@@ -1,7 +1,6 @@
-# Read-only upstream references. Never add these to the new repository.
-/OTONEI/
-/go-musicfox-master/
-/NetEaseMusicWorldNext-master/
+# Read-only reference copies (OTONEI and upstream projects). The whole folder is
+# local-only: never stage, commit or push anything below it.
+/reference/
 
 # Local tools, build outputs and test data
 /.tools/

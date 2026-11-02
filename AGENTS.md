@@ -11,7 +11,7 @@ User instructions always take precedence over this orchestration policy.
 
 ## Project boundaries
 
-- This is the independent Windows OTONEIGO project. `OTONEI/`, `go-musicfox-master/` and `NetEaseMusicWorldNext-master/` are ignored, read-only reference copies; never modify or stage them.
+- This is the independent Windows OTONEIGO project. `reference/OTONEI/`, `reference/go-musicfox-master/` and `reference/NetEaseMusicWorldNext-master/` are ignored, read-only reference copies; never modify or stage them.
 - Current delivery is the portable ZIP only. Do not build or run installers or installer smoke tests unless the user explicitly reopens that scope. The packaging command must default to ZIP-only output.
 - Follow the root implementation plan. P0 core verification must pass before claiming P1/P2 delivery. Record live, mocked, optional, failed and untested checks accurately.
 - Use one Go module, Wails 3, React, SQLite, one frontend queue owner and one audio executor. No separate local HTTP API process.

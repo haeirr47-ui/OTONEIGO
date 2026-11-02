@@ -30,7 +30,7 @@
 
 ## 项目边界
 
-- `OTONEI/`、`go-musicfox-master/`、`NetEaseMusicWorldNext-master/` 是只读参考副本，均已加入根 `.gitignore`；新工程不包含其 Git 历史，也不自动提交或推送。
+- `reference/` 下的 `OTONEI/`、`go-musicfox-master/`、`NetEaseMusicWorldNext-master/` 是只读参考副本，整个目录已加入根 `.gitignore`；新工程不包含其 Git 历史，也不自动提交或推送。
 - 只有网易云曲库，歌曲 ID 始终为字符串。本地收藏/历史/设置已实现；账号保持禁用，GD 发布 capability 已开放，用户设置默认关闭；不承诺 VIP、其他录音版本或高音质覆盖。
 - 没有 Firebase、UNM、额外本地 HTTP API 进程或自建远程服务器。同进程随机 loopback 端口仅提供受限媒体字节通道，业务仍通过 Wails 绑定。
 - 本地数据默认位于 `%LOCALAPPDATA%\OTONEIGO\library.db`；启动恢复为暂停。验证可通过进程环境变量 `OTONEIGO_DATA_DIR` 指定隔离目录。
