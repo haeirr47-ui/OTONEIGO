@@ -1,0 +1,227 @@
+/* Reused from OTONEI/src/styles/AudioPlayer.desktop.css; MIT, copyright (c) 2026 voici5986. */
+/* 桌面端播放器控制样式 */
+@media (min-width: 768px) {
+  .player-inner {
+    padding: 0;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: visible;
+  }
+
+  .player-info-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0 30px;
+    position: relative;
+  }
+
+  .player-left-section {
+    display: flex;
+    align-items: center;
+    width: 25%;
+    min-width: 200px;
+    z-index: var(--z-index-above);
+  }
+
+  .player-center-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 50%;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: var(--z-index-base);
+  }
+
+  /* 播放控制按钮特定样式 */
+  .control-icon-btn.accent-control {
+    opacity: 1;
+  }
+
+  .play-pause-button {
+    background-color: var(--color-accent);
+    border-radius: 50%;
+    color: var(--color-on-solid);
+    width: 45px;
+    height: 45px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+      transform 0.2s ease,
+      background-color 0.2s ease;
+    box-shadow: 0 4px 12px var(--color-accent-overlay);
+  }
+
+  .play-pause-button:hover {
+    transform: scale(1.05);
+    background-color: var(--color-accent-light);
+  }
+
+  .play-pause-button:active {
+    transform: scale(0.95);
+  }
+
+  /* 调整图标位置 */
+  .play-pause-button svg {
+    display: block;
+  }
+
+  /* 播放图标由于视觉重心问题，通常需要微调 */
+  .play-pause-button .play-icon {
+    margin-left: 3px;
+  }
+
+  .player-right-section {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    width: 25%;
+    min-width: 200px;
+    z-index: var(--z-index-above);
+  }
+
+  .progress-control-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    height: var(--progress-height);
+    z-index: var(--z-index-interaction);
+    line-height: 1;
+  }
+
+  /* 高度与 min-height 由 ProgressBar.jsx 依据播放状态给出（引用 --progress-height /
+     --progress-height-hover），这里只保留桌面端特有的底纹。 */
+  .progress-control-container .progress {
+    background-color: var(--color-overlay-subtle) !important;
+  }
+
+  .progress-control-container .progress-bar {
+    height: 100% !important;
+    background-color: var(--color-accent) !important;
+  }
+
+  /* 桌面端全屏展开视图样式（仿移动端沉浸式，但适配大屏布局） */
+  .desktop-expanded-view {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0; /* 桌面端全屏覆盖，包括播放器栏高度 */
+    height: 100vh;
+    padding: 40px 60px;
+    background-color: var(--card-background);
+    z-index: var(--z-index-player-expanded);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .desktop-expanded-view .close-lyrics-btn {
+    position: absolute;
+    top: 30px;
+    right: 40px;
+    z-index: var(--z-index-interaction);
+    color: var(--color-text-secondary);
+  }
+
+  .desktop-expanded-view .expanded-main-wrapper {
+    display: flex;
+    flex-direction: row; /* 左右布局 */
+    gap: 100px;
+    max-width: 1400px; /* 增大最大宽度以配合黄金比例 */
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+    padding: 0 40px;
+    align-items: center;
+  }
+
+  .desktop-expanded-view .album-info-section {
+    width: 35%; /* 黄金比例：封面占 35% */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-right: none;
+    padding-right: 0;
+  }
+
+  .desktop-expanded-view .album-cover-container {
+    width: 100%;
+    max-width: 550px; /* 适当增大封面上限 */
+    aspect-ratio: 1/1;
+    margin-bottom: 0;
+  }
+
+  .desktop-expanded-view .album-cover-large,
+  .desktop-expanded-view .album-cover-wrapper {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: var(--radius-md);
+    box-shadow: 0 25px 70px var(--color-overlay-heavy);
+  }
+
+  .desktop-expanded-view .lyrics-section {
+    width: 65%; /* 黄金比例：歌词占 65% */
+    padding-left: 20px;
+    height: 85vh; /* 使用用户调整后的高度 */
+    display: flex;
+    flex-direction: column;
+  }
+
+  .desktop-expanded-view .lyrics-scroll-container {
+    flex: 1;
+    overflow-y: auto;
+  }
+
+  .desktop-expanded-view .lyric-line {
+    font-size: 1.2rem !important;
+    padding: 15px 0 !important;
+    text-align: left !important; /* 桌面端左对齐更有现代感 */
+    transition: all 0.3s ease;
+    color: var(--color-text-secondary) !important;
+  }
+
+  .desktop-expanded-view .lyric-line.active {
+    font-size: 1.4rem !important;
+    font-weight: var(--font-weight-bold) !important;
+    color: var(--color-accent) !important;
+  }
+
+  /* 桌面端隐藏不必要的移动端元素 */
+  .desktop-expanded-view .close-lyrics-btn svg {
+    font-size: 1.4rem;
+  }
+}
+
+/* 全局隐藏规则：在桌面端隐藏移动端特有组件 */
+@media (min-width: 768px) {
+  .mobile-mini-player,
+  .mobile-progress-container {
+    display: none;
+  }
+}
+
+/* 769–991px 显示底部 Tab 时，桌面播放器也要避开 Tab 的命中区。 */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .audio-player.collapsed {
+    bottom: max(var(--mobile-tab-bar-height), 60px);
+  }
+}

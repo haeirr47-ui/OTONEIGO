@@ -1,0 +1,563 @@
+/* Reused from OTONEI/src/styles/App.css; MIT, copyright (c) 2026 voici5986. */
+/* 
+ * 设备旋转提示层样式
+ * Orientation Lock Overlay Styles
+ * 替代旧的强制旋转 Hack，提供更好的用户体验
+ */
+.orientation-lock-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: var(--color-background);
+  /* 适配深色模式 */
+  color: var(--color-text-primary);
+  z-index: var(--z-index-notification);
+  /* 确保在最顶层 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+}
+
+.orientation-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  animation: rotateIcon 2s infinite ease-in-out;
+  color: var(--color-primary);
+}
+
+.orientation-text {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-medium);
+  max-width: 80%;
+  line-height: 1.5;
+}
+
+@keyframes rotateIcon {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  25% {
+    transform: rotate(-90deg);
+  }
+
+  50% {
+    transform: rotate(-90deg);
+  }
+
+  75% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(0deg);
+  }
+}
+
+/* 音乐卡片样式 */
+.music-card {
+  background-color: var(--card-background);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  cursor: pointer;
+  margin-bottom: 0;
+  display: block;
+  position: relative;
+}
+
+/* 弃用通用 .card-body，改用自定义容器保持卡片契约独立 */
+.music-card-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--spacing-compact) var(--spacing-md);
+  width: 100%;
+  min-height: 60px;
+}
+
+.music-card-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  text-align: left;
+  padding-right: var(--spacing-compact);
+}
+
+.music-card-info h6 {
+  color: var(--color-text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--spacing-xs);
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-height: 1.5;
+}
+
+.home-results-row .music-card-info h6 {
+  min-height: 3em;
+}
+
+.music-card-info small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 音乐卡片底部操作栏 */
+.music-card-actions {
+  margin-top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--spacing-sm);
+  flex-shrink: 0;
+}
+
+/* 统一的操作按钮样式：无背景、无边框、大图标 */
+.music-card-actions .btn,
+.music-card-actions button {
+  background: transparent;
+  border: none;
+  min-width: var(--control-hit-size);
+  min-height: var(--control-hit-size);
+  padding: 0;
+  border-radius: var(--control-radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-tertiary);
+  transition: var(--control-transition);
+  box-shadow: none;
+}
+
+/* 悬停效果：轻微放大和颜色加深 */
+.music-card-actions .btn:hover:not(:disabled),
+.music-card-actions button:hover:not(:disabled) {
+  transform: none;
+  background-color: var(--control-hover-background);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+.music-card-actions .btn-outline-danger:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.music-card-actions .btn-outline-success:hover:not(:disabled) {
+  color: var(--color-text-primary);
+}
+
+.music-card-actions .accent-action {
+  color: var(--color-accent);
+}
+
+.music-card-actions .accent-action:hover:not(:disabled) {
+  color: var(--color-accent);
+}
+
+.minimal-action-btn {
+  background: transparent;
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  box-shadow: none;
+  min-height: var(--button-min-height);
+  padding: var(--spacing-sm) var(--spacing-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  transition: var(--control-transition);
+}
+
+.minimal-action-btn:hover:not(:disabled) {
+  background: var(--color-background-alt);
+}
+
+.btn-primary-custom {
+  background-color: var(--color-primary);
+  color: var(--color-on-solid);
+  border: none;
+  border-radius: var(--radius-sm);
+  min-height: var(--button-min-height);
+  padding: var(--spacing-sm) var(--spacing-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: var(--control-transition);
+}
+
+.btn-primary-custom:hover:not(:disabled) {
+  background-color: var(--color-primary-light);
+  transform: none;
+}
+
+.btn-primary-custom:active:not(:disabled) {
+  transform: none;
+}
+
+/* 原生 Spinner */
+.spinner-custom {
+  width: 1.2rem;
+  height: 1.2rem;
+  border: 2px solid var(--color-overlay-light);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  display: inline-block;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* 通用 Badge */
+.badge-custom {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-semibold);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--radius-xs);
+  background-color: var(--color-background-alt);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.minimal-action-btn:disabled {
+  opacity: 0.5;
+}
+
+.minimal-action-item {
+  color: var(--color-text-secondary);
+}
+
+.minimal-action-item:hover,
+.minimal-action-item:focus {
+  background: var(--color-background-alt);
+  color: var(--color-text-primary);
+}
+
+/* 图标尺寸调整 */
+.music-card-actions svg {
+  font-size: 1.2rem;
+}
+
+/* 加载中状态不需要缩放 */
+.music-card-actions .spinner-border {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.music-card:hover {
+  background-color: var(--color-hover-notion);
+  box-shadow: none;
+  transform: none;
+}
+
+.music-card.is-active {
+  border-color: var(--color-border);
+  background-color: var(--color-hover-notion);
+  box-shadow: none;
+}
+
+.text-primary {
+  color: var(--color-text-primary);
+}
+
+.text-secondary {
+  color: var(--color-text-secondary);
+}
+
+.text-tertiary {
+  color: var(--color-text-tertiary);
+}
+
+.text-muted {
+  /* 兼容类用于说明文字；弱色令牌只保留给装饰和禁用态。 */
+  color: var(--color-text-secondary);
+}
+
+/* 移动端全局布局调整 */
+@media (max-width: 991.98px) {
+  /* 底部控件留白属于内容滚动区，不能把整个文档撑高。 */
+  body {
+    padding-bottom: 0;
+    padding-top: 0;
+    /* 顶栏没了，不需要顶部内边距 */
+  }
+
+  /* 播放器全屏模式下，重置 padding-bottom */
+  body.player-expanded {
+    padding-bottom: 0;
+    overflow: hidden;
+    /* 全屏模式下禁止 body 滚动 */
+  }
+}
+
+/* 桌面端两栏布局 */
+.app-container {
+  display: flex;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background-color: var(--color-background);
+}
+
+.app-container .main-content {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background-color: var(--color-background);
+}
+
+.desktop-layout .main-content {
+  margin-left: var(--sidebar-width);
+}
+
+.app-container .content-area {
+  flex-shrink: 0;
+}
+
+/* 统一的页面内容包装器，消除不同页面的容器差异 */
+.page-content-wrapper {
+  width: 100%;
+  margin: 0 auto;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 历史页面特有的时间标签 */
+.badge-time {
+  font-size: 0.7rem;
+  color: var(--color-text-secondary);
+  background-color: var(--color-background-alt);
+  padding: 2px 6px;
+  border-radius: var(--radius-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+}
+
+/* Notion 风格交互卡片 (用于登录页统计等) */
+.stats-card-interactive {
+  border-radius: var(--radius-md);
+  background-color: var(--color-background);
+  border: 1px solid transparent;
+  /* 默认无边框 */
+  transition:
+    background 0.15s ease,
+    transform 0.12s ease;
+  cursor: pointer;
+}
+
+.stats-card-interactive:hover {
+  background-color: var(--color-background-alt);
+  /* 移除边框高亮和浮动阴影，仅背景色变化 */
+  border-color: transparent;
+  transform: none;
+  box-shadow: none;
+}
+
+.stats-card-interactive:active {
+  background-color: var(--color-background-alt);
+  transform: none;
+}
+
+.stats-card-interactive .stats-icon {
+  transition: none;
+  /* 移除图标缩放 */
+}
+
+.stats-card-interactive:hover .stats-icon {
+  transform: none;
+}
+
+/* 统一的空状态/提醒框样式 */
+.alert-light {
+  background-color: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-secondary);
+  padding: var(--spacing-xl);
+  border-radius: var(--radius-md);
+  text-align: center;
+}
+
+/* 适配桌面端侧边栏模式下的 Navigation */
+.desktop-layout .navigation-sidebar {
+  width: var(--sidebar-width);
+  height: 100vh;
+  position: fixed;
+  left: 0;
+  top: 0;
+  background-color: var(--color-background-alt);
+  border-right: 1px solid var(--color-border);
+  z-index: var(--z-index-sidebar);
+  overflow: hidden;
+}
+
+/* 桌面端内容区内边距 */
+.desktop-layout .content-area {
+  padding-top: var(--spacing-compact);
+  padding-right: var(--spacing-2xl);
+  padding-bottom: calc(var(--player-height-collapsed) + 40px);
+  padding-left: var(--spacing-2xl);
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* 移动端内容区内边距 */
+@media (max-width: 991.98px) {
+  .app-container .content-area {
+    padding: var(--spacing-compact) var(--spacing-md)
+      calc(
+        max(var(--mobile-tab-bar-height), 60px) + var(--player-height-collapsed) +
+          var(--safe-area-bottom)
+      )
+      var(--spacing-md);
+  }
+}
+
+/* 在桌面端，由于外部 content-area 已提供 padding-top，
+   我们需要移除页面内部 Container 的额外 margin-top 以保持基准线一致 */
+.desktop-layout .content-area .container {
+  margin-top: 0;
+}
+
+.desktop-layout .home-desktop {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-lg);
+}
+
+.desktop-layout .home-search-filter-bar {
+  background-color: var(--color-background-alt);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-compact) 20px;
+  display: flex;
+  align-items: center;
+  box-shadow: var(--shadow-sm);
+}
+
+.desktop-layout .home-filter-form {
+  width: 100%;
+}
+
+.desktop-layout .filter-group {
+  position: relative;
+}
+
+.desktop-layout .home-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-compact);
+}
+
+.page-status {
+  width: 100%;
+  max-width: 720px;
+  margin: var(--spacing-lg) auto;
+  background-color: var(--card-background);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-xl) var(--spacing-lg);
+  text-align: center;
+}
+
+.page-status-title {
+  margin: var(--spacing-sm) 0;
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  line-height: 1.25;
+}
+
+.page-status-description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: var(--line-height-base);
+  overflow-wrap: anywhere;
+}
+
+.page-status-actions {
+  display: flex;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: var(--spacing-md);
+}
+
+.home-filter-select {
+  width: auto;
+  min-width: 120px;
+}
+
+.load-more-btn {
+  min-width: 128px;
+}
+
+.header-search-status {
+  /* 页面内提供可见加载反馈；顶栏保留读屏提示，避免挤占固定高度。 */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (max-width: 991.98px) {
+  .desktop-layout .navigation-sidebar {
+    display: none;
+  }
+
+  .desktop-layout .main-content {
+    margin-left: 0;
+    padding-top: calc(var(--navbar-height-mobile) + var(--safe-area-top));
+  }
+
+  /* Header.desktop.css 的同名规则在组件样式中加载较晚；提高特异性，
+     让窄屏使用移动 Header 的真实高度（含安全区）。 */
+  .app-container.desktop-layout .main-content {
+    padding-top: calc(var(--navbar-height-mobile) + var(--safe-area-top));
+  }
+}

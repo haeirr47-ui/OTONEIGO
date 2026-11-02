@@ -1,0 +1,86 @@
+/* Reused from OTONEI/src/styles/Navigation.mobile.css; MIT, copyright (c) 2026 voici5986. */
+/* 移动端底部导航栏样式 */
+.mobile-tab-bar {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--mobile-tab-bar-height);
+  min-height: 60px;
+  background-color: var(--card-background);
+  border-top: 1px solid var(--color-border);
+  z-index: var(--z-index-mobile-nav);
+  padding-bottom: var(--safe-area-bottom);
+}
+
+.mobile-tab-item {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+  min-height: var(--control-hit-size-coarse);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  transition: var(--transition-fast);
+  position: relative;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.mobile-tab-label {
+  font-size: var(--font-size-2xs);
+  line-height: var(--line-height-base);
+}
+
+/* 底部导航贴屏幕下沿，外扩的焦点环会被裁切，因此这一处改用内缩偏移。
+   颜色与粗细仍与全局焦点环一致（见 index.css 顶部的焦点环策略）。 */
+html[data-nav='keyboard'] .mobile-tab-item:focus-visible {
+  outline: var(--focus-ring) !important;
+  outline-offset: var(--focus-ring-offset-inset) !important;
+}
+
+/* 选中态的胶囊背景框 */
+.mobile-tab-item::after {
+  content: '';
+  position: absolute;
+  width: 64px;
+  height: 32px;
+  background-color: var(--color-background-alt); /* 稍微深一点的背景色作为胶囊 */
+  border-radius: var(--radius-full);
+  z-index: var(--z-index-negative);
+  opacity: 0;
+  transition: all 0.3s ease;
+  transform: scale(0.8);
+}
+
+.mobile-tab-item.active {
+  color: var(--color-text-primary);
+}
+
+.mobile-tab-item.active::after {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.mobile-tab-item svg {
+  font-size: 1.4rem;
+  z-index: var(--z-index-base);
+}
+
+/* 桌面端隐藏移动端导航 */
+@media (min-width: 992px) {
+  .mobile-tab-bar {
+    display: none;
+  }
+}
+
+/* 播放器展开时隐藏导航栏 */
+body.player-expanded .mobile-tab-bar {
+  display: none !important;
+}

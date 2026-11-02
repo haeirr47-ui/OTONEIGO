@@ -1,0 +1,127 @@
+/* Reused from OTONEI/src/styles/primitives.css; MIT, copyright (c) 2026 voici5986. */
+/*
+ * UI 基础原语
+ *
+ * 本地兼容工具类负责 grid/flex/spacing；组件自己的视觉规则和交互命中区
+ * 集中在这里，避免每个组件重新定义同一套按钮行为。
+ */
+
+.ui-icon-button {
+  --ui-icon-button-size: var(--control-hit-size);
+  inline-size: var(--ui-icon-button-size);
+  block-size: var(--ui-icon-button-size);
+  min-inline-size: var(--ui-icon-button-size);
+  min-block-size: var(--ui-icon-button-size);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  appearance: none;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: var(--color-text-tertiary);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+  transition: var(--control-transition);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.ui-icon-button:hover:not(:disabled) {
+  background-color: var(--control-hover-background);
+  color: var(--color-text-primary);
+}
+
+.ui-icon-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-icon-button.is-active,
+.ui-icon-button.accent-action,
+.ui-icon-button.accent-control {
+  color: var(--color-accent);
+}
+
+/* 忙碌态必须压过收藏按钮的强调色，给用户明确的处理中反馈。 */
+.ui-icon-button.is-busy,
+.ui-icon-button.is-busy.accent-action,
+.ui-icon-button.is-busy.accent-control {
+  color: var(--color-text-muted) !important;
+  cursor: wait;
+  opacity: 0.55;
+}
+
+.ui-icon-button--play {
+  --ui-icon-button-size: 56px;
+}
+
+.ui-icon-button--bare:hover:not(:disabled) {
+  background-color: transparent;
+}
+
+.ui-button {
+  min-block-size: var(--button-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  appearance: none;
+  font: inherit;
+  line-height: 1.2;
+  cursor: pointer;
+  transition: var(--control-transition);
+}
+
+.ui-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.ui-button--primary {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 0;
+  background: var(--color-primary);
+  color: var(--color-on-solid);
+}
+
+.ui-button--primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.ui-button--secondary {
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: var(--border-width) solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.ui-button--secondary:hover:not(:disabled) {
+  background: var(--color-background-alt);
+}
+
+.ui-action-group {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.ui-text-button {
+  min-block-size: var(--control-hit-size);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 0;
+  border-radius: var(--control-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.ui-text-button:hover {
+  background: var(--control-hover-background);
+}

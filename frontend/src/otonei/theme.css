@@ -1,0 +1,217 @@
+/* Reused from OTONEI/src/styles/theme.css; MIT, copyright (c) 2026 voici5986. */
+/* theme.css - 统一的主题变量系统 */
+
+@font-face {
+  font-family: 'MiSans';
+  src: url('/MiSansVF.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+:root {
+  /* ===== 颜色系统 ===== */
+  /* 基础颜色 */
+  /* 主色及交互态均满足普通字号白字的 4.5:1 对比度。 */
+  --color-primary: #1a6dc0;
+  --color-primary-light: #1d75ce;
+  --color-primary-dark: #165da5;
+  /* 实色表面（主色 / accent / danger / info / 深色底）上的前景色。
+     不要用 --color-background 代替——那是底色语义，主题一变就会失效。 */
+  --color-on-solid: #ffffff;
+
+  /* 功能性颜色 */
+  --color-success: #28a745;
+  --color-danger: #e74c3c;
+  --color-danger-dark: #dc3545;
+  --color-danger-hover: #d32f2f;
+  --color-warning: #ffc107;
+  --color-info: #17a2b8;
+  --color-accent: #d15c5c;
+  --color-accent-text: #b34444;
+
+  /* 中性颜色 (Notion 风格) */
+  --color-text-primary: #2f3437;
+  --color-text-secondary: #6b6f76;
+  --color-text-tertiary: #91918e;
+  --color-text-muted: #9b9a97;
+  --color-background: #ffffff;
+  --color-background-alt: #f7f7f5;
+  --color-hover-notion: #efefee;
+  --color-hover-strong: #f1f1ef;
+  --color-border-subtle: rgba(15, 15, 15, 0.1);
+  --color-accent-light: #e06d6d;
+  --color-border: #e5e5e5;
+  /* 归一化为浅灰描边 */
+  --color-border-active: var(--color-primary);
+
+  /* 组件语义色与透明叠层。组件层只引用这些令牌，保持主题可替换。 */
+  --color-danger-text: #721c24;
+  --color-danger-background: #f8d7da;
+  --color-danger-border: #f5c6cb;
+  --color-success-text: #155724;
+  --color-success-background: #d4edda;
+  --color-success-border: #c3e6cb;
+  --color-info-text: #0c5460;
+  --color-info-background: #d1ecf1;
+  --color-info-border: #bee5eb;
+  --color-danger-soft: #fef2f2;
+  --color-danger-strong: #eb5757;
+  --color-danger-soft-strong: #fee2e2;
+  --color-overlay-dark: rgba(0, 0, 0, 0.7);
+  --color-overlay-backdrop: rgba(0, 0, 0, 0.4);
+  --color-overlay-heavy: rgba(0, 0, 0, 0.25);
+  --color-overlay-strong: rgba(0, 0, 0, 0.2);
+  --color-overlay-medium: rgba(0, 0, 0, 0.15);
+  --color-overlay-light: rgba(0, 0, 0, 0.1);
+  --color-overlay-subtle: rgba(0, 0, 0, 0.05);
+  --color-white-overlay: rgba(255, 255, 255, 0.2);
+  --color-white-transparent: rgba(255, 255, 255, 0);
+  --color-surface-translucent: rgba(255, 255, 255, 0.85);
+  --color-neutral-overlay-medium: rgba(15, 15, 15, 0.15);
+  --color-neutral-overlay-subtle: rgba(15, 15, 15, 0.05);
+  --color-neutral-overlay-light: rgba(15, 15, 15, 0.08);
+  --color-accent-overlay: rgba(209, 92, 92, 0.3);
+  --color-icon-shadow: rgba(31, 31, 31, 0.25);
+
+  /* ===== 排版 ===== */
+  --font-family-base:
+    'MiSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', 'Roboto', sans-serif;
+  --font-size-2xs: 0.75rem;
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-md: 1.125rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --line-height-base: 1.5;
+
+  /* ===== 交互控件 ===== */
+  /* 命中区与图标视觉尺寸分离，避免为了可触控而放大图标。 */
+  --control-hit-size: 40px;
+  --control-hit-size-coarse: 44px;
+  --control-visual-size: 20px;
+  --control-radius: 8px;
+  --control-hover-background: var(--color-hover-notion);
+  --button-min-height: var(--control-hit-size);
+  /* 焦点环：拆成长写令牌，供 index.css 的全局无障碍策略统一引用 */
+  --focus-ring-width: 3px;
+  --focus-ring-color: var(--color-primary);
+  --focus-ring: var(--focus-ring-width) solid var(--focus-ring-color);
+  --focus-ring-offset: 2px;
+  /* 贴屏幕下沿的元素用内缩偏移，避免焦点环被裁切 */
+  --focus-ring-offset-inset: -3px;
+  --control-transition: color 0.15s ease, background-color 0.15s ease, transform 0.15s ease;
+
+  /* ===== 间距 ===== */
+  --spacing-xs: 0.25rem;
+  /* 4px */
+  --spacing-sm: 0.5rem;
+  /* 8px */
+  --spacing-compact: 0.75rem;
+  /* 12px */
+  --spacing-md: 1rem;
+  /* 16px */
+  --spacing-lg: 1.5rem;
+  /* 24px */
+  --spacing-xl: 2rem;
+  /* 32px */
+  --spacing-2xl: 3rem;
+  /* 48px */
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  /* PWA 顶部 / 底部安全区域高度 */
+
+  /* ===== 边框 ===== */
+  /* 只保留四档视觉圆角；结构性圆角（0 / 50% / inherit）仍由组件按需使用。 */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-full: 999px;
+  /* 旧令牌暂保留为兼容别名，新增代码统一使用 --radius-*。 */
+  --border-radius-sm: var(--radius-sm);
+  --border-radius-md: var(--radius-sm);
+  --border-radius-lg: var(--radius-md);
+  --border-width: 1px;
+  --border-radius: var(--radius-md);
+
+  /* ===== 阴影 (Notion 风格：极弱) ===== */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.04);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+  /* ===== 过渡效果 ===== */
+  --transition-fast: all 0.2s ease;
+  --transition-normal: all 0.3s ease;
+
+  /* ===== 动画曲线 ===== */
+  --ease-in-out: cubic-bezier(0.645, 0.045, 0.355, 1);
+  --ease-out-circ: cubic-bezier(0.08, 0.82, 0.17, 1);
+
+  /* ===== 组件特定变量 ===== */
+  /* 播放器 */
+  --player-height-collapsed: 85px;
+
+  /* 卡片 */
+  --card-background: #ffffff;
+  --card-hover-background: #f7f6f4;
+
+  /* 导航栏。桌面与移动是两套布局，高度确实不同，因此拆成两个令牌而不是强行统一 */
+  --navbar-height-desktop: 64px;
+  --navbar-height-mobile: 56px;
+  --sidebar-width: 240px;
+  /* 桌面端侧边栏宽度 */
+  --mobile-tab-bar-height: 8vh;
+
+  /* 进度条。高度全部由 ProgressBar.jsx 依据播放状态引用：
+     收起态取 --progress-height，悬停/拖动/触摸取 -hover；
+     移动端迷你播放器的容器更高、条更细，单独取 -mini 并在地毯式覆盖中锁住。 */
+  --progress-height: 3px;
+  --progress-height-hover: 6px;
+  --progress-height-mini: 4px;
+  --progress-border-radius: var(--radius-xs);
+  --progress-background: #d3d1cb;
+  --progress-fill: var(--color-text-primary);
+
+  /* ===== Z-Index 层级系统 ===== */
+  --z-index-negative: -1;
+  --z-index-base: 1;
+  --z-index-above: 10;
+  --z-index-interaction: 100;
+  --z-index-sidebar: 100;
+  --z-index-player-base: 1000;
+  --z-index-navbar: 1020;
+  --z-index-suggestions: 1100;
+  --z-index-fixed-bottom: 1030;
+  --z-index-mobile-nav: 1050;
+  --z-index-player-backdrop: 9000;
+  --z-index-player-expanded: 9500;
+  --z-index-overlay: 9999;
+  --z-index-player-force: 10000;
+  /* 模态框：遮罩与内容拆成两层，内容层 +1；高于播放器强制展开层。 */
+  --z-index-modal: 10010;
+  --z-index-modal-content: 10011;
+  --z-index-notification: 11000;
+
+  /* 全局引导：高于移动端全屏控件，交互仅限提示关闭按钮。 */
+  --z-index-guidance: 20010;
+
+  /* 移动端全屏模式专有层级 (20000系列) */
+  --z-index-mobile-expanded-base: 20000;
+  --z-index-mobile-expanded-content: 20001;
+  --z-index-mobile-expanded-info: 20003;
+  --z-index-mobile-expanded-top: 20005;
+}
+
+/* 移动端导航栏样式已移至 Navigation.mobile.css */
+/* 音乐卡片样式已移至 App.css */
+
+/* 触摸设备优先使用 44px 命中区；图标仍由组件自身的 size/font-size 控制。 */
+@media (pointer: coarse), (max-width: 991.98px) {
+  :root {
+    --control-hit-size: var(--control-hit-size-coarse);
+  }
+}

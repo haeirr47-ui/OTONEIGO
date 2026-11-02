@@ -1,0 +1,19 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="noteGradient" x1="60" y1="40" x2="240" y2="260" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6A11CB" />
+      <stop offset="1" stop-color="#2575FC" />
+    </linearGradient>
+    <linearGradient id="bgGradient" x1="50" y1="0" x2="250" y2="280" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F2F5FF" />
+      <stop offset="1" stop-color="#E6ECFF" />
+    </linearGradient>
+    <filter id="shadow" x="0" y="0" width="300" height="300" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-opacity="0.15" />
+    </filter>
+  </defs>
+  <rect x="24" y="24" width="252" height="252" rx="28" fill="url(#bgGradient)" filter="url(#shadow)" />
+  <path d="M212 88V182.4C212 200.72 199.6 216 181.6 216C167.04 216 154.4 207.68 149.44 195.36C142.08 203.52 131.68 208.8 120 208.8C101.28 208.8 86 193.52 86 174.8C86 156.08 101.28 140.8 120 140.8C128.64 140.8 136.48 143.84 142.72 148.96V104H212Z" fill="url(#noteGradient)" />
+  <circle cx="121" cy="175" r="21" fill="#FFFFFF" opacity="0.35" />
+  <circle cx="182" cy="185" r="18" fill="#FFFFFF" opacity="0.25" />
+</svg>

@@ -1,0 +1,250 @@
+/* Reused from OTONEI/src/styles/Navigation.desktop.css; MIT, copyright (c) 2026 voici5986. */
+/* 桌面端顶部导航栏样式 */
+.navbar {
+  box-shadow: none;
+  border-bottom: 1px solid var(--color-border);
+  background-color: var(--card-background);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+  padding: 0.2rem var(--spacing-md);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-index-navbar);
+  display: flex; /* 确保显示 */
+}
+
+.navbar-collapse {
+  background-color: transparent;
+  box-shadow: none;
+  transition: all 0.3s ease;
+}
+
+/* 导航链接动画 - 增强版 */
+.navbar .nav-link {
+  border-bottom: 2px solid transparent;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+  overflow: hidden;
+  min-height: var(--button-min-height);
+  padding: var(--spacing-sm) 0.8rem;
+  margin: 0 0.3rem;
+  border-radius: var(--radius-sm);
+  font-weight: var(--font-weight-medium);
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.navbar .nav-link:after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: var(--color-text-primary);
+  transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.navbar .nav-link:hover {
+  background-color: var(--color-background-alt);
+  transform: translateY(-2px);
+}
+
+.navbar .nav-link:hover:after {
+  width: 100%;
+}
+
+.navbar .nav-link.active {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  background-color: var(--color-background-alt);
+}
+
+.navbar .nav-link.active::after {
+  display: block;
+  width: 100%;
+}
+
+/* 导航图标动画增强 */
+.nav-icon {
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-link:hover .nav-icon {
+  transform: scale(1.2) rotate(5deg);
+}
+
+.nav-link.active .nav-icon {
+  transform: scale(1.1);
+  color: var(--color-text-primary);
+}
+
+/* Logo脉冲动画增强 */
+@keyframes logoPulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: scale(1.1);
+    filter: brightness(1.2);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+.logo-pulse {
+  animation: logoPulse 4s infinite ease-in-out;
+  transition: all 0.3s ease;
+}
+
+.logo-pulse:hover {
+  animation-play-state: paused;
+  filter: drop-shadow(0 0 3px var(--color-icon-shadow));
+}
+
+/* 导航栏整体动画 */
+.nav-animated {
+  animation: navFadeIn 0.5s ease-out;
+}
+
+/* lg 断点以下使用移动导航，桌面导航必须彻底退出布局。 */
+@media (max-width: 991.98px) {
+  .navbar {
+    display: none !important;
+  }
+}
+
+/* 桌面端侧边栏模式下的适配 */
+.navigation-sidebar .navbar {
+  flex-direction: column;
+  height: 100%;
+  align-items: flex-start;
+  padding: var(--spacing-xl) var(--spacing-md);
+  border-bottom: none;
+  background-color: transparent;
+  position: relative;
+  top: 0;
+  width: 100%;
+}
+
+.navigation-sidebar .container-fluid {
+  flex-direction: column;
+  align-items: flex-start;
+  height: 100%;
+  padding: 0;
+  display: flex;
+}
+
+.navigation-sidebar .navbar-brand {
+  margin-bottom: var(--spacing-2xl);
+  margin-right: 0;
+  padding-left: var(--spacing-sm);
+}
+
+.navigation-sidebar .navbar-toggler {
+  display: none;
+}
+
+.navigation-sidebar .navbar-collapse {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  align-items: flex-start;
+  visibility: visible; /* 确保可见 */
+}
+
+.navigation-sidebar .navbar-nav {
+  flex-direction: column;
+  width: 100%;
+  display: flex;
+}
+
+.navigation-sidebar .navbar-nav .nav-link {
+  margin: var(--spacing-xs) 0;
+  padding: var(--spacing-compact) var(--spacing-md);
+  width: 100%;
+  border-bottom: none;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  color: var(--color-text-secondary);
+  font-size: 15px;
+  font-weight: var(--font-weight-medium);
+  transition: all 0.2s ease;
+}
+
+.navigation-sidebar .nav-link:hover {
+  background-color: var(--color-hover-notion);
+  color: var(--color-text-primary);
+  transform: none;
+}
+
+.navigation-sidebar .nav-link.active {
+  background-color: var(--color-hover-notion);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.navigation-sidebar .nav-link::after {
+  display: none;
+}
+
+.navigation-sidebar .nav-icon {
+  margin-right: var(--spacing-compact);
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+}
+
+/* 桌面端侧边栏中的用户区域移至底部 */
+.navigation-sidebar .order-lg-last {
+  margin-top: auto;
+  margin-left: 0;
+  margin-right: 0;
+  padding: var(--spacing-md) var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  width: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.navigation-sidebar .order-lg-last .nav-link {
+  min-width: var(--control-hit-size);
+  min-height: var(--control-hit-size);
+  padding: 0;
+  width: auto;
+  border-radius: 50%;
+}
+
+.navbar .order-lg-last .nav-link {
+  min-width: var(--control-hit-size);
+  min-height: var(--control-hit-size);
+}
+
+.navigation-sidebar .user-info-sidebar {
+  margin-left: var(--spacing-compact);
+  display: flex;
+  flex-direction: column;
+}
+
+.navigation-sidebar .user-name-sidebar {
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.navigation-sidebar .user-status-sidebar {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-tertiary);
+}

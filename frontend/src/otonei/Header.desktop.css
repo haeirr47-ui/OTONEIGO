@@ -1,0 +1,330 @@
+/* Reused from OTONEI/src/styles/Header.desktop.css; MIT, copyright (c) 2026 voici5986. */
+/* 
+ * Header.desktop.css - 桌面端样式及通用建议项
+ */
+
+/* 1. 桌面端顶部导航基础容器 */
+.app-header-desktop {
+  position: fixed;
+  top: 0;
+  right: 0;
+  /* 让开左侧固定侧边栏 */
+  left: var(--sidebar-width);
+  height: var(--navbar-height-desktop);
+  background-color: var(--color-surface-translucent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: var(--z-index-navbar);
+  padding: 0 40px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--color-neutral-overlay-subtle);
+  transition: left var(--transition-normal);
+}
+
+/* 桌面端搜索框外层容器 */
+.header-search-container {
+  flex: 0 1 755px;
+  position: relative;
+}
+
+/* 核心输入框组：极致一体化设计 */
+.header-search-field-wrapper {
+  display: flex;
+  align-items: center;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-md);
+  height: calc(var(--control-hit-size) + 2 * var(--border-width));
+  padding: 0 10px;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: visible;
+}
+
+/* 聚焦状态：与联想面板合体。这是形态变化，指针操作时同样保留。 */
+.header-search-container:focus-within .header-search-field-wrapper {
+  background-color: var(--color-background);
+  box-shadow: 0 8px 20px -5px var(--color-border-subtle);
+}
+
+/* 蓝框只在键盘导航时出现，覆盖整个搜索框（图标 + 输入框 + 清除按钮）。
+   transition-property: none 是因为容器自身的 transition: all 会让焦点提示淡入，
+   而焦点提示应当即时出现。 */
+html[data-nav='keyboard'] .header-search-container:focus-within .header-search-field-wrapper {
+  border-color: var(--color-border-active);
+  transition-property: none;
+}
+
+/* 联想面板展开时：搜索条底部让位给面板，蓝框由面板接续，两者仍是一体 */
+.header-search-container.is-suggestions-open:focus-within .header-search-field-wrapper {
+  border-bottom-color: transparent;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+html[data-nav='keyboard']
+  .header-search-container.is-suggestions-open:focus-within
+  .desktop-search-suggestions {
+  border-top: none;
+  border-color: var(--color-border-active);
+}
+
+/* 搜索图标：零背景完全融合 */
+.header-search-icon {
+  color: var(--color-text-tertiary);
+  font-size: var(--font-size-sm);
+  margin-right: var(--spacing-sm);
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
+}
+
+/* 输入框：彻底融入背景 */
+.header-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-primary);
+  padding: 0;
+  height: 100%;
+  outline: none;
+  margin: 0;
+}
+
+.header-search-input::-webkit-search-cancel-button,
+.header-search-input::-webkit-search-decoration,
+.header-search-input::-webkit-search-results-button,
+.header-search-input::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
+}
+
+.header-search-input::placeholder {
+  color: var(--color-text-secondary);
+}
+
+/* 桌面端建议面板：紧密耦合 */
+.desktop-search-suggestions {
+  position: absolute;
+  top: 36px;
+  left: 0;
+  right: 0;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border-subtle);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  box-shadow: 0 20px 35px -5px var(--color-neutral-overlay-medium);
+  z-index: var(--z-index-suggestions);
+  animation: suggestionFadeIn 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  max-height: 600px;
+  display: flex;
+  /* 改为 flex 布局 */
+  flex-direction: column;
+}
+
+/* 新增：独立的内部滚动区域 */
+.suggestion-scroll-area {
+  flex: 1;
+  /* 占据剩余空间 */
+  overflow-y: auto;
+  /* 在这里开启滚动 */
+  padding: 6px 0 10px 0;
+}
+
+@keyframes suggestionFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 2. 建议项通用样式 (桌面与移动共用) */
+.suggestion-section-title {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  margin: 6px 6px 6px 6px;
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.clear-history-link {
+  border: 0;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-weight: var(--font-weight-normal);
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.clear-history-link:hover {
+  color: var(--color-text-primary);
+}
+
+.suggestion-item {
+  width: calc(100% - 16px);
+  margin: 0 var(--spacing-sm);
+  min-height: var(--control-hit-size);
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 6px var(--spacing-compact);
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+
+/* 桌面端特有：单行左右布局 */
+.desktop-search-suggestions .suggestion-item {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  padding: 10px var(--spacing-compact);
+}
+
+.desktop-search-suggestions .suggestion-title {
+  flex: 1;
+}
+
+.desktop-search-suggestions .suggestion-subtitle {
+  flex-shrink: 0;
+  text-align: right;
+  max-width: 240px;
+}
+
+.suggestion-item:hover,
+.suggestion-item.selected {
+  background-color: var(--color-hover-strong);
+}
+
+.suggestion-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-subtitle {
+  font-size: var(--font-size-2xs);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.suggestion-empty {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 30px var(--spacing-compact);
+  text-align: center;
+}
+
+.suggestion-more {
+  font-size: var(--font-size-sm);
+  min-height: var(--control-hit-size);
+  color: var(--color-text-secondary);
+  border: 0;
+  background: transparent;
+  width: calc(100% - 14px);
+  text-align: left;
+  padding: var(--spacing-sm) var(--spacing-compact);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  margin: var(--spacing-xs) 6px 0 var(--spacing-sm);
+  transition: background 0.1s ease;
+}
+
+.suggestion-more:hover,
+.suggestion-more.selected {
+  background-color: var(--color-hover-strong);
+  color: var(--color-text-primary);
+}
+
+.suggestion-divider {
+  height: 1px;
+  background-color: var(--color-border-subtle);
+  margin: 6px var(--spacing-compact);
+}
+
+.suggestion-footer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 10px var(--spacing-md);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-normal);
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-neutral-overlay-subtle);
+  flex-shrink: 0;
+  /* 拒绝被滚动条挤压 */
+  background-color: var(--color-background);
+  /* 确保背景不透明 */
+  border-bottom-left-radius: 12px;
+  /* 保持跟容器底部一致 */
+  border-bottom-right-radius: 12px;
+}
+
+.search-clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-text-tertiary);
+  width: var(--control-hit-size);
+  height: var(--control-hit-size);
+  min-width: var(--control-hit-size);
+  min-height: var(--control-hit-size);
+  padding: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.header-user-profile {
+  min-width: var(--control-hit-size);
+  min-height: var(--control-hit-size);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  text-align: inherit;
+  cursor: pointer;
+}
+
+.search-clear-btn:hover {
+  background-color: var(--color-hover-strong);
+  color: var(--color-text-primary);
+}
+
+/* 桌面端特有覆盖：桌面布局主内容间距 */
+.desktop-layout .main-content {
+  /* 必须与顶栏高度一致，否则内容会被固定顶栏压住 —— 用同一个令牌锁住这个耦合 */
+  padding-top: var(--navbar-height-desktop);
+}
+
+@media (max-width: 991.98px) {
+  .app-header-desktop {
+    display: none;
+  }
+}

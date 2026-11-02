@@ -1,0 +1,343 @@
+/* Reused from OTONEI/src/index.css; MIT, copyright (c) 2026 voici5986. */
+/* 添加全局样式优化 */
+/* 主要变量已移至theme.css */
+
+html,
+body {
+  margin: 0;
+  font-family: var(--font-family-base);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--color-background);
+  /* 禁用浏览器默认的下拉刷新和边缘回弹效果，提升 PWA 类原生体验 */
+  overscroll-behavior-y: none;
+}
+
+/* ===== 焦点环策略：仅键盘导航可见 =====
+ * 指针操作（鼠标 / 触摸）一律不显示焦点环。这一步无法只靠 :focus-visible 完成——
+ * 浏览器会把 input 和 select 视为"必须给出焦点提示"的元素，鼠标点击时同样匹配
+ * :focus-visible。因此由 src/utils/inputModality.js 在 <html> 上记录最后一次
+ * 交互方式（data-nav），此处按该属性决定是否显示焦点环。
+ * 键盘导航时统一使用 --focus-ring，所有元素样式一致。
+ */
+html[data-nav='pointer'] :focus,
+html[data-nav='pointer'] :focus-visible {
+  outline: none !important;
+}
+
+/* 用长写而非 outline 简写，避免组件焦点规则只覆盖其中一部分，
+ * 出现"粗细来自这里、颜色来自那里"的混合结果。全局焦点环必须压过组件样式。 */
+html[data-nav='keyboard'] :focus-visible {
+  outline-style: solid !important;
+  outline-width: var(--focus-ring-width) !important;
+  outline-color: var(--focus-ring-color) !important;
+  outline-offset: var(--focus-ring-offset) !important;
+}
+
+/* 焦点环必须即时出现。组件里的 transition: all 会把 outline-color / outline-offset 纳入过渡，
+   于是焦点环从 currentColor 淡入（先灰后蓝），不同元素的出现速度不一致。
+   因此这里用等价的冗余条件 :focus-visible:focus 提高选择器权重。 */
+html[data-nav='keyboard'] :focus-visible:focus {
+  transition-property: none !important;
+}
+
+/* 搜索输入框自身不画环：它的焦点环由外层 .header-search-field-wrapper 承担，
+   因为图标和清除按钮是输入框的兄弟节点，挂在输入框上的环包不住它们。 */
+html[data-nav='keyboard'] .header-search-input:focus-visible,
+html[data-nav='keyboard'] .mobile-search-input:focus-visible {
+  outline: none !important;
+}
+
+/* 导航链接和按钮不再叠加浏览器或组件库默认的蓝色光晕，避免与统一焦点环撞色。 */
+html[data-nav='keyboard'] .nav-link:focus-visible,
+html[data-nav='keyboard'] .btn:focus-visible {
+  box-shadow: none;
+}
+
+/* 美化按钮 */
+.btn {
+  border-radius: var(--radius-sm);
+  transition: background 0.12s ease-in;
+  position: relative;
+  overflow: hidden;
+  box-shadow: none;
+  font-weight: var(--font-weight-medium);
+  letter-spacing: 0.3px;
+}
+
+/* 移除投影与渐变 */
+.btn-primary {
+  background: var(--color-text-primary);
+  border: none;
+  color: var(--color-on-solid);
+  box-shadow: none;
+}
+
+.btn:hover {
+  filter: brightness(1.1);
+  /* 极简亮度变化 */
+}
+
+/* 移除已废弃的波纹动画定义 */
+
+/* 移除重复定义与投影 */
+
+.btn-outline-primary:hover {
+  background: var(--color-text-primary);
+  border-color: var(--color-text-primary);
+  color: var(--color-on-solid);
+}
+
+/* 美化进度条
+   这里刻意不声明 height：高度由 ProgressBar.jsx 依据播放状态引用同一组令牌给出。
+   过去两边都写 height，导致 CSS 必须用 !important 才压得住内联样式，
+   组件里还有 4 处规则叠着覆盖同一个值。 */
+.progress {
+  border-radius: var(--progress-border-radius);
+  overflow: hidden;
+  background-color: var(--progress-background);
+  transition: height 0.2s var(--ease-out-circ);
+}
+
+.progress-bar {
+  background: var(--progress-fill);
+  transition: width 0.3s ease-in-out;
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    var(--color-white-transparent) 0%,
+    var(--color-white-overlay) 50%,
+    var(--color-white-transparent) 100%
+  );
+  animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 美化导航 - 基础样式已移至 Navigation.mobile.css 和 Navigation.desktop.css */
+
+/* 美化专辑封面 (移除投影与缩放) */
+img.rounded {
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+/* 专辑封面包装器 */
+.album-cover-wrapper {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-background-alt);
+  border-radius: var(--radius-md);
+  transition: all 0.2s ease;
+}
+
+/* 美化表单控件 */
+.form-control,
+.form-select,
+.dropdown-toggle {
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  padding: 0.6rem var(--spacing-md);
+  transition: all 0.3s var(--ease-in-out);
+}
+
+/* 
+ * 播放控件美化
+ * 主要样式已迁移至 AudioPlayer.css，此处仅保留基础占位逻辑
+ */
+.fixed-bottom {
+  border-top: none;
+  box-shadow: none;
+  /* 移除冗余阴影，由 AudioPlayer.css 统一管理 */
+  z-index: var(--z-index-fixed-bottom);
+}
+
+@media (max-width: 767.98px) {
+  .fixed-bottom {
+    height: auto;
+    padding: 10px;
+  }
+}
+
+/* 
+ * 歌词样式优化 (旧版兼容)
+ * 已废弃：核心逻辑已移至 AudioPlayer.css 的全屏模式
+ */
+.lyric-container {
+  display: none;
+  /* 强制隐藏旧版容器 */
+}
+
+/* 
+ * 文本溢出处理 
+ * 用于歌曲列表等场景
+ */
+.track-name,
+.track-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* 加载动画增强 (移除投影) */
+.spinner-border {
+  animation-duration: 0.8s;
+  box-shadow: none;
+}
+
+/* 卡片加载骨架屏 */
+@keyframes shimmer {
+  0% {
+    background-position: -468px 0;
+  }
+
+  100% {
+    background-position: 468px 0;
+  }
+}
+
+.skeleton-loader {
+  background: linear-gradient(
+    to right,
+    var(--color-background-alt) 8%,
+    var(--card-background) 18%,
+    var(--color-background-alt) 33%
+  );
+  background-size: 800px 104px;
+  animation: shimmer 1.5s linear infinite;
+  border-radius: var(--radius-xs);
+  height: 15px;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.skeleton-img {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 80%;
+}
+
+.skeleton-text {
+  height: 15px;
+  width: 60%;
+}
+
+/* 控制按钮动画 */
+.control-button {
+  transition: all 0.2s ease;
+}
+
+.control-button:hover {
+  transform: scale(1.1);
+  color: var(--color-text-primary);
+}
+
+.control-button:active {
+  transform: scale(0.95);
+}
+
+/* 歌词高亮动画增强 */
+.lyric-line {
+  transition: all 0.4s ease;
+}
+
+.lyric-line.active {
+  transform: scale(1.05);
+  color: var(--color-text-primary) !important;
+  font-weight: var(--font-weight-semibold);
+  border-radius: var(--radius-xs);
+  padding-left: 5px !important;
+  padding-right: 5px !important;
+}
+
+/* 下一句歌词样式 */
+.lyric-line.next-active {
+  transform: scale(1.02);
+  border-radius: var(--radius-xs);
+  padding-left: 3px !important;
+  padding-right: 3px !important;
+}
+
+/* 歌词预览容器样式 */
+.lyrics-preview-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  max-width: 100%;
+  padding: 5px 10px;
+  border-radius: var(--radius-xs);
+  transition: all 0.3s ease;
+}
+
+.lyrics-preview-container:hover {
+  background-color: var(--color-background-alt);
+}
+
+.current-lyric-container {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+  overflow: hidden;
+  max-width: calc(100% - 40px);
+}
+
+.current-lyric {
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-primary);
+}
+
+.next-lyric {
+  margin-top: 2px;
+}
+
+@media (max-width: 767.98px) {
+  .lyrics-preview-container {
+    justify-content: center;
+  }
+}
+
+/* ===== 动效偏好 =====
+ * 尊重系统的"减少动效"设置。播放器展开、歌词滚动、骨架屏、呼吸动画等
+ * 在这里统一降级，不要求每个组件单独处理。
+ * 用 0.01ms 而不是 0，是为了让 transitionend / animationend 仍然触发。
+ */
+@media (prefers-reduced-motion: reduce) {
+  html:root *,
+  html:root *::before,
+  html:root *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+
+  html:root {
+    scroll-behavior: auto !important;
+  }
+}
