@@ -8,9 +8,9 @@ Invoke-ProjectToolchain {
     }
     & '.tools/bin/wails3.exe' generate bindings -ts -i
     Assert-ExitCode 'Generate Wails TypeScript bindings'
-    npm --prefix frontend run typecheck
+    pnpm --dir frontend run typecheck
     Assert-ExitCode 'Frontend typecheck'
-    npm --prefix frontend run build
+    pnpm --dir frontend run build
     Assert-ExitCode 'Frontend build'
     New-Item -ItemType Directory -Force 'bin' | Out-Null
     go build -trimpath -tags production -ldflags '-H=windowsgui -s -w' -o bin/OTONEIGO.exe .

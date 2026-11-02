@@ -10,7 +10,7 @@
 
 ## 开发与构建
 
-需要 Windows x64、Node.js 26 与 Go 1.26 以上。当前验证使用 Node 26.12.1、Go 1.27.3、Wails 3.0.0。首次运行：
+需要 Windows x64、Node.js 26、pnpm 12 与 Go 1.26 以上。当前验证使用 Node 26.12.1、pnpm 12.16.1、Go 1.27.3、Wails 3.0.0。前端依赖由 pnpm 管理（`frontend/pnpm-lock.yaml` 为唯一锁文件）。首次运行：
 
 ```powershell
 ./scripts/bootstrap.ps1
@@ -18,7 +18,11 @@
 ./bin/OTONEIGO.exe
 ```
 
-`bootstrap.ps1` 在缺少 Go 时下载校验过的官方便携工具链，Wails CLI 与缓存放在 `.tools/`，不修改系统 PATH。`verify.ps1` 执行 Go 测试/vet、前端测试、类型检查、绑定生成、Windows 生产构建和依赖门禁。单独构建使用 `./scripts/build.ps1`，单独生成依赖及许可记录使用 `./scripts/audit-dependencies.ps1`。
+`bootstrap.ps1` 在缺少 Go 时下载校验过的官方便携工具链，Wails CLI 与缓存放在 `.tools/`，不修改系统 PATH。`verify.ps1` 依次执行 Go 格式检查（`gofmt -l`）、Go 测试/vet、前端格式与 lint 检查（Biome）、前端测试、类型检查、绑定生成、Windows 生产构建和依赖门禁。单独构建使用 `./scripts/build.ps1`，单独生成依赖及许可记录使用 `./scripts/audit-dependencies.ps1`。
+
+格式化与静态检查：Go 用 `gofmt -w <目录或文件>` 写入、`verify.ps1` 用 `gofmt -l` 校验；前端用 Biome（`frontend/biome.json`），`pnpm --dir frontend run format` 写入，`format:check` 与 `lint` 只检查，`frontend/bindings`、`dist` 与 CSS 不在范围内。依赖升级保持“先查后升、升完必验”：后端 `go list -m -u all` → `go get`/`go mod tidy`，前端 `pnpm --dir frontend outdated` → 安装精确版本并提交 `pnpm-lock.yaml`，两者都需重跑 `verify.ps1`；升级 Wails 时 `go.mod` 与 `bootstrap.ps1` 的 CLI 版本必须同步，并重跑原生验收脚本。
+
+前端依赖装在 pnpm 的全局内容仓库里：`frontend/.npmrc` 设置 `enable-global-virtual-store=true`，虚拟仓库位于 pnpm store（默认 `%LOCALAPPDATA%\pnpm\store`），`frontend/node_modules` 只保留指向仓库的链接，因此多个检出共享同一份包文件。不要在仓库里再用 `npm install`，它会生成 `package-lock.json` 并破坏链接布局；该文件已加入 `.gitignore`。
 
 构建结果为 `bin/OTONEIGO.exe`，配套许可文件位于同一目录；当前按用户要求只交付免安装 ZIP，安装包工作暂停；打包脚本默认仅生成 ZIP，最终包需与最后一次构建核对；没有代码签名、自动更新或远程发布。打包命令与限制见[打包说明](docs/packaging.md)。运行需要 Microsoft Edge WebView2 Runtime。普通前端 Vite 页面只是开发工具，业务依赖 Wails 桌面绑定。
 

@@ -1,0 +1,24 @@
+# OTONEIGO 统一格式约定。Go 由 gofmt 决定缩进，TypeScript/JSON 由 Biome 格式化；
+# 这里只约束编辑器默认值，避免两边互相覆盖。
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.go]
+indent_style = tab
+indent_size = 4
+
+[*.ps1]
+end_of_line = crlf
+
+[*.{md,markdown}]
+trim_trailing_whitespace = false
+
+[*.{woff2,pdf,png,ico,zip,exe}]
+insert_final_newline = false

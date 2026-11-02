@@ -45,7 +45,7 @@ Invoke-ProjectToolchain {
     }
     # The production executable embeds the frontend bundle as well as Go code.
     $frontendInventory = @()
-    $frontendPaths = @(& npm --prefix frontend ls --omit=dev --all --parseable)
+    $frontendPaths = @(& pnpm --dir frontend list --prod --depth Infinity --parseable)
     Assert-ExitCode 'List frontend runtime dependencies'
     if ($frontendPaths -match '(?i)firebase|UnblockNeteaseMusic') { throw 'Forbidden frontend runtime dependency' }
     foreach ($dependencyPath in ($frontendPaths | Sort-Object -Unique)) {
@@ -54,7 +54,7 @@ Invoke-ProjectToolchain {
         $frontendLicenses = @(Get-ChildItem -LiteralPath $dependencyPath -File |
             Where-Object { $_.Name -match '^(LICENSE|LICENCE|COPYING|NOTICE)(\..*)?$' })
         if ($frontendLicenses.Count -eq 0) {
-            # The npm runtime omits its notice; the same pinned Wails release's
+            # The published npm package omits its notice; the same pinned Wails release's
             # full MIT notice is already included by the executable module audit.
             if ($package.name -eq '@wailsio/runtime' -and $package.version -eq '3.0.0' -and
                 ($inventory | Where-Object { $_.module -eq 'github.com/wailsapp/wails/v3' -and $_.version -eq 'v3.0.0' })) {

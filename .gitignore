@@ -28,10 +28,10 @@ Thumbs.db
 .idea/
 .vscode/
 
-# Frontend package-manager state: npm with frontend/package-lock.json is the
-# pinned toolchain (scripts/bootstrap.ps1 runs `npm ci`); a stale pnpm lock
-# must not enter the repository.
-/frontend/pnpm-lock.yaml
+# Frontend package-manager state: pnpm with frontend/pnpm-lock.yaml is the
+# pinned toolchain (scripts/bootstrap.ps1 runs `pnpm install --frozen-lockfile`);
+# a stray npm lock must not enter the repository.
+/frontend/package-lock.json
 
 # Compiler/bundler leftovers
 *.tsbuildinfo

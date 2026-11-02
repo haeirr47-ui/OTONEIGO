@@ -21,6 +21,9 @@ Invoke-ProjectToolchain {
     Assert-ExitCode 'Download Go modules'
     go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
     Assert-ExitCode 'Build project-local Wails CLI'
-    npm --prefix frontend ci
-    Assert-ExitCode 'Install pinned frontend dependencies'
+    if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+        throw 'pnpm 12 is required; install it before running bootstrap.'
+    }
+    pnpm --dir frontend install --frozen-lockfile
+    Assert-ExitCode 'Install pinned frontend dependencies (pnpm)'
 }
