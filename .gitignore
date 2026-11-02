@@ -1,0 +1,46 @@
+# Read-only upstream references. Never add these to the new repository.
+/OTONEI/
+/go-musicfox-master/
+/NetEaseMusicWorldNext-master/
+
+# Local tools, build outputs and test data
+/.tools/
+/bin/
+/build/
+/output/
+/.playwright-cli/
+**/node_modules/
+**/dist/
+**/coverage/
+*.log
+playback.jsonl*
+*.db
+*.db-shm
+*.db-wal
+*.sqlite*
+.env
+.env.*
+!.env.example
+
+# Editor / OS files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Frontend package-manager state: npm with frontend/package-lock.json is the
+# pinned toolchain (scripts/bootstrap.ps1 runs `npm ci`); a stale pnpm lock
+# must not enter the repository.
+/frontend/pnpm-lock.yaml
+
+# Compiler/bundler leftovers
+*.tsbuildinfo
+/frontend/.vite/
+
+# Stray local packages and binaries; distributable artifacts live in bin/ (ignored)
+*.exe
+*.msi
+*.msix
+*.zip
+*.7z
+*.sha256
