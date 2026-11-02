@@ -1,12 +1,13 @@
-const focusableSelector =
-  'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"]';
+const focusableSelector = 'button, a[href], input, select, textarea, [tabindex], [contenteditable="true"]';
 
 export function isOverlayTabStop(element: HTMLElement): boolean {
-  return element.tabIndex >= 0 &&
+  return (
+    element.tabIndex >= 0 &&
     !element.matches(":disabled") &&
     !element.closest("[hidden], [inert]") &&
     element.getClientRects().length > 0 &&
-    getComputedStyle(element).visibility === "visible";
+    getComputedStyle(element).visibility === "visible"
+  );
 }
 
 export function nextOverlayTabStop<T>(stops: T[], current: T | null, backwards: boolean): T | undefined {
@@ -29,10 +30,11 @@ export function containOverlayFocus(
     .filter((child): child is HTMLElement => child instanceof HTMLElement)
     .filter((child) => !roots.includes(child) && !child.hasAttribute("data-overlay-backdrop"));
   const previousInert = background.map((element) => element.inert);
-  background.forEach((element) => { element.inert = true; });
-  const stops = () => roots.flatMap((root) =>
-    Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(isOverlayTabStop),
-  );
+  background.forEach((element) => {
+    element.inert = true;
+  });
+  const stops = () =>
+    roots.flatMap((root) => Array.from(root.querySelectorAll<HTMLElement>(focusableSelector)).filter(isOverlayTabStop));
   const focusInside = () => (stops()[0] || initial).focus();
   const onKey = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -54,6 +56,8 @@ export function containOverlayFocus(
   return () => {
     document.removeEventListener("keydown", onKey, true);
     document.removeEventListener("focusin", onFocus);
-    background.forEach((element, index) => { element.inert = previousInert[index]; });
+    background.forEach((element, index) => {
+      element.inert = previousInert[index];
+    });
   };
 }

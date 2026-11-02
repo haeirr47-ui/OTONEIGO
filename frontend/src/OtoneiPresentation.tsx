@@ -5,15 +5,7 @@ import { AddToPlaylistButton } from "./PlaylistPanels";
 // Adapted from OTONEI/src/components/{DesktopNavbar,MobileBottomNav,Header,SearchResultItem,
 // DesktopPlayerView,DesktopPlayerControl,DesktopExpandedView,DesktopAlbumCover,PlayerSubComponents}.
 // MIT License, copyright (c) 2026 voici5986. Desktop state/bridge/audio remain OTONEIGO-owned.
-import {
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  type FormEvent,
-  type ReactNode,
-} from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   FaSearch,
   FaHeart,
@@ -26,13 +18,7 @@ import {
   FaList,
   FaVolumeUp,
 } from "react-icons/fa";
-import {
-  MdSkipPrevious,
-  MdSkipNext,
-  MdRepeat,
-  MdRepeatOne,
-  MdShuffle,
-} from "react-icons/md";
+import { MdSkipPrevious, MdSkipNext, MdRepeat, MdRepeatOne, MdShuffle } from "react-icons/md";
 import type { TrackSnapshot } from "./contracts";
 import { usePlayer } from "./PlayerContext";
 import { FavoriteButton } from "./LibraryPanels";
@@ -45,13 +31,7 @@ const items = [
   { id: "history", title: "播放历史", icon: FaHistory },
   { id: "settings", title: "设置", icon: FaCog },
 ] as const;
-export function OtoneiNavigation({
-  view,
-  onNavigate,
-}: {
-  view: View;
-  onNavigate: (view: View) => void;
-}) {
+export function OtoneiNavigation({ view, onNavigate }: { view: View; onNavigate: (view: View) => void }) {
   return (
     <>
       <div className="navigation-sidebar">
@@ -117,7 +97,9 @@ export function OtoneiHeader({
       <div className="header-search-container">
         <form onSubmit={onSubmit}>
           <div className="header-search-field-wrapper">
-            <span className="header-search-icon" aria-hidden="true"><FaSearch /></span>
+            <span className="header-search-icon" aria-hidden="true">
+              <FaSearch />
+            </span>
             <input
               type="search"
               aria-label="搜索歌曲或歌手"
@@ -128,28 +110,17 @@ export function OtoneiHeader({
               autoComplete="off"
             />
             {query && (
-              <button
-                type="button"
-                className="ui-icon-button"
-                aria-label="清除搜索"
-                onClick={() => onQuery("")}
-              >
+              <button type="button" className="ui-icon-button" aria-label="清除搜索" onClick={() => onQuery("")}>
                 <FaTimes />
               </button>
             )}
-            <button
-              type="submit"
-              className="search-submit"
-              disabled={!query.trim()}
-            >
+            <button type="submit" className="search-submit" disabled={!query.trim()}>
               搜索
             </button>
           </div>
         </form>
       </div>
-      <span className="header-scope">
-        {searching ? "正在搜索…" : "网易云音乐"}
-      </span>
+      <span className="header-scope">{searching ? "正在搜索…" : "网易云音乐"}</span>
     </header>
   );
 }
@@ -168,13 +139,13 @@ export function TrackCard({
 }) {
   const { state } = usePlayer();
   const active =
-    state.queue.entries.find(
-      (e) => e.queueEntryId === state.queue.currentEntryId,
-    )?.track.neteaseSongId === track.neteaseSongId;
+    state.queue.entries.find((e) => e.queueEntryId === state.queue.currentEntryId)?.track.neteaseSongId ===
+    track.neteaseSongId;
   return (
     <div className={`music-card ${active ? "is-active" : ""}`}>
       <div className="music-card-row">
         <button
+          type="button"
           className="music-card-info"
           onClick={onPlay}
           disabled={disabled}
@@ -182,8 +153,7 @@ export function TrackCard({
         >
           <h6 title={track.name}>{track.name}</h6>
           <small>
-            {track.artists.map((a) => a.name).join(" / ")}{" "}
-            {track.album?.name && `· ${track.album.name}`}
+            {track.artists.map((a) => a.name).join(" / ")} {track.album?.name && `· ${track.album.name}`}
           </small>
           {date && <span className="badge-time">{date}</span>}
         </button>
@@ -192,6 +162,7 @@ export function TrackCard({
           <FavoriteButton track={track} />
           <AddToPlaylistButton track={track} />
           <button
+            type="button"
             className="ui-icon-button"
             disabled={disabled}
             aria-label={`加入队列：${track.name}`}
@@ -204,15 +175,7 @@ export function TrackCard({
     </div>
   );
 }
-function Cover({
-  track,
-  onClick,
-  large = false,
-}: {
-  track?: TrackSnapshot;
-  onClick?: () => void;
-  large?: boolean;
-}) {
+function Cover({ track, onClick, large = false }: { track?: TrackSnapshot; onClick?: () => void; large?: boolean }) {
   const { state, store } = usePlayer();
   const [source, setSource] = useState("/default_cover.svg");
   const [imageAttempt, setImageAttempt] = useState(0);
@@ -225,17 +188,34 @@ function Cover({
     const ref = track?.coverRef;
     setSource("/default_cover.svg");
     if (!ref) return;
-    const load = () => { void store.resolveCover(ref).then(value => { if (active) setSource(value); }); };
+    const load = () => {
+      void store.resolveCover(ref).then((value) => {
+        if (active) setSource(value);
+      });
+    };
     const image = imageRef.current;
     if (large || !image || typeof IntersectionObserver === "undefined") load();
     else {
-      const observer = new IntersectionObserver(entries => {
-        if (entries.some(entry => entry.isIntersecting)) { observer.disconnect(); load(); }
-      }, { rootMargin: "150px" });
+      const observer = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((entry) => entry.isIntersecting)) {
+            observer.disconnect();
+            load();
+          }
+        },
+        { rootMargin: "150px" },
+      );
       observer.observe(image);
-      return () => { active = false; coverAttempt.current.generation++; observer.disconnect(); };
+      return () => {
+        active = false;
+        coverAttempt.current.generation++;
+        observer.disconnect();
+      };
     }
-    return () => { active = false; coverAttempt.current.generation++; };
+    return () => {
+      active = false;
+      coverAttempt.current.generation++;
+    };
   }, [track?.coverRef, state.coverRevision, store, large]);
   const image = (
     <img
@@ -254,27 +234,22 @@ function Cover({
         const gen = attempt.generation;
         if (original && /^\/artwork\/[a-f0-9]{64}$/.test(failed) && !attempt.retried) {
           attempt.retried = true;
-          void store.recoverCover(original, failed).then(value => {
+          void store.recoverCover(original, failed).then((value) => {
             if (coverAttempt.current.generation !== gen) return;
             setSource(value);
-            setImageAttempt(value => value + 1);
+            setImageAttempt((value) => value + 1);
           });
-        } else setSource(original && validRemoteCover(original) && failed !== original ? original : "/default_cover.svg");
+        } else
+          setSource(original && validRemoteCover(original) && failed !== original ? original : "/default_cover.svg");
       }}
     />
   );
   return onClick ? (
-    <button
-      className="player-thumbnail album-cover-wrapper"
-      onClick={onClick}
-      aria-label="展开歌词"
-    >
+    <button type="button" className="player-thumbnail album-cover-wrapper" onClick={onClick} aria-label="展开歌词">
       {image}
     </button>
   ) : (
-    <div className={`album-cover-wrapper ${large ? "album-cover-large" : ""}`}>
-      {image}
-    </div>
+    <div className={`album-cover-wrapper ${large ? "album-cover-large" : ""}`}>{image}</div>
   );
 }
 export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
@@ -307,9 +282,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
   });
   const lyricRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    lyricRef.current
-      ?.querySelector(".active")
-      ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    lyricRef.current?.querySelector(".active")?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [active, expanded]);
   useLayoutEffect(() => {
     const top = queueOpen ? "queue" : expanded ? "lyrics" : null;
@@ -323,25 +296,24 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
       return;
     }
     const roots = queueOpen ? [dialog] : [dialog, footer];
-    const initial = previous === "queue" && !queueOpen && restore?.isConnected
-      ? restore
-      : dialog.querySelector<HTMLElement>("button");
+    const initial =
+      previous === "queue" && !queueOpen && restore?.isConnected
+        ? restore
+        : dialog.querySelector<HTMLElement>("button");
     return containOverlayFocus(roots, footer.parentElement!, initial || dialog, () => {
       if (queueOpen) setQueueOpen(false);
       else setExpanded(false);
     });
   }, [expanded, queueOpen]);
-  useLayoutEffect(() => () => {
-    if (!previousOverlay.current) return;
-    const opener = expandedOpener.current || queueOpener.current;
-    if (opener?.isConnected) opener.focus();
-  }, []);
-  const iconButton = (
-    label: string,
-    icon: ReactNode,
-    fn: () => void,
-    disabled = false,
-  ) => (
+  useLayoutEffect(
+    () => () => {
+      if (!previousOverlay.current) return;
+      const opener = expandedOpener.current || queueOpener.current;
+      if (opener?.isConnected) opener.focus();
+    },
+    [],
+  );
+  const iconButton = (label: string, icon: ReactNode, fn: () => void, disabled = false) => (
     <button
       type="button"
       className="control-icon-btn ui-icon-button"
@@ -354,12 +326,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
     </button>
   );
   const blocked = !ready || !current || !state.settings;
-  const modeLabel =
-    q.playMode === "shuffle"
-      ? "随机播放"
-      : q.playMode === "repeat-one"
-        ? "单曲循环"
-        : "列表循环";
+  const modeLabel = q.playMode === "shuffle" ? "随机播放" : q.playMode === "repeat-one" ? "单曲循环" : "列表循环";
   return (
     <>
       {expanded && (
@@ -383,12 +350,8 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                 <Cover track={current} large />
               </div>
               <div className="track-details">
-                <h2 className="track-title">
-                  {current?.name || "尚未选择歌曲"}
-                </h2>
-                <p className="track-artist-album">
-                  {current?.artists.map((a) => a.name).join(" / ")}
-                </p>
+                <h2 className="track-title">{current?.name || "尚未选择歌曲"}</h2>
+                <p className="track-artist-album">{current?.artists.map((a) => a.name).join(" / ")}</p>
               </div>
             </div>
             <div className="lyrics-section">
@@ -397,23 +360,15 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                   <div className="lyric-line no-lyrics">歌词暂时无法加载</div>
                 ) : lyrics.length ? (
                   lyrics.map((line, index) => (
-                    <div
-                      key={index}
-                      className={`lyric-line ${index === active ? "active" : ""}`}
-                      data-time={line.time}
-                    >
+                    <div key={index} className={`lyric-line ${index === active ? "active" : ""}`} data-time={line.time}>
                       <div>{line.text || "♪"}</div>
-                      {line.translated && (
-                        <div className="translated-lyric">{line.translated}</div>
-                      )}
+                      {line.translated && <div className="translated-lyric">{line.translated}</div>}
                     </div>
                   ))
                 ) : (
                   <div className="lyric-line no-lyrics plain-lyrics">
                     {state.lyrics?.original || "播放歌曲后在这里查看歌词"}
-                    {state.lyrics?.translated && (
-                      <p>{state.lyrics.translated}</p>
-                    )}
+                    {state.lyrics?.translated && <p>{state.lyrics.translated}</p>}
                   </div>
                 )}
               </div>
@@ -424,6 +379,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
       {queueOpen && (
         <>
           <button
+            type="button"
             className="queue-backdrop"
             tabIndex={-1}
             data-overlay-backdrop=""
@@ -436,37 +392,31 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                 播放队列 <small>{q.entries.length}</small>
               </h2>
               <button
+                type="button"
                 className="ui-icon-button"
                 aria-label="关闭队列"
                 onClick={() => setQueueOpen(false)}
-                  >
+              >
                 <FaTimes />
               </button>
             </div>
             {!ready && <p>正在读取队列…</p>}
-            {ready && !q.entries.length && (
-              <p className="alert-light">从搜索结果加入歌曲</p>
-            )}
+            {ready && !q.entries.length && <p className="alert-light">从搜索结果加入歌曲</p>}
             <ol>
               {q.entries.map((e) => (
-                <li
-                  key={e.queueEntryId}
-                  className={
-                    e.queueEntryId === q.currentEntryId ? "selected" : ""
-                  }
-                >
+                <li key={e.queueEntryId} className={e.queueEntryId === q.currentEntryId ? "selected" : ""}>
                   <button
+                    type="button"
                     className="queue-track"
                     disabled={!ready || !state.settings}
                     onClick={() => void store.select(e.queueEntryId)}
                   >
                     <strong>{e.track.name}</strong>
-                    <small>
-                      {e.track.artists.map((a) => a.name).join(" / ")}
-                    </small>
+                    <small>{e.track.artists.map((a) => a.name).join(" / ")}</small>
                   </button>
                   <FavoriteButton track={e.track} />
                   <button
+                    type="button"
                     className="ui-icon-button"
                     aria-label={`移除：${e.track.name}`}
                     disabled={!ready}
@@ -482,6 +432,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
       )}
       <footer
         ref={footerRef}
+        role="region"
         className={`audio-player ${expanded ? "expanded" : "collapsed"}`}
         aria-label="播放器"
       >
@@ -503,12 +454,9 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
               <div className="player-left-section">
                 <Cover track={current} onClick={openLyrics} />
                 <div className="track-info-container">
-                  <h6 className="track-name">
-                    {current?.name || "尚未选择歌曲"}
-                  </h6>
+                  <h6 className="track-name">{current?.name || "尚未选择歌曲"}</h6>
                   <small className="track-artist">
-                    {current?.artists.map((a) => a.name).join(" / ") ||
-                      "搜索并播放一首音乐"}
+                    {current?.artists.map((a) => a.name).join(" / ") || "搜索并播放一首音乐"}
                   </small>
                   <small className="stream-source">
                     {state.stream
@@ -538,42 +486,27 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                       ),
                     !ready,
                   )}
-                  {iconButton(
-                    "上一首",
-                    <MdSkipPrevious size={28} />,
-                    () => void store.previous(),
-                    blocked,
-                  )}
+                  {iconButton("上一首", <MdSkipPrevious size={28} />, () => void store.previous(), blocked)}
                   <button
+                    type="button"
                     className="control-icon-btn ui-icon-button ui-icon-button--play accent-control"
                     disabled={blocked}
                     aria-label={
-                      state.playback === "paused"
-                        ? "播放"
-                        : state.playback === "loading"
-                          ? "取消加载"
-                          : "暂停"
+                      state.playback === "paused" ? "播放" : state.playback === "loading" ? "取消加载" : "暂停"
                     }
-                    onClick={() =>
-                      state.playback === "paused"
-                        ? void store.play()
-                        : store.pause()
-                    }
+                    onClick={() => (state.playback === "paused" ? void store.play() : store.pause())}
                   >
                     <div className="play-pause-button">
                       {state.playback === "paused" ? (
-                        <span className="play-icon"><FaPlay size={20} /></span>
+                        <span className="play-icon">
+                          <FaPlay size={20} />
+                        </span>
                       ) : (
                         <FaPause size={20} />
                       )}
                     </div>
                   </button>
-                  {iconButton(
-                    "下一首",
-                    <MdSkipNext size={28} />,
-                    () => void store.next(),
-                    !ready || !current,
-                  )}
+                  {iconButton("下一首", <MdSkipNext size={28} />, () => void store.next(), !ready || !current)}
                   {current && <FavoriteButton track={current} />}
                 </div>
                 <small className="player-time">
@@ -598,13 +531,11 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                   type="button"
                   className="control-button ui-icon-button"
                   aria-label={expanded ? "收起歌词" : "展开歌词"}
-                  onClick={() => expanded ? setExpanded(false) : openLyrics()}
+                  onClick={() => (expanded ? setExpanded(false) : openLyrics())}
                 >
                   <img src="/lyric.svg" alt="" width="20" height="20" />
                 </button>
-                {iconButton("播放队列", <FaList size={18} />, () =>
-                  openQueue(),
-                )}
+                {iconButton("播放队列", <FaList size={18} />, () => openQueue())}
               </div>
             </div>
           </div>

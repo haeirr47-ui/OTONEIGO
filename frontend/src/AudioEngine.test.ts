@@ -97,23 +97,20 @@ it.each([
   [Infinity, 120000, "STREAM_DURATION_MISMATCH"],
   [0, 120000, "STREAM_DURATION_MISMATCH"],
   [120, 0, "STREAM_DURATION_MISMATCH"],
-])(
-  "blocks incomplete/unknown GD metadata: actual %s expected %s",
-  async (duration, expectedDurationMs, code) => {
-    const media = new Media();
-    const engine = new AudioEngine(media as unknown as HTMLAudioElement);
-    const promise = engine.setSource("https://audio.example/gd", 0, {
-      requireComplete: true,
-      expectedDurationMs,
-    });
-    const rejection = expect(promise).rejects.toMatchObject({ code });
-    media.duration = duration;
-    media.dispatchEvent(new Event("loadedmetadata"));
-    await rejection;
-    expect(media.play).not.toHaveBeenCalled();
-    expect(media.src).toBe("");
-  },
-);
+])("blocks incomplete/unknown GD metadata: actual %s expected %s", async (duration, expectedDurationMs, code) => {
+  const media = new Media();
+  const engine = new AudioEngine(media as unknown as HTMLAudioElement);
+  const promise = engine.setSource("https://audio.example/gd", 0, {
+    requireComplete: true,
+    expectedDurationMs,
+  });
+  const rejection = expect(promise).rejects.toMatchObject({ code });
+  media.duration = duration;
+  media.dispatchEvent(new Event("loadedmetadata"));
+  await rejection;
+  expect(media.play).not.toHaveBeenCalled();
+  expect(media.src).toBe("");
+});
 it("rejects an already expired shared startup deadline without loading or playing a new source", async () => {
   const media = new Media();
   const engine = new AudioEngine(media as unknown as HTMLAudioElement);
@@ -215,9 +212,7 @@ it("replacement and pause cancel GD metadata waits and remove their deadlines", 
       requireComplete: true,
       expectedDurationMs: 120000,
     });
-    const oldRejection = expect(old).rejects.toBeInstanceOf(
-      PlaybackRequestReplacedError,
-    );
+    const oldRejection = expect(old).rejects.toBeInstanceOf(PlaybackRequestReplacedError);
     await engine.setSource("https://audio.example/new", 0);
     await oldRejection;
     media.duration = 120;
@@ -228,9 +223,7 @@ it("replacement and pause cancel GD metadata waits and remove their deadlines", 
       requireComplete: true,
       expectedDurationMs: 120000,
     });
-    const pauseRejection = expect(pending).rejects.toBeInstanceOf(
-      PlaybackRequestReplacedError,
-    );
+    const pauseRejection = expect(pending).rejects.toBeInstanceOf(PlaybackRequestReplacedError);
     engine.pause();
     await pauseRejection;
     media.dispatchEvent(new Event("loadedmetadata"));
@@ -272,7 +265,12 @@ it("retains settled paused media without reloading or forwarding stale events, t
 it("a preserve request still unloads pending native play and rejects late startup", async () => {
   const media = new Media();
   let finish!: () => void;
-  media.play.mockImplementation(() => new Promise<void>(resolve => { finish = resolve; }));
+  media.play.mockImplementation(
+    () =>
+      new Promise<void>((resolve) => {
+        finish = resolve;
+      }),
+  );
   const engine = new AudioEngine(media as unknown as HTMLAudioElement);
   const startup = engine.setSource("https://audio.example/pending", 0);
   const rejected = expect(startup).rejects.toBeInstanceOf(PlaybackRequestReplacedError);
@@ -288,7 +286,9 @@ it("a late settled play promise cannot restart preserved paused media", async ()
   let finish!: () => void;
   media.play.mockImplementation(() => {
     media.paused = false;
-    return new Promise<void>(resolve => { finish = resolve; });
+    return new Promise<void>((resolve) => {
+      finish = resolve;
+    });
   });
   const engine = new AudioEngine(media as unknown as HTMLAudioElement);
   const startup = engine.setSource("https://audio.example/playing", 0);

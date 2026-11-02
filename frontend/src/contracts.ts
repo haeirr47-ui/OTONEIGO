@@ -1,25 +1,81 @@
 export type DesktopView = "mini" | "lyrics";
-export interface WindowPlacement { valid: boolean; x: number; y: number; width: number; height: number }
+export interface WindowPlacement {
+  valid: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
 export interface DesktopSettings {
-  miniAlwaysOnTop: boolean; lyricsAlwaysOnTop: boolean; lyricsLocked: boolean;
-  lyricsFontSize: number; lyricsOpacity: number; notifyTrackChanges: boolean; taskbarProgress: boolean;
-  miniPlacement: WindowPlacement; lyricsPlacement: WindowPlacement;
+  miniAlwaysOnTop: boolean;
+  lyricsAlwaysOnTop: boolean;
+  lyricsLocked: boolean;
+  lyricsFontSize: number;
+  lyricsOpacity: number;
+  notifyTrackChanges: boolean;
+  taskbarProgress: boolean;
+  miniPlacement: WindowPlacement;
+  lyricsPlacement: WindowPlacement;
 }
 export interface DesktopSnapshot {
-  epoch: number; sequence: number; ready: boolean; closing: boolean;
-  queueEntryId: string; songId: string; title: string; artist: string; album: string; coverRef: string;
-  playback: "paused" | "loading" | "playing"; positionMs: number; durationMs: number; volume: number;
-  favorite: boolean; canPrevious: boolean; canNext: boolean; cacheHit: boolean;
-  provider: "" | "netease-direct" | "gd-netease"; quality: string;
-  currentLyric: string; nextLyric: string; translation: string; lyricProgress: number; error: string;
+  epoch: number;
+  sequence: number;
+  ready: boolean;
+  closing: boolean;
+  queueEntryId: string;
+  songId: string;
+  title: string;
+  artist: string;
+  album: string;
+  coverRef: string;
+  playback: "paused" | "loading" | "playing";
+  positionMs: number;
+  durationMs: number;
+  volume: number;
+  favorite: boolean;
+  canPrevious: boolean;
+  canNext: boolean;
+  cacheHit: boolean;
+  provider: "" | "netease-direct" | "gd-netease";
+  quality: string;
+  currentLyric: string;
+  nextLyric: string;
+  translation: string;
+  lyricProgress: number;
+  error: string;
   options: DesktopSettings;
 }
-export type DesktopCommandName = "play" | "pause" | "toggle-play" | "previous" | "next" | "seek" | "volume" | "toggle-favorite" | "toggle-lyrics-lock" | "toggle-mini-topmost" | "toggle-lyrics-topmost";
-export interface DesktopCommand { epoch: number; command: DesktopCommandName; songId: string; value: number }
+export type DesktopCommandName =
+  | "play"
+  | "pause"
+  | "toggle-play"
+  | "previous"
+  | "next"
+  | "seek"
+  | "volume"
+  | "toggle-favorite"
+  | "toggle-lyrics-lock"
+  | "toggle-mini-topmost"
+  | "toggle-lyrics-topmost";
+export interface DesktopCommand {
+  epoch: number;
+  command: DesktopCommandName;
+  songId: string;
+  value: number;
+}
 export interface DesktopNativeState {
-  mainVisible: boolean; mainMinimized: boolean; miniVisible: boolean; lyricsVisible: boolean; lyricsLocked: boolean;
-  taskbarAvailable: boolean; taskbarState: string; taskbarPositionMs: number; taskbarDurationMs: number;
-  notificationRequests: number; notificationAccepted: number; lastError: string;
+  mainVisible: boolean;
+  mainMinimized: boolean;
+  miniVisible: boolean;
+  lyricsVisible: boolean;
+  lyricsLocked: boolean;
+  taskbarAvailable: boolean;
+  taskbarState: string;
+  taskbarPositionMs: number;
+  taskbarDurationMs: number;
+  notificationRequests: number;
+  notificationAccepted: number;
+  lastError: string;
 }
 export interface TrackSnapshot {
   neteaseSongId: string;
@@ -72,13 +128,47 @@ export interface PlaybackQualityPolicy {
   selectableQualities: PlaybackQuality[];
   maxBitrate: number;
 }
-export interface AudioCacheSettings { enabled: boolean; maxBytes: number }
-export interface AudioCacheStats { available: boolean; enabled: boolean; maxBytes: number; usedBytes: number; cachedTracks: number; activeDownloads: number; errorCode?: string }
-export interface HistoryPage { entries: HistoryEntry[]; hasMore: boolean }
-export interface FavoritePage { tracks: TrackSnapshot[]; hasMore: boolean; nextAddedOrder: number; nextSongId: string }
-export interface SearchHistoryEntry { query: string; searchedAt: number }
-export interface ResourceCacheStats { available: boolean; enabled: boolean; maxBytes: number; usedBytes: number; cachedCovers: number; cachedLyrics: number; errorCode?: string }
-export interface StorageRecoveryStatus { quarantinedFavorites: number; quarantinedHistory: number; settingsRecovered: boolean }
+export interface AudioCacheSettings {
+  enabled: boolean;
+  maxBytes: number;
+}
+export interface AudioCacheStats {
+  available: boolean;
+  enabled: boolean;
+  maxBytes: number;
+  usedBytes: number;
+  cachedTracks: number;
+  activeDownloads: number;
+  errorCode?: string;
+}
+export interface HistoryPage {
+  entries: HistoryEntry[];
+  hasMore: boolean;
+}
+export interface FavoritePage {
+  tracks: TrackSnapshot[];
+  hasMore: boolean;
+  nextAddedOrder: number;
+  nextSongId: string;
+}
+export interface SearchHistoryEntry {
+  query: string;
+  searchedAt: number;
+}
+export interface ResourceCacheStats {
+  available: boolean;
+  enabled: boolean;
+  maxBytes: number;
+  usedBytes: number;
+  cachedCovers: number;
+  cachedLyrics: number;
+  errorCode?: string;
+}
+export interface StorageRecoveryStatus {
+  quarantinedFavorites: number;
+  quarantinedHistory: number;
+  settingsRecovered: boolean;
+}
 export interface LocalSettings {
   desktop?: DesktopSettings;
   resourceCache?: AudioCacheSettings;
@@ -134,8 +224,20 @@ export interface DesktopBridge {
   HideDesktopView?(kind: DesktopView): Promise<void>;
   DispatchDesktopCommand?(command: DesktopCommand): Promise<void>;
   ResetDesktopViewPositions?(): Promise<void>;
-  SearchLocalFavorites?(query: string, limit: number, beforeAddedOrder: number, beforeSongID: string, signal?: AbortSignal): Promise<FavoritePage>;
-  SearchLocalHistory?(query: string, limit: number, beforePlayedAt: number, beforeEntryID: string, signal?: AbortSignal): Promise<HistoryPage>;
+  SearchLocalFavorites?(
+    query: string,
+    limit: number,
+    beforeAddedOrder: number,
+    beforeSongID: string,
+    signal?: AbortSignal,
+  ): Promise<FavoritePage>;
+  SearchLocalHistory?(
+    query: string,
+    limit: number,
+    beforePlayedAt: number,
+    beforeEntryID: string,
+    signal?: AbortSignal,
+  ): Promise<HistoryPage>;
   GetLocalFavoriteIDs?(): Promise<string[]>;
   ListSearchHistory?(limit: number): Promise<SearchHistoryEntry[]>;
   RecordSearchQuery?(query: string): Promise<void>;
@@ -167,17 +269,9 @@ export interface DesktopBridge {
   AddLocalHistory(entry: HistoryEntry): Promise<void>;
   ListLocalHistory(limit: number, offset: number): Promise<HistoryEntry[]>;
   ClearLocalHistory(): Promise<void>;
-  SearchNetease(
-    query: string,
-    page: number,
-    signal?: AbortSignal,
-  ): Promise<SearchResult>;
+  SearchNetease(query: string, page: number, signal?: AbortSignal): Promise<SearchResult>;
   GetLyrics(songID: string, signal?: AbortSignal): Promise<LyricData>;
-  ResolveStream(
-    songID: string,
-    quality: string,
-    signal?: AbortSignal,
-  ): Promise<ResolvedStream>;
+  ResolveStream(songID: string, quality: string, signal?: AbortSignal): Promise<ResolvedStream>;
   LoadQueue(): Promise<QueueSnapshot | null>;
   SaveQueue(snapshot: QueueSnapshot): Promise<unknown>;
 }
@@ -196,10 +290,20 @@ export function trackSnapshot(t: TrackSnapshot): TrackSnapshot {
 export function validRemoteCover(value: string) {
   try {
     const u = new URL(value);
-    return u.protocol === "https:" && !u.username && !u.password && !u.port && !u.search && !u.hash &&
-      u.hostname.endsWith(".music.126.net") && /\.(?:jpe?g|png|webp|gif|avif)$/i.test(u.pathname) &&
-      new TextEncoder().encode(value).length <= 4096;
-  } catch { return false; }
+    return (
+      u.protocol === "https:" &&
+      !u.username &&
+      !u.password &&
+      !u.port &&
+      !u.search &&
+      !u.hash &&
+      u.hostname.endsWith(".music.126.net") &&
+      /\.(?:jpe?g|png|webp|gif|avif)$/i.test(u.pathname) &&
+      new TextEncoder().encode(value).length <= 4096
+    );
+  } catch {
+    return false;
+  }
 }
 
 // Match Go strings.TrimSpace and the native UTF-8 byte boundary, without truncating code points.

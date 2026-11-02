@@ -18,8 +18,7 @@ export function alignLyrics(original: string, translation: string) {
     let nearest: { time: number; text: string } | undefined;
     for (const candidate of translated) {
       const distance = Math.abs(candidate.time - line.time);
-      if (distance <= 750 && (!nearest || distance < Math.abs(nearest.time - line.time)))
-        nearest = candidate;
+      if (distance <= 750 && (!nearest || distance < Math.abs(nearest.time - line.time))) nearest = candidate;
     }
     return { ...line, translated: nearest?.text };
   });

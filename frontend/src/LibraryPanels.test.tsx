@@ -15,11 +15,21 @@ const track: TrackSnapshot = {
 function setup() {
   const bridge: DesktopBridge = {
     ListLocalPlaylists: vi.fn(async () => []),
-    GetLocalPlaylist: vi.fn(async () => { throw new Error("PLAYLIST_NOT_FOUND"); }),
-    CreateLocalPlaylist: vi.fn(async () => { throw new Error("not configured"); }),
-    UpdateLocalPlaylist: vi.fn(async () => { throw new Error("not configured"); }),
+    GetLocalPlaylist: vi.fn(async () => {
+      throw new Error("PLAYLIST_NOT_FOUND");
+    }),
+    CreateLocalPlaylist: vi.fn(async () => {
+      throw new Error("not configured");
+    }),
+    UpdateLocalPlaylist: vi.fn(async () => {
+      throw new Error("not configured");
+    }),
     DeleteLocalPlaylist: vi.fn(async () => {}),
-    GetPlaybackQualityPolicy: async () => ({ premiumAllowed: false, selectableQualities: ["exhigh"], maxBitrate: 320000 }),
+    GetPlaybackQualityPolicy: async () => ({
+      premiumAllowed: false,
+      selectableQualities: ["exhigh"],
+      maxBitrate: 320000,
+    }),
     GetSettings: async () => ({
       preferredQuality: "exhigh",
       regionMode: "auto",
@@ -46,9 +56,7 @@ function setup() {
     })),
     GetLocalFavorites: async () => [track],
     SetLocalFavorite: vi.fn(async () => {}),
-    ListLocalHistory: async () => [
-      { historyEntryId: "history", track, playedAt: 1000 },
-    ],
+    ListLocalHistory: async () => [{ historyEntryId: "history", track, playedAt: 1000 }],
     AddLocalHistory: async () => {},
     ClearLocalHistory: vi.fn(async () => {}),
     LoadQueue: async () => null,
@@ -118,12 +126,19 @@ it("shows saved settings and honest unknown region while hiding unverified GD an
 });
 
 it("shows a library failure and retry without an active loading message", async () => {
-  const {store,bridge}=setup();
-  bridge.GetLocalFavorites=async()=>{throw new Error("LOCAL_STORAGE_UNAVAILABLE");};
+  const { store, bridge } = setup();
+  bridge.GetLocalFavorites = async () => {
+    throw new Error("LOCAL_STORAGE_UNAVAILABLE");
+  };
   await store.hydrate();
-  for(const kind of ["favorites","history"] as const){
-    const html=renderToStaticMarkup(<PlayerProvider store={store}><LibraryPanel kind={kind}/></PlayerProvider>);
-    expect(html).toContain("本地音乐资料读取失败");expect(html).toContain("重试");
+  for (const kind of ["favorites", "history"] as const) {
+    const html = renderToStaticMarkup(
+      <PlayerProvider store={store}>
+        <LibraryPanel kind={kind} />
+      </PlayerProvider>,
+    );
+    expect(html).toContain("本地音乐资料读取失败");
+    expect(html).toContain("重试");
     expect(html).not.toContain("正在读取本地音乐资料…");
   }
 });
@@ -157,9 +172,7 @@ it("keeps original OTONEI shell and player controls without an always-visible qu
 
 it("parses repeated LRC timestamps, fractions and ordering without treating plain lyrics as timed", async () => {
   const { parseLyrics } = await import("./OtoneiPresentation");
-  expect(
-    parseLyrics("[00:10.50][00:20.5]副歌\n[ar:歌手]\n[00:02.005]开场"),
-  ).toEqual([
+  expect(parseLyrics("[00:10.50][00:20.5]副歌\n[ar:歌手]\n[00:02.005]开场")).toEqual([
     { time: 2005, text: "开场" },
     { time: 10500, text: "副歌" },
     { time: 20500, text: "副歌" },
@@ -167,11 +180,11 @@ it("parses repeated LRC timestamps, fractions and ordering without treating plai
   expect(parseLyrics("没有时间标签的歌词")).toEqual([]);
 });
 
-
 it("keeps favorite songs as the default tab and renders playlist hydration protection", async () => {
   const { PlaylistPanel } = await import("./PlaylistPanels");
   const { store } = setup();
-  const render = (element: React.ReactNode) => renderToStaticMarkup(<PlayerProvider store={store}>{element}</PlayerProvider>);
+  const render = (element: React.ReactNode) =>
+    renderToStaticMarkup(<PlayerProvider store={store}>{element}</PlayerProvider>);
   expect(render(<LibraryPanel kind="favorites" />)).toContain("收藏歌曲");
   expect(render(<LibraryPanel kind="favorites" />)).toContain("本地歌单");
   expect(render(<PlaylistPanel />)).toContain("正在读取本地歌单");
@@ -182,45 +195,69 @@ it("keeps favorite songs as the default tab and renders playlist hydration prote
   expect(render(<PlaylistPanel />)).toContain("还没有本地歌单");
 });
 
-
 it.each<{ metadata: Partial<ResolvedStream>; expected: string }>([
-  { metadata: { actualQuality: "standard", actualBitrate: 128000, actualFormat: "mp3" }, expected: "网易云直连 · 128 kbps · mp3" },
-  { metadata: { provider: "gd-netease", actualQuality: "standard", actualBitrate: 127900, actualFormat: "mp3", status: "trial" }, expected: "GD 网易云备用音源 · 128 kbps · mp3 · 试听片段" },
+  {
+    metadata: { actualQuality: "standard", actualBitrate: 128000, actualFormat: "mp3" },
+    expected: "网易云直连 · 128 kbps · mp3",
+  },
+  {
+    metadata: {
+      provider: "gd-netease",
+      actualQuality: "standard",
+      actualBitrate: 127900,
+      actualFormat: "mp3",
+      status: "trial",
+    },
+    expected: "GD 网易云备用音源 · 128 kbps · mp3 · 试听片段",
+  },
   { metadata: { status: "unknown" }, expected: "网易云直连 · 实际音质未知 · 完整性未确认" },
   { metadata: { actualQuality: "higher", actualBitrate: 0 }, expected: "网易云直连 · 较高" },
   { metadata: { actualQuality: "lossless", actualBitrate: NaN }, expected: "网易云直连 · 无损" },
   { metadata: { actualBitrate: Infinity }, expected: "网易云直连 · 实际音质未知" },
   { metadata: { actualBitrate: -128000 }, expected: "网易云直连 · 实际音质未知" },
   { metadata: { actualQuality: "unrecognized" }, expected: "网易云直连 · 实际音质未知" },
-])("renders returned stream metadata without substituting the 320 kbps preference: $expected", async ({ metadata, expected }) => {
-  const { OtoneiPlayer } = await import("./OtoneiPresentation");
-  const { store, bridge } = setup();
-  bridge.GetSettings = async () => ({ preferredQuality: "exhigh", regionMode: "off", gdEnabled: false, volume: 0.4 });
-  bridge.ResolveStream = vi.fn<DesktopBridge["ResolveStream"]>(async () => ({
-    songId: track.neteaseSongId,
-    provider: "netease-direct",
-    url: "https://media.example/audio",
-    requestedQuality: "exhigh",
-    status: "full",
-    ...metadata,
-  }));
-  await store.hydrate();
-  store.add(track);
-  await store.play();
-  expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
-  const html = renderToStaticMarkup(
-    <PlayerProvider store={store}><OtoneiPlayer current={track} /></PlayerProvider>,
-  );
-  expect(html).toContain(`<small class="stream-source">${expected}</small>`);
-  expect(html).not.toContain("320 kbps");
-  await store.flush();
-});
+])(
+  "renders returned stream metadata without substituting the 320 kbps preference: $expected",
+  async ({ metadata, expected }) => {
+    const { OtoneiPlayer } = await import("./OtoneiPresentation");
+    const { store, bridge } = setup();
+    bridge.GetSettings = async () => ({ preferredQuality: "exhigh", regionMode: "off", gdEnabled: false, volume: 0.4 });
+    bridge.ResolveStream = vi.fn<DesktopBridge["ResolveStream"]>(async () => ({
+      songId: track.neteaseSongId,
+      provider: "netease-direct",
+      url: "https://media.example/audio",
+      requestedQuality: "exhigh",
+      status: "full",
+      ...metadata,
+    }));
+    await store.hydrate();
+    store.add(track);
+    await store.play();
+    expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
+    const html = renderToStaticMarkup(
+      <PlayerProvider store={store}>
+        <OtoneiPlayer current={track} />
+      </PlayerProvider>,
+    );
+    expect(html).toContain(`<small class="stream-source">${expected}</small>`);
+    expect(html).not.toContain("320 kbps");
+    await store.flush();
+  },
+);
 
 it("renders premium manual tiers only from the trusted server policy without enabling account controls", async () => {
   const { store, bridge } = setup();
-  bridge.GetPlaybackQualityPolicy = async () => ({ premiumAllowed: true, selectableQualities: ["exhigh", "lossless", "hires", "jyeffect", "sky", "jymaster"], maxBitrate: 0 });
+  bridge.GetPlaybackQualityPolicy = async () => ({
+    premiumAllowed: true,
+    selectableQualities: ["exhigh", "lossless", "hires", "jyeffect", "sky", "jymaster"],
+    maxBitrate: 0,
+  });
   await store.hydrate();
-  const html = renderToStaticMarkup(<PlayerProvider store={store}><SettingsPanel /></PlayerProvider>);
+  const html = renderToStaticMarkup(
+    <PlayerProvider store={store}>
+      <SettingsPanel />
+    </PlayerProvider>,
+  );
   for (const quality of ["exhigh", "lossless", "hires", "jyeffect", "sky", "jymaster"])
     expect(html).toContain(`<option value="${quality}"`);
   expect(html).not.toContain('<option value="standard"');
@@ -231,12 +268,42 @@ it("renders premium manual tiers only from the trusted server policy without ena
 
 it("renders accessible cache and desktop controls plus cursor history paging", async () => {
   const { store, bridge } = setup();
-  bridge.GetAudioCacheStats = async () => ({ available: true, enabled: true, maxBytes: 20 * 1024 ** 3, usedBytes: 1024 ** 3, cachedTracks: 3, activeDownloads: 1 });
-  bridge.ListLocalHistoryBefore = async () => ({ entries: [{ historyEntryId: "h", playedAt: 1, track }], hasMore: true });
-  await store.hydrate(); await store.refreshCacheStats();
-  const render = (element: React.ReactNode) => renderToStaticMarkup(<PlayerProvider store={store}>{element}</PlayerProvider>);
+  bridge.GetAudioCacheStats = async () => ({
+    available: true,
+    enabled: true,
+    maxBytes: 20 * 1024 ** 3,
+    usedBytes: 1024 ** 3,
+    cachedTracks: 3,
+    activeDownloads: 1,
+  });
+  bridge.ListLocalHistoryBefore = async () => ({
+    entries: [{ historyEntryId: "h", playedAt: 1, track }],
+    hasMore: true,
+  });
+  await store.hydrate();
+  await store.refreshCacheStats();
+  const render = (element: React.ReactNode) =>
+    renderToStaticMarkup(<PlayerProvider store={store}>{element}</PlayerProvider>);
   const settings = render(<SettingsPanel bridge={bridge} />);
-  for (const text of ["启用音频缓存", "缓存容量上限（GB）", "音频缓存使用量", "清理音频缓存", "隐藏到托盘", "关闭窗口时隐藏到托盘", "1.00 GB / 20 GB", "正在缓存 1 首", "打开迷你播放器", "打开桌面歌词", "锁定桌面歌词（鼠标穿透）", "歌词字号", "歌词不透明度", "主窗口隐藏时提示新歌曲", "在任务栏显示播放进度", "重置桌面窗口位置"]) expect(settings).toContain(text);
+  for (const text of [
+    "启用音频缓存",
+    "缓存容量上限（GB）",
+    "音频缓存使用量",
+    "清理音频缓存",
+    "隐藏到托盘",
+    "关闭窗口时隐藏到托盘",
+    "1.00 GB / 20 GB",
+    "正在缓存 1 首",
+    "打开迷你播放器",
+    "打开桌面歌词",
+    "锁定桌面歌词（鼠标穿透）",
+    "歌词字号",
+    "歌词不透明度",
+    "主窗口隐藏时提示新歌曲",
+    "在任务栏显示播放进度",
+    "重置桌面窗口位置",
+  ])
+    expect(settings).toContain(text);
   expect(settings).not.toContain("127.0.0.1");
   expect(render(<LibraryPanel kind="history" />)).toContain("下一页");
   expect(render(<LibraryPanel kind="history" />)).not.toContain("最近 200");
@@ -245,25 +312,62 @@ it("labels complete cache hits without changing returned source quality or membe
   const { OtoneiPlayer } = await import("./OtoneiPresentation");
   const { store, bridge } = setup();
   const token = "b".repeat(32);
-  bridge.ResolveStream = async () => ({ songId: track.neteaseSongId, provider: "netease-direct", url: `http://127.0.0.1:19394/media/${token}`, cacheToken: token, cacheHit: true, requestedQuality: "exhigh", actualBitrate: 128000, actualFormat: "mp3", status: "full" });
-  await store.hydrate(); store.add(track); await store.play();
-  const html = renderToStaticMarkup(<PlayerProvider store={store}><OtoneiPlayer current={track} /></PlayerProvider>);
+  bridge.ResolveStream = async () => ({
+    songId: track.neteaseSongId,
+    provider: "netease-direct",
+    url: `http://127.0.0.1:19394/media/${token}`,
+    cacheToken: token,
+    cacheHit: true,
+    requestedQuality: "exhigh",
+    actualBitrate: 128000,
+    actualFormat: "mp3",
+    status: "full",
+  });
+  await store.hydrate();
+  store.add(track);
+  await store.play();
+  const html = renderToStaticMarkup(
+    <PlayerProvider store={store}>
+      <OtoneiPlayer current={track} />
+    </PlayerProvider>,
+  );
   expect(html).toContain("本地缓存 · 网易云直连 · 128 kbps · mp3");
   expect(store.getSnapshot().qualityPolicy?.premiumAllowed).toBe(false);
 });
 
-
 it("shows separate accessible resource-cache policy, usage, clear result and original audio cache controls", async () => {
   const { store, bridge } = setup();
-  bridge.GetResourceCacheStats = async () => ({ available: true, enabled: true, maxBytes: 1024 ** 3, usedBytes: 10, cachedCovers: 2, cachedLyrics: 3 });
+  bridge.GetResourceCacheStats = async () => ({
+    available: true,
+    enabled: true,
+    maxBytes: 1024 ** 3,
+    usedBytes: 10,
+    cachedCovers: 2,
+    cachedLyrics: 3,
+  });
   bridge.ClearResourceCache = vi.fn(async () => ({ removedCovers: 2, removedLyrics: 3 }));
-  await store.hydrate(); await store.refreshResourceCacheStats();
-  const render = () => renderToStaticMarkup(<PlayerProvider store={store}><SettingsPanel /></PlayerProvider>);
-  for (const text of ["启用封面与歌词缓存", "封面与歌词容量上限（GB）", "封面与歌词缓存使用量", "清理封面与歌词缓存", "启用音频缓存", "清理音频缓存"])
+  await store.hydrate();
+  await store.refreshResourceCacheStats();
+  const render = () =>
+    renderToStaticMarkup(
+      <PlayerProvider store={store}>
+        <SettingsPanel />
+      </PlayerProvider>,
+    );
+  for (const text of [
+    "启用封面与歌词缓存",
+    "封面与歌词容量上限（GB）",
+    "封面与歌词缓存使用量",
+    "清理封面与歌词缓存",
+    "启用音频缓存",
+    "清理音频缓存",
+  ])
     expect(render()).toContain(text);
-  store.setSettings({ resourceCache: { enabled: false, maxBytes: 2 * 1024 ** 3 } }); await store.flush();
+  store.setSettings({ resourceCache: { enabled: false, maxBytes: 2 * 1024 ** 3 } });
+  await store.flush();
   expect(store.getSnapshot().settings?.resourceCache).toEqual({ enabled: false, maxBytes: 2 * 1024 ** 3 });
   await store.clearResourceCache();
   expect(render()).toContain("已清理 2 张封面和 3 首歌词");
-  expect(bridge.ClearLocalHistory).not.toHaveBeenCalled(); expect(bridge.SetLocalFavorite).not.toHaveBeenCalled();
+  expect(bridge.ClearLocalHistory).not.toHaveBeenCalled();
+  expect(bridge.SetLocalFavorite).not.toHaveBeenCalled();
 });

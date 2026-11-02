@@ -22,7 +22,12 @@ it("checks immediately, continues after healthy data, and discovers later recove
 it("does not overlap slow reads or publish or schedule after cleanup", async () => {
   vi.useFakeTimers();
   let finish!: (value: number) => void;
-  const read = vi.fn(() => new Promise<number>(resolve => { finish = resolve; }));
+  const read = vi.fn(
+    () =>
+      new Promise<number>((resolve) => {
+        finish = resolve;
+      }),
+  );
   const accept = vi.fn();
   const stop = startDiagnosticPolling(read, accept);
   await vi.advanceTimersByTimeAsync(120_000);

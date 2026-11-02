@@ -6,12 +6,31 @@ describe("normal close", () => {
     const steps: string[] = [];
     let hydrate!: () => void;
     let flush!: () => void;
-    const handler = createCloseHandler({
-      beginClose: () => { steps.push("beginClose"); },
-      hydrate: () => new Promise<void>((resolve) => { hydrate = resolve; }),
-      pause: () => { steps.push("pause"); },
-      flush: () => new Promise<void>((resolve) => { steps.push("flush"); flush = resolve; }),
-    }, () => { steps.push("freeze"); }, async (token) => { steps.push(`ack:${token}`); });
+    const handler = createCloseHandler(
+      {
+        beginClose: () => {
+          steps.push("beginClose");
+        },
+        hydrate: () =>
+          new Promise<void>((resolve) => {
+            hydrate = resolve;
+          }),
+        pause: () => {
+          steps.push("pause");
+        },
+        flush: () =>
+          new Promise<void>((resolve) => {
+            steps.push("flush");
+            flush = resolve;
+          }),
+      },
+      () => {
+        steps.push("freeze");
+      },
+      async (token) => {
+        steps.push(`ack:${token}`);
+      },
+    );
     const pending = handler("1");
     expect(handler("1")).toBe(pending);
     expect(handler("stale")).toBe(pending);
@@ -27,7 +46,17 @@ describe("normal close", () => {
   it("rejects invalid tokens and acknowledges a failed save attempt without an unhandled rejection", async () => {
     const freeze = vi.fn();
     const acknowledge = vi.fn(async () => {});
-    const handler = createCloseHandler({ hydrate: async () => {}, pause: vi.fn(), flush: async () => { throw new Error("save failed"); } }, freeze, acknowledge);
+    const handler = createCloseHandler(
+      {
+        hydrate: async () => {},
+        pause: vi.fn(),
+        flush: async () => {
+          throw new Error("save failed");
+        },
+      },
+      freeze,
+      acknowledge,
+    );
     await handler(null);
     await handler("");
     expect(freeze).not.toHaveBeenCalled();

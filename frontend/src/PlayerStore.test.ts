@@ -35,10 +35,14 @@ const saved: QueueSnapshot = {
   revision: 8,
 };
 
-it("hydrates favorite membership after page reads quarantine damaged records",async()=>{
-  const {store,bridge}=setup();let ids=[track.neteaseSongId];
-  bridge.GetLocalFavoriteIDs=async()=>ids.slice();
-  bridge.SearchLocalFavorites=async()=>{ids=[];return {tracks:[],hasMore:false,nextAddedOrder:0,nextSongId:""};};
+it("hydrates favorite membership after page reads quarantine damaged records", async () => {
+  const { store, bridge } = setup();
+  let ids = [track.neteaseSongId];
+  bridge.GetLocalFavoriteIDs = async () => ids.slice();
+  bridge.SearchLocalFavorites = async () => {
+    ids = [];
+    return { tracks: [], hasMore: false, nextAddedOrder: 0, nextSongId: "" };
+  };
   await store.hydrate();
   expect(store.getSnapshot().libraryReady).toBe(true);
   expect(store.isFavorite(track)).toBe(false);
@@ -71,17 +75,27 @@ class FakeAudio implements AudioExecutor {
   }
 }
 const memberPolicy: PlaybackQualityPolicy = {
-  premiumAllowed: true, selectableQualities: ["exhigh", "lossless", "hires", "jyeffect", "sky", "jymaster"], maxBitrate: 0,
+  premiumAllowed: true,
+  selectableQualities: ["exhigh", "lossless", "hires", "jyeffect", "sky", "jymaster"],
+  maxBitrate: 0,
 };
 const anonymousPolicy: PlaybackQualityPolicy = {
-  premiumAllowed: false, selectableQualities: ["exhigh"], maxBitrate: 320000,
+  premiumAllowed: false,
+  selectableQualities: ["exhigh"],
+  maxBitrate: 320000,
 };
 function setup(load: Promise<QueueSnapshot | null> = Promise.resolve(null)) {
   const bridge: DesktopBridge = {
     ListLocalPlaylists: vi.fn(async () => []),
-    GetLocalPlaylist: vi.fn(async () => { throw new Error("PLAYLIST_NOT_FOUND"); }),
-    CreateLocalPlaylist: vi.fn(async () => { throw new Error("not configured"); }),
-    UpdateLocalPlaylist: vi.fn(async () => { throw new Error("not configured"); }),
+    GetLocalPlaylist: vi.fn(async () => {
+      throw new Error("PLAYLIST_NOT_FOUND");
+    }),
+    CreateLocalPlaylist: vi.fn(async () => {
+      throw new Error("not configured");
+    }),
+    UpdateLocalPlaylist: vi.fn(async () => {
+      throw new Error("not configured");
+    }),
     DeleteLocalPlaylist: vi.fn(async () => {}),
     GetPlaybackQualityPolicy: vi.fn(async () => memberPolicy),
     GetSettings: vi.fn<DesktopBridge["GetSettings"]>(async () => ({
@@ -139,28 +153,21 @@ describe("single queue owner and playback races", () => {
     store.seek(45000.733);
     store.setMode("repeat-one");
     await store.flush();
-    const positions = vi
-      .mocked(bridge.SaveQueue)
-      .mock.calls.map(([q]) => q.positionMs);
+    const positions = vi.mocked(bridge.SaveQueue).mock.calls.map(([q]) => q.positionMs);
     expect(positions).toContain(38792);
     expect(positions).toContain(45001);
-    expect(positions.every((p) => Number.isSafeInteger(p) && p >= 0)).toBe(
-      true,
-    );
+    expect(positions.every((p) => Number.isSafeInteger(p) && p >= 0)).toBe(true);
   });
-  it.each([NaN, Infinity, -Infinity, -100])(
-    "clamps invalid media position %s before saving",
-    async (position) => {
-      const { store, engine, bridge } = setup(Promise.resolve(saved));
-      await store.hydrate();
-      await store.play();
-      engine.emit("playing");
-      engine.currentTime = position;
-      store.pause();
-      await store.flush();
-      expect(vi.mocked(bridge.SaveQueue).mock.lastCall?.[0].positionMs).toBe(0);
-    },
-  );
+  it.each([NaN, Infinity, -Infinity, -100])("clamps invalid media position %s before saving", async (position) => {
+    const { store, engine, bridge } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    await store.play();
+    engine.emit("playing");
+    engine.currentTime = position;
+    store.pause();
+    await store.flush();
+    expect(vi.mocked(bridge.SaveQueue).mock.lastCall?.[0].positionMs).toBe(0);
+  });
   it("captures exact media position when pausing actual playback", async () => {
     const { store, engine } = setup(Promise.resolve(saved));
     await store.hydrate();
@@ -231,9 +238,7 @@ describe("single queue owner and playback races", () => {
     await store.flush();
     expect(a).not.toBe(b);
     expect(store.getSnapshot().queue.entries).toHaveLength(2);
-    expect(
-      JSON.stringify(vi.mocked(bridge.SaveQueue).mock.calls),
-    ).not.toContain("secret");
+    expect(JSON.stringify(vi.mocked(bridge.SaveQueue).mock.calls)).not.toContain("secret");
   });
   it("serializes full snapshot writes in revision order", async () => {
     const { store, bridge } = setup(Promise.resolve(saved));
@@ -247,12 +252,8 @@ describe("single queue owner and playback races", () => {
     expect(bridge.SaveQueue).toHaveBeenCalledTimes(1);
     first.resolve();
     await store.flush();
-    expect(
-      vi.mocked(bridge.SaveQueue).mock.calls.map((call) => call[0].revision),
-    ).toEqual([9, 10]);
-    expect(vi.mocked(bridge.SaveQueue).mock.calls[1][0].playMode).toBe(
-      "repeat-one",
-    );
+    expect(vi.mocked(bridge.SaveQueue).mock.calls.map((call) => call[0].revision)).toEqual([9, 10]);
+    expect(vi.mocked(bridge.SaveQueue).mock.calls[1][0].playMode).toBe("repeat-one");
   });
   it("cancels a pending play and discards its late URL after pause", async () => {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
@@ -339,8 +340,7 @@ describe("single queue owner and playback races", () => {
 describe("local library, settings and playback policy", () => {
   it("hydrates saved settings before playback and never overwrites unread settings", async () => {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
-    const settings =
-      deferred<Awaited<ReturnType<DesktopBridge["GetSettings"]>>>();
+    const settings = deferred<Awaited<ReturnType<DesktopBridge["GetSettings"]>>>();
     vi.mocked(bridge.GetSettings).mockReturnValue(settings.promise);
     const hydration = store.hydrate();
     await Promise.resolve();
@@ -357,11 +357,7 @@ describe("local library, settings and playback policy", () => {
     await hydration;
     expect(engine.setVolume).toHaveBeenCalledWith(0.3);
     await store.play();
-    expect(bridge.ResolveStream).toHaveBeenCalledWith(
-      track.neteaseSongId,
-      "lossless",
-      expect.any(AbortSignal),
-    );
+    expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "lossless", expect.any(AbortSignal));
     expect(bridge.SetSettings).not.toHaveBeenCalled();
   });
   it("keeps a failed settings read protected", async () => {
@@ -393,14 +389,8 @@ describe("local library, settings and playback policy", () => {
       volume: 1,
     });
     await play;
-    expect(
-      vi.mocked(bridge.SetSettings).mock.calls.map(([s]) => s.preferredQuality),
-    ).toEqual(["lossless", "hires"]);
-    expect(bridge.ResolveStream).toHaveBeenCalledWith(
-      track.neteaseSongId,
-      "hires",
-      expect.any(AbortSignal),
-    );
+    expect(vi.mocked(bridge.SetSettings).mock.calls.map(([s]) => s.preferredQuality)).toEqual(["lossless", "hires"]);
+    expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "hires", expect.any(AbortSignal));
   });
   it("records actual advancing audio once, excludes selection/failure/rebuffer and gives a repeat session a new ID", async () => {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
@@ -434,9 +424,7 @@ describe("local library, settings and playback policy", () => {
     engine.emit("timeupdate");
     await store.flush();
     expect(bridge.AddLocalHistory).toHaveBeenCalledTimes(2);
-    expect(
-      vi.mocked(bridge.AddLocalHistory).mock.calls[1][0].historyEntryId,
-    ).not.toBe(first.historyEntryId);
+    expect(vi.mocked(bridge.AddLocalHistory).mock.calls[1][0].historyEntryId).not.toBe(first.historyEntryId);
   });
   it("does not mistake a seek or a stalled playhead for listened audio", async () => {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
@@ -453,21 +441,15 @@ describe("local library, settings and playback policy", () => {
   });
   it("serializes favorites and clears history using only SQLite bridge operations", async () => {
     const { store, bridge } = setup();
-    vi.mocked(bridge.ListLocalHistory).mockResolvedValue([
-      { historyEntryId: "prior", track, playedAt: 1 },
-    ]);
+    vi.mocked(bridge.ListLocalHistory).mockResolvedValue([{ historyEntryId: "prior", track, playedAt: 1 }]);
     await store.hydrate();
     const metadata = { ...track, url: stream.url } as TrackSnapshot;
     store.toggleFavorite(metadata);
     store.toggleFavorite(metadata);
     await store.flush();
-    expect(
-      vi.mocked(bridge.SetLocalFavorite).mock.calls.map(([, liked]) => liked),
-    ).toEqual([true, false]);
+    expect(vi.mocked(bridge.SetLocalFavorite).mock.calls.map(([, liked]) => liked)).toEqual([true, false]);
     expect(store.getSnapshot().favorites).toEqual([]);
-    expect(
-      JSON.stringify(vi.mocked(bridge.SetLocalFavorite).mock.calls),
-    ).not.toContain("secret");
+    expect(JSON.stringify(vi.mocked(bridge.SetLocalFavorite).mock.calls)).not.toContain("secret");
     store.clearHistory();
     await store.flush();
     expect(bridge.ClearLocalHistory).toHaveBeenCalledOnce();
@@ -541,9 +523,7 @@ describe("local library, settings and playback policy", () => {
       });
       await store.pollRegion();
       expect(engine.pause).toHaveBeenCalledTimes(pauses);
-      expect(store.getSnapshot().playback).toBe(
-        phase === "playing" ? "playing" : "loading",
-      );
+      expect(store.getSnapshot().playback).toBe(phase === "playing" ? "playing" : "loading");
       startup.resolve();
       await play;
       engine.emit("playing");
@@ -677,7 +657,6 @@ it.each([120, 90, 30])(
   },
 );
 
-
 it("commits playlist queue batches atomically, enforces capacity and isolates queue from later playlist deletion", async () => {
   const { store, bridge, engine } = setup();
   await store.hydrate();
@@ -688,7 +667,7 @@ it("commits playlist queue batches atomically, enforces capacity and isolates qu
   expect(store.getSnapshot().queue.currentIndex).toBe(0);
   expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
   const firstId = store.getSnapshot().queue.currentEntryId;
-  expect(new Set(store.getSnapshot().queue.entries.map(e => e.queueEntryId)).size).toBe(2);
+  expect(new Set(store.getSnapshot().queue.entries.map((e) => e.queueEntryId)).size).toBe(2);
   expect(store.getSnapshot().queue.entries[0].track).not.toBe(tracks[0]);
   tracks[0] = { ...track, name: "修改歌单对象" };
   expect(store.getSnapshot().queue.entries[0].track.name).toBe(track.name);
@@ -708,7 +687,6 @@ it("commits playlist queue batches atomically, enforces capacity and isolates qu
   expect(bridge.SaveQueue).toHaveBeenCalledTimes(2);
 });
 
-
 it.each([
   ["ordinary UTF-8", "n".repeat(1024), "a".repeat(960)],
   ["Go HTML and separator escaping", "<>&\u2028\u2029".repeat(64), "a".repeat(64)],
@@ -721,12 +699,21 @@ it.each([
   const signal = vi.mocked(bridge.ResolveStream).mock.calls[0][2]!;
   const pauses = engine.pause.mock.calls.length;
   const tracks = Array.from({ length: 1000 }, (_, i) => ({
-    neteaseSongId: String(i + 1), name, artists: [{ name: artist }], durationMs: 1000,
+    neteaseSongId: String(i + 1),
+    name,
+    artists: [{ name: artist }],
+    durationMs: 1000,
   }));
   const playlist = { playlistId: "large", name: "large", tracks, revision: 1, createdAt: 1, updatedAt: 1 };
-  const goBytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)
-    .replaceAll("<", "\\u003c").replaceAll(">", "\\u003e").replaceAll("&", "\\u0026")
-    .replaceAll("\u2028", "\\u2028").replaceAll("\u2029", "\\u2029")).length;
+  const goBytes = (value: unknown) =>
+    new TextEncoder().encode(
+      JSON.stringify(value)
+        .replaceAll("<", "\\u003c")
+        .replaceAll(">", "\\u003e")
+        .replaceAll("&", "\\u0026")
+        .replaceAll("\u2028", "\\u2028")
+        .replaceAll("\u2029", "\\u2029"),
+    ).length;
   expect(goBytes(playlist)).toBeLessThan(2 * 1024 * 1024);
   expect(store.addAll(tracks, true)).toBe(false);
   await store.flush();
@@ -745,7 +732,12 @@ it.each([
 it("shares the byte guard with ordinary add and ignores non-snapshot input fields", async () => {
   const tracks = Array.from({ length: 980 }, (_, i) => ({
     queueEntryId: String(i + 1).padStart(36, "0"),
-    track: { neteaseSongId: String(i + 1), name: "n".repeat(1024), artists: [{ name: "a".repeat(960) }], durationMs: 1000 },
+    track: {
+      neteaseSongId: String(i + 1),
+      name: "n".repeat(1024),
+      artists: [{ name: "a".repeat(960) }],
+      durationMs: 1000,
+    },
   }));
   const initial: QueueSnapshot = { ...saved, entries: tracks, currentEntryId: tracks[0].queueEntryId, currentIndex: 0 };
   expect(new TextEncoder().encode(JSON.stringify(initial)).length).toBeLessThan(2 * 1024 * 1024);
@@ -768,20 +760,33 @@ it("shares the byte guard with ordinary add and ignores non-snapshot input field
   expect(JSON.stringify(vi.mocked(bridge.SaveQueue).mock.calls)).not.toContain("private");
 });
 
- it.each(["standard", "higher", "hires"])("normalizes legacy or unauthorized saved %s to anonymous exhigh", async quality => {
-  const { store, bridge } = setup(Promise.resolve(saved));
-  vi.mocked(bridge.GetPlaybackQualityPolicy).mockResolvedValue(anonymousPolicy);
-  vi.mocked(bridge.GetSettings).mockResolvedValue({ preferredQuality: quality as LocalSettings["preferredQuality"], regionMode: "off", gdEnabled: false, volume: 1 });
-  await store.hydrate();
-  expect(store.getSnapshot().settings?.preferredQuality).toBe("exhigh");
-  await store.play();
-  expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
-});
+it.each(["standard", "higher", "hires"])(
+  "normalizes legacy or unauthorized saved %s to anonymous exhigh",
+  async (quality) => {
+    const { store, bridge } = setup(Promise.resolve(saved));
+    vi.mocked(bridge.GetPlaybackQualityPolicy).mockResolvedValue(anonymousPolicy);
+    vi.mocked(bridge.GetSettings).mockResolvedValue({
+      preferredQuality: quality as LocalSettings["preferredQuality"],
+      regionMode: "off",
+      gdEnabled: false,
+      volume: 1,
+    });
+    await store.hydrate();
+    expect(store.getSnapshot().settings?.preferredQuality).toBe("exhigh");
+    await store.play();
+    expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
+  },
+);
 it("waits for entitlement hydration and fails closed when the policy RPC fails", async () => {
   const { store, bridge } = setup(Promise.resolve(saved));
   const policy = deferred<PlaybackQualityPolicy>();
   vi.mocked(bridge.GetPlaybackQualityPolicy).mockReturnValue(policy.promise);
-  vi.mocked(bridge.GetSettings).mockResolvedValue({ preferredQuality: "hires", regionMode: "off", gdEnabled: false, volume: 1 });
+  vi.mocked(bridge.GetSettings).mockResolvedValue({
+    preferredQuality: "hires",
+    regionMode: "off",
+    gdEnabled: false,
+    volume: 1,
+  });
   const hydration = store.hydrate();
   await Promise.resolve();
   await store.play();
@@ -793,23 +798,26 @@ it("waits for entitlement hydration and fails closed when the policy RPC fails",
   await store.play();
   expect(bridge.ResolveStream).toHaveBeenCalledWith(track.neteaseSongId, "exhigh", expect.any(AbortSignal));
 });
-it.each(["standard", "higher", "hires", "jymaster"])("rejects anonymous manual %s without persisting and permits a valid retry", async quality => {
-  const { store, bridge } = setup();
-  vi.mocked(bridge.GetPlaybackQualityPolicy).mockResolvedValue(anonymousPolicy);
-  await store.hydrate();
-  store.setSettings({ preferredQuality: quality as LocalSettings["preferredQuality"] });
-  await store.flush();
-  expect(bridge.SetSettings).not.toHaveBeenCalled();
-  expect(store.getSnapshot().settings?.preferredQuality).toBe("exhigh");
-  expect(store.getSnapshot().settingsError).toBeTruthy();
-  store.setSettings({ preferredQuality: "exhigh" });
-  await store.flush();
-  expect(store.getSnapshot().settingsError).toBe("");
-});
+it.each(["standard", "higher", "hires", "jymaster"])(
+  "rejects anonymous manual %s without persisting and permits a valid retry",
+  async (quality) => {
+    const { store, bridge } = setup();
+    vi.mocked(bridge.GetPlaybackQualityPolicy).mockResolvedValue(anonymousPolicy);
+    await store.hydrate();
+    store.setSettings({ preferredQuality: quality as LocalSettings["preferredQuality"] });
+    await store.flush();
+    expect(bridge.SetSettings).not.toHaveBeenCalled();
+    expect(store.getSnapshot().settings?.preferredQuality).toBe("exhigh");
+    expect(store.getSnapshot().settingsError).toBeTruthy();
+    store.setSettings({ preferredQuality: "exhigh" });
+    await store.flush();
+    expect(store.getSnapshot().settingsError).toBe("");
+  },
+);
 it("accepts the server normalized settings response without keeping an optimistic premium preference", async () => {
   const { store, bridge } = setup();
   await store.hydrate();
-  vi.mocked(bridge.SetSettings).mockImplementation(async s => ({ ...s, preferredQuality: "exhigh" }));
+  vi.mocked(bridge.SetSettings).mockImplementation(async (s) => ({ ...s, preferredQuality: "exhigh" }));
   store.setSettings({ preferredQuality: "hires" });
   await store.flush();
   expect(store.getSnapshot().settings?.preferredQuality).toBe("exhigh");
@@ -853,30 +861,45 @@ it("does not replace newer settings with an older normalized save response and r
 });
 
 const cacheToken = "a".repeat(32);
-const cachedStream: ResolvedStream = { ...stream, url: `http://127.0.0.1:18993/media/${cacheToken}`, cacheToken, cacheHit: true };
+const cachedStream: ResolvedStream = {
+  ...stream,
+  url: `http://127.0.0.1:18993/media/${cacheToken}`,
+  cacheToken,
+  cacheHit: true,
+};
 it("releases a cache lease exactly once after pause and flush waits for release", async () => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   const done = deferred<void>();
   bridge.ReleasePlaybackSource = vi.fn(() => done.promise);
   bridge.ReportPlaybackSourceFailure = vi.fn(async () => {});
   vi.mocked(bridge.ResolveStream).mockResolvedValue(cachedStream);
-  await store.hydrate(); await store.play(); engine.emit("playing");
-  store.pause(); store.pause(); store.dispose();
+  await store.hydrate();
+  await store.play();
+  engine.emit("playing");
+  store.pause();
+  store.pause();
+  store.dispose();
   let flushed = false;
-  const flush = store.flush().then(() => { flushed = true; });
+  const flush = store.flush().then(() => {
+    flushed = true;
+  });
   await Promise.resolve();
   expect(flushed).toBe(false);
   expect(bridge.ReleasePlaybackSource).toHaveBeenCalledExactlyOnceWith(cacheToken);
   expect(bridge.ReportPlaybackSourceFailure).not.toHaveBeenCalled();
-  done.resolve(); await flush;
+  done.resolve();
+  await flush;
 });
 it("reports source failures without racing a separate release", async () => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   bridge.ReleasePlaybackSource = vi.fn(async () => {});
   bridge.ReportPlaybackSourceFailure = vi.fn(async () => {});
   vi.mocked(bridge.ResolveStream).mockResolvedValue(cachedStream);
-  await store.hydrate(); await store.play(); engine.emit("error");
-  store.pause(); await store.flush();
+  await store.hydrate();
+  await store.play();
+  engine.emit("error");
+  store.pause();
+  await store.flush();
   expect(bridge.ReportPlaybackSourceFailure).toHaveBeenCalledExactlyOnceWith(cacheToken);
   expect(bridge.ReleasePlaybackSource).not.toHaveBeenCalled();
 });
@@ -885,8 +908,12 @@ it("releases stale resolver leases without using their media and preserves snaps
   const pending = deferred<ResolvedStream>();
   bridge.ReleasePlaybackSource = vi.fn(async () => {});
   vi.mocked(bridge.ResolveStream).mockReturnValue(pending.promise);
-  await store.hydrate(); const play = store.play(); store.pause();
-  pending.resolve(cachedStream); await play; await store.flush();
+  await store.hydrate();
+  const play = store.play();
+  store.pause();
+  pending.resolve(cachedStream);
+  await play;
+  await store.flush();
   expect(engine.setSource).not.toHaveBeenCalled();
   expect(bridge.ReleasePlaybackSource).toHaveBeenCalledExactlyOnceWith(cacheToken);
   expect(JSON.stringify(vi.mocked(bridge.SaveQueue).mock.calls)).not.toContain(cacheToken);
@@ -896,11 +923,22 @@ it("clearing or disabling cache leaves active playback and lease intact", async 
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   bridge.ReleasePlaybackSource = vi.fn(async () => {});
   bridge.ClearAudioCache = vi.fn(async () => ({ removedTracks: 2, retainedActiveTracks: 1 }));
-  bridge.GetAudioCacheStats = vi.fn(async () => ({ available: true, enabled: true, maxBytes: 20 * 1024 ** 3, usedBytes: 30, cachedTracks: 1, activeDownloads: 0 }));
+  bridge.GetAudioCacheStats = vi.fn(async () => ({
+    available: true,
+    enabled: true,
+    maxBytes: 20 * 1024 ** 3,
+    usedBytes: 30,
+    cachedTracks: 1,
+    activeDownloads: 0,
+  }));
   vi.mocked(bridge.ResolveStream).mockResolvedValue(cachedStream);
-  await store.hydrate(); await store.play(); engine.emit("playing");
+  await store.hydrate();
+  await store.play();
+  engine.emit("playing");
   engine.pause.mockClear();
-  await store.clearAudioCache(); store.setSettings({ audioCache: { enabled: false, maxBytes: 20 * 1024 ** 3 } }); await store.flush();
+  await store.clearAudioCache();
+  store.setSettings({ audioCache: { enabled: false, maxBytes: 20 * 1024 ** 3 } });
+  await store.flush();
   expect(engine.pause).not.toHaveBeenCalled();
   expect(bridge.ReleasePlaybackSource).not.toHaveBeenCalled();
   expect(store.getSnapshot().playback).toBe("playing");
@@ -908,19 +946,31 @@ it("clearing or disabling cache leaves active playback and lease intact", async 
 });
 it("pages history by its original cursor, keeps new and loaded entries, and blocks stale pages after clear", async () => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
-  const entries = Array.from({ length: 200 }, (_, i) => ({ historyEntryId: `h${200-i}`, track, playedAt: 200-i }));
+  const entries = Array.from({ length: 200 }, (_, i) => ({ historyEntryId: `h${200 - i}`, track, playedAt: 200 - i }));
   const pending = deferred<{ entries: typeof entries; hasMore: boolean }>();
-  bridge.ListLocalHistoryBefore = vi.fn().mockResolvedValueOnce({ entries, hasMore: true }).mockReturnValueOnce(pending.promise);
-  await store.hydrate(); const more = store.loadMoreHistory();
-  await store.play(); engine.emit("playing"); engine.currentTime = 600; engine.emit("timeupdate"); await store.flush();
+  bridge.ListLocalHistoryBefore = vi
+    .fn()
+    .mockResolvedValueOnce({ entries, hasMore: true })
+    .mockReturnValueOnce(pending.promise);
+  await store.hydrate();
+  const more = store.loadMoreHistory();
+  await store.play();
+  engine.emit("playing");
+  engine.currentTime = 600;
+  engine.emit("timeupdate");
+  await store.flush();
   expect(store.getSnapshot().history).toHaveLength(201);
-  pending.resolve({ entries: [entries[199], { historyEntryId: "older", track, playedAt: 0 }], hasMore: true }); await more;
+  pending.resolve({ entries: [entries[199], { historyEntryId: "older", track, playedAt: 0 }], hasMore: true });
+  await more;
   expect(store.getSnapshot().history).toHaveLength(202);
   expect(bridge.ListLocalHistoryBefore).toHaveBeenNthCalledWith(2, 200, 1, "h1");
   const stale = deferred<{ entries: typeof entries; hasMore: boolean }>();
   vi.mocked(bridge.ListLocalHistoryBefore).mockReturnValueOnce(stale.promise);
-  const staleLoad = store.loadMoreHistory(); store.clearHistory(); await store.flush();
-  stale.resolve({ entries, hasMore: true }); await staleLoad;
+  const staleLoad = store.loadMoreHistory();
+  store.clearHistory();
+  await store.flush();
+  stale.resolve({ entries, hasMore: true });
+  await staleLoad;
   expect(store.getSnapshot().history).toEqual([]);
   expect(store.getSnapshot().historyHasMore).toBe(false);
 });
@@ -930,12 +980,15 @@ it("cancels pending startup when cache is disabled but ignores a limit-only upda
   const pending = deferred<ResolvedStream>();
   bridge.ReleasePlaybackSource = vi.fn(async () => {});
   vi.mocked(bridge.ResolveStream).mockReturnValue(pending.promise);
-  await store.hydrate(); const play = store.play();
+  await store.hydrate();
+  const play = store.play();
   store.setSettings({ audioCache: { enabled: true, maxBytes: 10 * 1024 ** 3 } });
   expect(store.getSnapshot().playback).toBe("loading");
   store.setSettings({ audioCache: { enabled: false, maxBytes: 10 * 1024 ** 3 } });
   expect(store.getSnapshot().playback).toBe("paused");
-  pending.resolve(cachedStream); await play; await store.flush();
+  pending.resolve(cachedStream);
+  await play;
+  await store.flush();
   expect(engine.setSource).not.toHaveBeenCalled();
   expect(bridge.ReleasePlaybackSource).toHaveBeenCalledExactlyOnceWith(cacheToken);
 });
@@ -943,12 +996,25 @@ it("releases the previous lease before replacing its source and releases ended p
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   const nextToken = "b".repeat(32);
   const order: string[] = [];
-  bridge.ReleasePlaybackSource = vi.fn(async token => { order.push(`release:${token}`); });
-  vi.mocked(bridge.ResolveStream).mockResolvedValueOnce(cachedStream).mockResolvedValue({ ...cachedStream, cacheToken: nextToken, url: `http://127.0.0.1:18993/media/${nextToken}` });
-  engine.setSource.mockImplementation(async url => { order.push(`source:${url}`); });
-  await store.hydrate(); await store.play(); await store.play();
-  expect(order.indexOf(`release:${cacheToken}`)).toBeLessThan(order.indexOf(`source:http://127.0.0.1:18993/media/${nextToken}`));
-  engine.emit("playing"); engine.currentTime = 120000; engine.emit("ended"); await store.flush();
+  bridge.ReleasePlaybackSource = vi.fn(async (token) => {
+    order.push(`release:${token}`);
+  });
+  vi.mocked(bridge.ResolveStream)
+    .mockResolvedValueOnce(cachedStream)
+    .mockResolvedValue({ ...cachedStream, cacheToken: nextToken, url: `http://127.0.0.1:18993/media/${nextToken}` });
+  engine.setSource.mockImplementation(async (url) => {
+    order.push(`source:${url}`);
+  });
+  await store.hydrate();
+  await store.play();
+  await store.play();
+  expect(order.indexOf(`release:${cacheToken}`)).toBeLessThan(
+    order.indexOf(`source:http://127.0.0.1:18993/media/${nextToken}`),
+  );
+  engine.emit("playing");
+  engine.currentTime = 120000;
+  engine.emit("ended");
+  await store.flush();
   expect(bridge.ReleasePlaybackSource).toHaveBeenCalledWith(nextToken);
 });
 
@@ -960,7 +1026,12 @@ it("freezes transports during close, cancels settings-waiting playback and permi
   store.setSettings({ volume: 0.5 });
   const pendingPlay = store.play();
   const handlers = new Map<string, MediaSessionActionHandler | null>();
-  const session = { setActionHandler: (action: string, handler: MediaSessionActionHandler | null) => handlers.set(action, handler), setPositionState: vi.fn(), metadata: null, playbackState: "none" } as unknown as MediaSession;
+  const session = {
+    setActionHandler: (action: string, handler: MediaSessionActionHandler | null) => handlers.set(action, handler),
+    setPositionState: vi.fn(),
+    metadata: null,
+    playbackState: "none",
+  } as unknown as MediaSession;
   const cleanup = bindMediaSession(store, session);
   const ack = vi.fn(async () => {});
   const freeze = vi.fn();
@@ -969,16 +1040,27 @@ it("freezes transports during close, cancels settings-waiting playback and permi
   expect(store.isClosing()).toBe(true);
   expect(close("token")).toBe(closing);
   settings.resolve({ preferredQuality: "exhigh", regionMode: "auto", gdEnabled: false, volume: 0.5 });
-  await pendingPlay; await closing;
+  await pendingPlay;
+  await closing;
   expect(engine.setSource).not.toHaveBeenCalled();
   expect(bridge.ResolveStream).not.toHaveBeenCalled();
   const savedCalls = vi.mocked(bridge.SaveQueue).mock.calls.length;
   const settingsCalls = vi.mocked(bridge.SetSettings).mock.calls.length;
   for (const command of ["toggle-play", "next", "previous"]) playerCommand(store, command);
-  for (const [action, handler] of handlers) handler?.({ action: action as MediaSessionAction, seekTime: 42, seekOffset: 10 });
-  await store.play(); await store.select("old-entry"); await store.next(); await store.previous();
-  store.seek(42000); store.add(track); store.addAll([track], true); store.remove("old-entry"); store.setMode("shuffle"); store.setSettings({ volume: 1 });
-  store.beginClose(); await store.flush();
+  for (const [action, handler] of handlers)
+    handler?.({ action: action as MediaSessionAction, seekTime: 42, seekOffset: 10 });
+  await store.play();
+  await store.select("old-entry");
+  await store.next();
+  await store.previous();
+  store.seek(42000);
+  store.add(track);
+  store.addAll([track], true);
+  store.remove("old-entry");
+  store.setMode("shuffle");
+  store.setSettings({ volume: 1 });
+  store.beginClose();
+  await store.flush();
   expect(vi.mocked(bridge.SaveQueue).mock.calls.length).toBe(savedCalls);
   expect(vi.mocked(bridge.SetSettings).mock.calls.length).toBe(settingsCalls);
   expect(store.getSnapshot().queue.entries).toHaveLength(1);
@@ -992,22 +1074,38 @@ it("freezes transports during close, cancels settings-waiting playback and permi
 it("closing before hydration still saves the restored paused queue", async () => {
   const loaded = deferred<QueueSnapshot | null>();
   const { store, bridge, engine } = setup(loaded.promise);
-  const close = createCloseHandler(store, () => {}, async () => {});
+  const close = createCloseHandler(
+    store,
+    () => {},
+    async () => {},
+  );
   const closing = close("loading-close");
   expect(store.isClosing()).toBe(true);
-  loaded.resolve(saved); await closing;
-  expect(bridge.SaveQueue).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ currentEntryId: "old-entry", positionMs: saved.positionMs }));
+  loaded.resolve(saved);
+  await closing;
+  expect(bridge.SaveQueue).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ currentEntryId: "old-entry", positionMs: saved.positionMs }),
+  );
   expect(engine.setSource).not.toHaveBeenCalled();
 });
 it("invalidates a full cached stream that ends far before its expected duration without advancing", async () => {
-  const shortTrackQueue = { ...saved, entries: [{ queueEntryId: "old-entry", track: { ...track, durationMs: 30000 } }] };
+  const shortTrackQueue = {
+    ...saved,
+    entries: [{ queueEntryId: "old-entry", track: { ...track, durationMs: 30000 } }],
+  };
   const { store, bridge, engine } = setup(Promise.resolve(shortTrackQueue));
   bridge.ReleasePlaybackSource = vi.fn(async () => {});
   bridge.ReportPlaybackSourceFailure = vi.fn(async () => {});
   vi.mocked(bridge.ResolveStream).mockResolvedValue({ ...cachedStream, durationMs: 30000 });
-  await store.hydrate(); await store.play(); engine.emit("playing"); engine.currentTime = 10000;
+  await store.hydrate();
+  await store.play();
+  engine.emit("playing");
+  engine.currentTime = 10000;
   const next = vi.spyOn(store, "next");
-  engine.emit("ended"); engine.emit("ended"); store.pause(); await store.flush();
+  engine.emit("ended");
+  engine.emit("ended");
+  store.pause();
+  await store.flush();
   expect(next).not.toHaveBeenCalled();
   expect(bridge.ReportPlaybackSourceFailure).toHaveBeenCalledExactlyOnceWith(cacheToken);
   expect(bridge.ReleasePlaybackSource).not.toHaveBeenCalled();
@@ -1020,13 +1118,17 @@ it("preserves unknown and uncached ended behavior and tolerates natural cache en
     bridge.ReportPlaybackSourceFailure = vi.fn(async () => {});
     bridge.ReleasePlaybackSource = vi.fn(async () => {});
     vi.mocked(bridge.ResolveStream).mockResolvedValue(resolved);
-    await store.hydrate(); await store.play(); engine.emit("playing");
+    await store.hydrate();
+    await store.play();
+    engine.emit("playing");
     engine.currentTime = resolved === cachedStream ? 118000 : 10000;
     const next = vi.spyOn(store, "next").mockResolvedValue();
-    engine.emit("ended"); await store.flush();
+    engine.emit("ended");
+    await store.flush();
     expect(next).toHaveBeenCalledExactlyOnceWith(true);
     expect(bridge.ReportPlaybackSourceFailure).not.toHaveBeenCalled();
-    store.dispose(); await store.flush();
+    store.dispose();
+    await store.flush();
   }
 });
 
@@ -1036,19 +1138,30 @@ it("ignores repeated media-session play while loading or playing and pause while
   const pending = deferred<ResolvedStream>();
   vi.mocked(bridge.ResolveStream).mockReturnValue(pending.promise);
   const handlers = new Map<string, MediaSessionActionHandler | null>();
-  const session = { setActionHandler: (action: string, handler: MediaSessionActionHandler | null) => handlers.set(action, handler), setPositionState: vi.fn(), metadata: null, playbackState: "none" } as unknown as MediaSession;
+  const session = {
+    setActionHandler: (action: string, handler: MediaSessionActionHandler | null) => handlers.set(action, handler),
+    setPositionState: vi.fn(),
+    metadata: null,
+    playbackState: "none",
+  } as unknown as MediaSession;
   const cleanup = bindMediaSession(store, session);
   const play = () => handlers.get("play")?.({ action: "play" });
   const pause = () => handlers.get("pause")?.({ action: "pause" });
-  play(); play();
+  play();
+  play();
   expect(store.getSnapshot().playback).toBe("loading");
   expect(bridge.ResolveStream).toHaveBeenCalledOnce();
-  pending.resolve(stream); await Promise.resolve(); await Promise.resolve();
-  engine.emit("playing"); play();
+  pending.resolve(stream);
+  await Promise.resolve();
+  await Promise.resolve();
+  engine.emit("playing");
+  play();
   expect(bridge.ResolveStream).toHaveBeenCalledOnce();
   expect(engine.setSource).toHaveBeenCalledOnce();
   const before = vi.mocked(bridge.SaveQueue).mock.calls.length;
-  pause(); pause(); await store.flush();
+  pause();
+  pause();
+  await store.flush();
   expect(vi.mocked(bridge.SaveQueue).mock.calls.length).toBe(before + 1);
   cleanup();
 });
@@ -1075,7 +1188,7 @@ it("preserves only ordinary established pauses, releases their lease, and resolv
   expect(bridge.ResolveStream).toHaveBeenCalledTimes(2);
   expect(engine.setSource).toHaveBeenLastCalledWith(cachedStream.url, 42000, expect.any(Object));
 });
-it.each(["select", "remove", "replace", "close", "dispose"])("fully resets retained media on %s", async action => {
+it.each(["select", "remove", "replace", "close", "dispose"])("fully resets retained media on %s", async (action) => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   await store.hydrate();
   await store.play();
@@ -1089,7 +1202,7 @@ it.each(["select", "remove", "replace", "close", "dispose"])("fully resets retai
   if (action === "close") store.beginClose();
   if (action === "dispose") store.dispose();
   expect(engine.pause).toHaveBeenCalled();
-  expect(engine.pause.mock.calls.every(args => args[0] !== true)).toBe(true);
+  expect(engine.pause.mock.calls.every((args) => args[0] !== true)).toBe(true);
   await store.flush();
 });
 it("never preserves a source when cancelling pending startup", async () => {
@@ -1122,19 +1235,24 @@ it("preserves established media when pausing during buffering", async () => {
   expect(bridge.ReleasePlaybackSource).toHaveBeenCalledExactlyOnceWith(cacheToken);
 });
 
-
 describe("SQLite library pages and lightweight membership", () => {
   it("uses all favorite IDs independently of loaded metadata and serializes rapid toggles", async () => {
     const { store, bridge } = setup();
     bridge.GetLocalFavoriteIDs = vi.fn(async () => [track.neteaseSongId]);
-    bridge.SearchLocalFavorites = vi.fn(async () => ({ tracks: [], hasMore: false, nextAddedOrder: 0, nextSongId: "" }));
+    bridge.SearchLocalFavorites = vi.fn(async () => ({
+      tracks: [],
+      hasMore: false,
+      nextAddedOrder: 0,
+      nextSongId: "",
+    }));
     await store.hydrate();
     expect(bridge.GetLocalFavorites).not.toHaveBeenCalled();
     expect(store.getSnapshot().favorites).toEqual([]);
     expect(store.isFavorite(track)).toBe(true);
-    store.toggleFavorite(track); store.toggleFavorite(track);
+    store.toggleFavorite(track);
+    store.toggleFavorite(track);
     await store.flush();
-    expect(vi.mocked(bridge.SetLocalFavorite).mock.calls.map(call => call[1])).toEqual([false, true]);
+    expect(vi.mocked(bridge.SetLocalFavorite).mock.calls.map((call) => call[1])).toEqual([false, true]);
     expect(store.isFavorite(track)).toBe(true);
   });
   it("queries the whole library, rejects late queries, and uses bounded stable pages", async () => {
@@ -1145,16 +1263,29 @@ describe("SQLite library pages and lightweight membership", () => {
     bridge.SearchLocalFavorites = vi.fn(async () => first);
     await store.hydrate();
     vi.mocked(bridge.SearchLocalFavorites).mockReturnValueOnce(old.promise);
-    const stale = store.queryFavorites("中文%_"); await Promise.resolve();
+    const stale = store.queryFavorites("中文%_");
+    await Promise.resolve();
     vi.mocked(bridge.SearchLocalFavorites).mockResolvedValueOnce({ ...first, tracks: [{ ...track, name: "日本語" }] });
     await store.queryFavorites("日本語");
-    old.resolve(first); await stale;
+    old.resolve(first);
+    await stale;
     expect(store.getSnapshot().favorites[0].name).toBe("日本語");
     expect(bridge.SearchLocalFavorites).toHaveBeenCalledWith("日本語", 200, 0, "", expect.any(AbortSignal));
-    vi.mocked(bridge.SearchLocalFavorites).mockResolvedValueOnce({ tracks: [{ ...track, neteaseSongId: "2" }], hasMore: false, nextAddedOrder: 0, nextSongId: "" });
+    vi.mocked(bridge.SearchLocalFavorites).mockResolvedValueOnce({
+      tracks: [{ ...track, neteaseSongId: "2" }],
+      hasMore: false,
+      nextAddedOrder: 0,
+      nextSongId: "",
+    });
     await store.navigateFavorites(1);
-    expect(bridge.SearchLocalFavorites).toHaveBeenLastCalledWith("日本語", 200, 1000, track.neteaseSongId, expect.any(AbortSignal));
-    expect(store.getSnapshot().favorites.map(t => t.neteaseSongId)).toEqual(["2"]);
+    expect(bridge.SearchLocalFavorites).toHaveBeenLastCalledWith(
+      "日本語",
+      200,
+      1000,
+      track.neteaseSongId,
+      expect.any(AbortSignal),
+    );
+    expect(store.getSnapshot().favorites.map((t) => t.neteaseSongId)).toEqual(["2"]);
     await store.navigateFavorites(-1);
     expect(bridge.SearchLocalFavorites).toHaveBeenLastCalledWith("日本語", 200, 0, "", expect.any(AbortSignal));
   });
@@ -1164,12 +1295,19 @@ describe("SQLite library pages and lightweight membership", () => {
     await store.hydrate();
     const pending = deferred<import("./contracts").HistoryPage>();
     vi.mocked(bridge.SearchLocalHistory).mockReturnValueOnce(pending.promise);
-    const read = store.queryHistory("歌"); await Promise.resolve();
-    store.clearHistory(); await store.flush();
-    pending.resolve({ entries: [{ historyEntryId: "stale", track, playedAt: 1 }], hasMore: true }); await read;
+    const read = store.queryHistory("歌");
+    await Promise.resolve();
+    store.clearHistory();
+    await store.flush();
+    pending.resolve({ entries: [{ historyEntryId: "stale", track, playedAt: 1 }], hasMore: true });
+    await read;
     expect(store.getSnapshot().history).toEqual([]);
-    await store.play(); engine.emit("playing"); engine.currentTime = 600; engine.emit("timeupdate");
-    await store.flush(); await Promise.resolve();
+    await store.play();
+    engine.emit("playing");
+    engine.currentTime = 600;
+    engine.emit("timeupdate");
+    await store.flush();
+    await Promise.resolve();
     expect(bridge.SearchLocalHistory).toHaveBeenLastCalledWith("歌", 200, 0, "", expect.any(AbortSignal));
   });
 });
@@ -1181,16 +1319,30 @@ describe("local search keyword write ordering", () => {
     const pending = deferred<void>();
     const order: string[] = [];
     bridge.ListSearchHistory = vi.fn(async () => [...entries]);
-    bridge.RecordSearchQuery = vi.fn(async query => { order.push("record"); await pending.promise; entries.unshift({ query, searchedAt: 2 }); });
-    bridge.DeleteSearchQuery = vi.fn(async query => { order.push("delete"); entries = entries.filter(e => e.query !== query); });
-    bridge.ClearSearchHistory = vi.fn(async () => { order.push("clear"); entries = []; });
+    bridge.RecordSearchQuery = vi.fn(async (query) => {
+      order.push("record");
+      await pending.promise;
+      entries.unshift({ query, searchedAt: 2 });
+    });
+    bridge.DeleteSearchQuery = vi.fn(async (query) => {
+      order.push("delete");
+      entries = entries.filter((e) => e.query !== query);
+    });
+    bridge.ClearSearchHistory = vi.fn(async () => {
+      order.push("clear");
+      entries = [];
+    });
     await store.hydrate();
     expect(bridge.ListSearchHistory).toHaveBeenCalledWith(20);
     const gen = store.getSearchHistoryGeneration();
-    store.recordSearchQuery("新词", gen); await Promise.resolve(); await Promise.resolve();
-    store.deleteSearchQuery("旧词"); store.clearSearchHistory();
+    store.recordSearchQuery("新词", gen);
+    await Promise.resolve();
+    await Promise.resolve();
+    store.deleteSearchQuery("旧词");
+    store.clearSearchHistory();
     store.recordSearchQuery("迟到搜索", gen);
-    pending.resolve(); await store.flush();
+    pending.resolve();
+    await store.flush();
     expect(order).toEqual(["record", "delete", "clear"]);
     expect(store.getSnapshot().searchHistory).toEqual([]);
     expect(bridge.RecordSearchQuery).toHaveBeenCalledTimes(1);
@@ -1204,10 +1356,15 @@ describe("local search keyword write ordering", () => {
     store.recordSearchQuery("成功搜索", store.getSearchHistoryGeneration());
     store.beginClose();
     let flushed = false;
-    const flush = store.flush().then(() => { flushed = true; });
-    await Promise.resolve(); await Promise.resolve(); expect(flushed).toBe(false);
+    const flush = store.flush().then(() => {
+      flushed = true;
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(flushed).toBe(false);
     store.recordSearchQuery("退出后的响应", store.getSearchHistoryGeneration());
-    pending.resolve(); await flush;
+    pending.resolve();
+    await flush;
     expect(bridge.RecordSearchQuery).toHaveBeenCalledExactlyOnceWith("成功搜索");
   });
 });
@@ -1220,13 +1377,17 @@ it("coalesces cover resolution without mutating persisted metadata and evicts af
   bridge.ResolveCover = vi.fn(() => pending.promise);
   bridge.ClearResourceCache = async () => ({ removedCovers: 1, removedLyrics: 2 });
   await store.hydrate();
-  const first = store.resolveCover(original); const second = store.resolveCover(original);
+  const first = store.resolveCover(original);
+  const second = store.resolveCover(original);
   pending.resolve(artwork);
-  expect(await first).toBe(artwork); expect(await second).toBe(artwork);
+  expect(await first).toBe(artwork);
+  expect(await second).toBe(artwork);
   expect(bridge.ResolveCover).toHaveBeenCalledTimes(1);
-  store.add({ ...track, coverRef: original }); await store.flush();
+  store.add({ ...track, coverRef: original });
+  await store.flush();
   expect(vi.mocked(bridge.SaveQueue).mock.calls.at(-1)![0].entries[0].track.coverRef).toBe(original);
-  await store.clearResourceCache(); await store.resolveCover(original);
+  await store.clearResourceCache();
+  await store.resolveCover(original);
   expect(bridge.ResolveCover).toHaveBeenCalledTimes(2);
   store.setSettings({ resourceCache: { enabled: false, maxBytes: 1024 ** 3 } });
   await store.resolveCover(original);
@@ -1236,13 +1397,13 @@ it("coalesces cover resolution without mutating persisted metadata and evicts af
   expect(await store.resolveCover("https://p1.music.126.net/other.jpg")).toBe("https://p1.music.126.net/other.jpg");
 });
 
-
 it("drops runtime artwork references from snapshot persistence", async () => {
-  const { store, bridge } = setup(); await store.hydrate();
-  store.add({ ...track, coverRef: "/artwork/" + "a".repeat(64) }); await store.flush();
+  const { store, bridge } = setup();
+  await store.hydrate();
+  store.add({ ...track, coverRef: "/artwork/" + "a".repeat(64) });
+  await store.flush();
   expect(vi.mocked(bridge.SaveQueue).mock.calls.at(-1)![0].entries[0].track.coverRef).toBeUndefined();
 });
-
 
 it("resumes a cancelled page when its library view returns", async () => {
   const { store, bridge } = setup();
@@ -1251,16 +1412,24 @@ it("resumes a cancelled page when its library view returns", async () => {
   await store.hydrate();
   const pending = deferred<import("./contracts").FavoritePage>();
   vi.mocked(bridge.SearchLocalFavorites).mockReturnValueOnce(pending.promise);
-  const read = store.queryFavorites("歌"); await Promise.resolve();
+  const read = store.queryFavorites("歌");
+  await Promise.resolve();
   store.cancelLibraryQuery("favorites");
-  pending.resolve({ tracks: [track], hasMore: false, nextAddedOrder: 0, nextSongId: "" }); await read;
+  pending.resolve({ tracks: [track], hasMore: false, nextAddedOrder: 0, nextSongId: "" });
+  await read;
   expect(store.getSnapshot().favorites).toEqual([]);
-  vi.mocked(bridge.SearchLocalFavorites).mockResolvedValueOnce({ tracks: [track], hasMore: false, nextAddedOrder: 0, nextSongId: "" });
+  vi.mocked(bridge.SearchLocalFavorites).mockResolvedValueOnce({
+    tracks: [track],
+    hasMore: false,
+    nextAddedOrder: 0,
+    nextSongId: "",
+  });
   store.resumeLibraryQuery("favorites");
-  await Promise.resolve(); await Promise.resolve(); await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
   expect(store.getSnapshot().favorites).toEqual([track]);
 });
-
 
 it("recovers an LRU-evicted artwork once for shared consumers and keeps runtime URLs out of snapshots", async () => {
   const { store, bridge } = setup();
@@ -1269,14 +1438,19 @@ it("recovers an LRU-evicted artwork once for shared consumers and keeps runtime 
   const refreshed = "/artwork/" + "b".repeat(64);
   const pending = deferred<string>();
   bridge.ResolveCover = vi.fn().mockResolvedValueOnce(artwork).mockReturnValueOnce(pending.promise);
-  await store.hydrate(); expect(await store.resolveCover(original)).toBe(artwork);
-  const first = store.recoverCover(original, artwork); const second = store.recoverCover(original, artwork);
+  await store.hydrate();
+  expect(await store.resolveCover(original)).toBe(artwork);
+  const first = store.recoverCover(original, artwork);
+  const second = store.recoverCover(original, artwork);
   pending.resolve(refreshed);
-  expect(await first).toBe(refreshed); expect(await second).toBe(refreshed);
+  expect(await first).toBe(refreshed);
+  expect(await second).toBe(refreshed);
   expect(bridge.ResolveCover).toHaveBeenCalledTimes(2);
   expect(await store.recoverCover(original, artwork)).toBe(refreshed);
   expect(bridge.ResolveCover).toHaveBeenCalledTimes(2);
-  store.add({ ...track, coverRef: original }); store.toggleFavorite({ ...track, coverRef: original }); await store.flush();
+  store.add({ ...track, coverRef: original });
+  store.toggleFavorite({ ...track, coverRef: original });
+  await store.flush();
   expect(JSON.stringify(vi.mocked(bridge.SaveQueue).mock.calls)).not.toContain("/artwork/");
   expect(JSON.stringify(vi.mocked(bridge.SetLocalFavorite).mock.calls)).not.toContain("/artwork/");
   store.invalidateCover(original);
@@ -1297,55 +1471,91 @@ it("validates search inputs using UTF-8 bytes before calling SQLite", async () =
   expect(bridge.SearchLocalFavorites).toHaveBeenCalledTimes(count);
   expect(store.getSnapshot().libraryError).toContain("512");
   const gen = store.getSearchHistoryGeneration();
-  store.recordSearchQuery("😀".repeat(128), gen); store.recordSearchQuery("😀".repeat(129), gen); await store.flush();
+  store.recordSearchQuery("😀".repeat(128), gen);
+  store.recordSearchQuery("😀".repeat(129), gen);
+  await store.flush();
   expect(bridge.RecordSearchQuery).toHaveBeenCalledExactlyOnceWith("😀".repeat(128));
 });
-
 
 it("can recover the same deterministic artwork hash after a later independent eviction", async () => {
   const { store, bridge } = setup();
   const original = "https://p1.music.126.net/cover.jpg";
   const artwork = "/artwork/" + "a".repeat(64);
   bridge.ResolveCover = vi.fn(async () => artwork);
-  await store.hydrate(); await store.resolveCover(original);
+  await store.hydrate();
+  await store.resolveCover(original);
   await store.recoverCover(original, artwork);
   await store.recoverCover(original, artwork);
   expect(bridge.ResolveCover).toHaveBeenCalledTimes(3);
 });
 
-
 it("freezes page-three history navigation and query changes while clear is pending", async () => {
   const { store, bridge } = setup();
-  bridge.SearchLocalHistory = vi.fn(async (_query, _limit, playedAt) => ({ entries: [{ historyEntryId: `h${playedAt || 300}`, track, playedAt: (playedAt || 400) - 100 }], hasMore: true }));
+  bridge.SearchLocalHistory = vi.fn(async (_query, _limit, playedAt) => ({
+    entries: [{ historyEntryId: `h${playedAt || 300}`, track, playedAt: (playedAt || 400) - 100 }],
+    hasMore: true,
+  }));
   const clear = deferred<void>();
   bridge.ClearLocalHistory = vi.fn(() => clear.promise);
-  await store.hydrate(); await store.navigateHistory(1); await store.navigateHistory(1);
+  await store.hydrate();
+  await store.navigateHistory(1);
+  await store.navigateHistory(1);
   expect(store.getSnapshot().historyPage).toBe(3);
   const reads = vi.mocked(bridge.SearchLocalHistory).mock.calls.length;
-  store.clearHistory(); await Promise.resolve(); await Promise.resolve();
-  expect(store.getSnapshot()).toMatchObject({ historyPage: 1, historyLoading: true, historyClearing: true, historyHasMore: false });
-  await store.navigateHistory(-1); await store.navigateHistory(1); await store.queryHistory("清空期间查询");
+  store.clearHistory();
+  await Promise.resolve();
+  await Promise.resolve();
+  expect(store.getSnapshot()).toMatchObject({
+    historyPage: 1,
+    historyLoading: true,
+    historyClearing: true,
+    historyHasMore: false,
+  });
+  await store.navigateHistory(-1);
+  await store.navigateHistory(1);
+  await store.queryHistory("清空期间查询");
   store.clearHistory();
   expect(bridge.SearchLocalHistory).toHaveBeenCalledTimes(reads);
   expect(bridge.ClearLocalHistory).toHaveBeenCalledTimes(1);
   expect(store.getSnapshot().historyQuery).toBe("");
-  clear.resolve(); await store.flush();
-  expect(store.getSnapshot()).toMatchObject({ history: [], historyPage: 1, historyLoading: false, historyClearing: false, historyHasMore: false, libraryError: "" });
+  clear.resolve();
+  await store.flush();
+  expect(store.getSnapshot()).toMatchObject({
+    history: [],
+    historyPage: 1,
+    historyLoading: false,
+    historyClearing: false,
+    historyHasMore: false,
+    libraryError: "",
+  });
   await store.navigateHistory(-1);
   expect(bridge.SearchLocalHistory).toHaveBeenCalledTimes(reads);
   await store.queryHistory("清空后查询");
   expect(bridge.SearchLocalHistory).toHaveBeenLastCalledWith("清空后查询", 200, 0, "", expect.any(AbortSignal));
 });
 
-
 it("restores the previous stable history page if clearing fails", async () => {
   const { store, bridge } = setup();
-  bridge.SearchLocalHistory = vi.fn(async (_query, _limit, playedAt) => ({ entries: [{ historyEntryId: `h${playedAt || 300}`, track, playedAt: (playedAt || 400) - 100 }], hasMore: true }));
-  bridge.ClearLocalHistory = vi.fn(async () => { throw new Error("storage unavailable"); });
-  await store.hydrate(); await store.navigateHistory(1); await store.navigateHistory(1);
+  bridge.SearchLocalHistory = vi.fn(async (_query, _limit, playedAt) => ({
+    entries: [{ historyEntryId: `h${playedAt || 300}`, track, playedAt: (playedAt || 400) - 100 }],
+    hasMore: true,
+  }));
+  bridge.ClearLocalHistory = vi.fn(async () => {
+    throw new Error("storage unavailable");
+  });
+  await store.hydrate();
+  await store.navigateHistory(1);
+  await store.navigateHistory(1);
   const previous = store.getSnapshot().history;
-  store.clearHistory(); await store.flush();
-  expect(store.getSnapshot()).toMatchObject({ history: previous, historyPage: 3, historyHasMore: true, historyLoading: false, historyClearing: false });
+  store.clearHistory();
+  await store.flush();
+  expect(store.getSnapshot()).toMatchObject({
+    history: previous,
+    historyPage: 3,
+    historyHasMore: true,
+    historyLoading: false,
+    historyClearing: false,
+  });
   expect(store.getSnapshot().libraryError).toContain("清除失败");
   await store.navigateHistory(-1);
   expect(store.getSnapshot().historyPage).toBe(2);
@@ -1354,10 +1564,14 @@ it("restores the previous stable history page if clearing fails", async () => {
 
 it("retries all library hydration before enabling writes", async () => {
   const { store, bridge } = setup();
-  const ids = bridge.GetLocalFavoriteIDs = vi.fn().mockRejectedValueOnce(new Error("offline")).mockResolvedValue([track.neteaseSongId]);
+  const ids = (bridge.GetLocalFavoriteIDs = vi
+    .fn()
+    .mockRejectedValueOnce(new Error("offline"))
+    .mockResolvedValue([track.neteaseSongId]));
   await store.hydrate();
   expect(store.getSnapshot().libraryReady).toBe(false);
-  store.toggleFavorite(track); await store.flush();
+  store.toggleFavorite(track);
+  await store.flush();
   expect(bridge.SetLocalFavorite).not.toHaveBeenCalled();
   await store.retryLibrary("favorites");
   expect(ids).toHaveBeenCalledTimes(2);
@@ -1368,100 +1582,184 @@ it("retries all library hydration before enabling writes", async () => {
 it("favorite writes retain filtered page and rendered rows while refreshing its cursor", async () => {
   const { store, bridge } = setup();
   bridge.GetLocalFavoriteIDs = vi.fn(async () => [track.neteaseSongId]);
-  bridge.SearchLocalFavorites = vi.fn(async (_query, _limit, order) => ({ tracks: [track], hasMore: true, nextAddedOrder: order + 1, nextSongId: track.neteaseSongId }));
-  await store.hydrate(); await store.queryFavorites("test"); await store.navigateFavorites(1);
-  const pages: number[] = [], counts: number[] = [];
-  const stop = store.subscribe(() => { pages.push(store.getSnapshot().favoritesPage); counts.push(store.getSnapshot().favorites.length); });
+  bridge.SearchLocalFavorites = vi.fn(async (_query, _limit, order) => ({
+    tracks: [track],
+    hasMore: true,
+    nextAddedOrder: order + 1,
+    nextSongId: track.neteaseSongId,
+  }));
+  await store.hydrate();
+  await store.queryFavorites("test");
+  await store.navigateFavorites(1);
+  const pages: number[] = [],
+    counts: number[] = [];
+  const stop = store.subscribe(() => {
+    pages.push(store.getSnapshot().favoritesPage);
+    counts.push(store.getSnapshot().favorites.length);
+  });
   store.toggleFavorite({ ...track, neteaseSongId: "999" });
-  await store.flush(); await new Promise(resolve => setTimeout(resolve, 0));
-  expect(pages.every(page => page === 2)).toBe(true);
-  expect(counts.every(count => count > 0)).toBe(true);
-  expect(vi.mocked(bridge.SearchLocalFavorites).mock.calls.at(-1)?.slice(0, 4)).toEqual(["test", 200, 1, track.neteaseSongId]);
+  await store.flush();
+  await new Promise((resolve) => setTimeout(resolve, 0));
+  expect(pages.every((page) => page === 2)).toBe(true);
+  expect(counts.every((count) => count > 0)).toBe(true);
+  expect(vi.mocked(bridge.SearchLocalFavorites).mock.calls.at(-1)?.slice(0, 4)).toEqual([
+    "test",
+    200,
+    1,
+    track.neteaseSongId,
+  ]);
   stop();
 });
 it("coalesces slider seeks, flushes the old track on switch and keeps revision order", async () => {
   vi.useFakeTimers();
   try {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
-    await store.hydrate(); await store.play(); engine.emit("playing");
+    await store.hydrate();
+    await store.play();
+    engine.emit("playing");
     for (let i = 1; i <= 50; i++) store.seek(i * 1000);
-    await Promise.resolve(); await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
     expect(engine.seek).toHaveBeenCalledTimes(50);
     expect(bridge.SaveQueue).not.toHaveBeenCalled();
     await vi.advanceTimersByTimeAsync(250);
     expect(bridge.SaveQueue).toHaveBeenCalledTimes(1);
-    expect(vi.mocked(bridge.SaveQueue).mock.calls[0][0]).toMatchObject({ currentEntryId: "old-entry", positionMs: 50000, revision: 9 });
-    store.seek(51000); store.add(track);
+    expect(vi.mocked(bridge.SaveQueue).mock.calls[0][0]).toMatchObject({
+      currentEntryId: "old-entry",
+      positionMs: 50000,
+      revision: 9,
+    });
+    store.seek(51000);
+    store.add(track);
     const other = store.getSnapshot().queue.entries[1].queueEntryId;
-    await store.select(other); await store.flush();
+    await store.select(other);
+    await store.flush();
     const calls = vi.mocked(bridge.SaveQueue).mock.calls.map(([q]) => q);
-    expect(calls.some(q => q.currentEntryId === "old-entry" && q.positionMs === 51000)).toBe(true);
+    expect(calls.some((q) => q.currentEntryId === "old-entry" && q.positionMs === 51000)).toBe(true);
     expect(calls.at(-1)?.currentEntryId).toBe(other);
-    expect(calls.map(q => q.revision)).toEqual([...new Set(calls.map(q => q.revision))].sort((a,b) => a-b));
+    expect(calls.map((q) => q.revision)).toEqual([...new Set(calls.map((q) => q.revision))].sort((a, b) => a - b));
     store.dispose();
-  } finally { vi.useRealTimers(); }
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("recording listened audio keeps the history filter, page and rows", async () => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
-  bridge.SearchLocalHistory = vi.fn(async (_q, _n, before) => ({ entries: [{ historyEntryId: before ? "older" : "first", track, playedAt: before ? 50 : 100 }], hasMore: true }));
-  await store.hydrate(); await store.queryHistory("filter"); await store.navigateHistory(1);
+  bridge.SearchLocalHistory = vi.fn(async (_q, _n, before) => ({
+    entries: [{ historyEntryId: before ? "older" : "first", track, playedAt: before ? 50 : 100 }],
+    hasMore: true,
+  }));
+  await store.hydrate();
+  await store.queryHistory("filter");
+  await store.navigateHistory(1);
   const snapshots: ReturnType<PlayerStore["getSnapshot"]>[] = [];
   const stop = store.subscribe(() => snapshots.push(store.getSnapshot()));
-  await store.play(); engine.emit("playing"); engine.currentTime = 600; engine.emit("timeupdate");
-  await store.flush(); await new Promise(resolve => setTimeout(resolve, 0));
+  await store.play();
+  engine.emit("playing");
+  engine.currentTime = 600;
+  engine.emit("timeupdate");
+  await store.flush();
+  await new Promise((resolve) => setTimeout(resolve, 0));
   expect(bridge.AddLocalHistory).toHaveBeenCalledOnce();
-  expect(snapshots.every(s => s.historyPage === 2 && s.historyQuery === "filter" && s.history[0]?.historyEntryId === "older")).toBe(true);
-  expect(vi.mocked(bridge.SearchLocalHistory).mock.calls.at(-1)?.slice(0,4)).toEqual(["filter", 200, 100, "first"]);
-  stop(); store.dispose();
+  expect(
+    snapshots.every(
+      (s) => s.historyPage === 2 && s.historyQuery === "filter" && s.history[0]?.historyEntryId === "older",
+    ),
+  ).toBe(true);
+  expect(vi.mocked(bridge.SearchLocalHistory).mock.calls.at(-1)?.slice(0, 4)).toEqual(["filter", 200, 100, "first"]);
+  stop();
+  store.dispose();
 });
 it("deleting the final favorite on a page backs up to a valid cursor without clearing rows", async () => {
   const { store, bridge } = setup();
   let removed = false;
   bridge.GetLocalFavoriteIDs = vi.fn(async () => [track.neteaseSongId]);
-  bridge.SetLocalFavorite = vi.fn(async () => { removed = true; });
-  bridge.SearchLocalFavorites = vi.fn(async (_q, _n, order) => ({ tracks: removed && order ? [] : [track], hasMore: !removed, nextAddedOrder: 1, nextSongId: track.neteaseSongId }));
-  await store.hydrate(); await store.navigateFavorites(1);
-  const counts: number[] = []; const stop = store.subscribe(() => counts.push(store.getSnapshot().favorites.length));
-  store.toggleFavorite(track); await store.flush(); await new Promise(resolve => setTimeout(resolve, 0));
+  bridge.SetLocalFavorite = vi.fn(async () => {
+    removed = true;
+  });
+  bridge.SearchLocalFavorites = vi.fn(async (_q, _n, order) => ({
+    tracks: removed && order ? [] : [track],
+    hasMore: !removed,
+    nextAddedOrder: 1,
+    nextSongId: track.neteaseSongId,
+  }));
+  await store.hydrate();
+  await store.navigateFavorites(1);
+  const counts: number[] = [];
+  const stop = store.subscribe(() => counts.push(store.getSnapshot().favorites.length));
+  store.toggleFavorite(track);
+  await store.flush();
+  await new Promise((resolve) => setTimeout(resolve, 0));
   expect(store.getSnapshot()).toMatchObject({ favoritesPage: 1, favoritesHasMore: false });
-  expect(counts.every(n => n === 1)).toBe(true);
-  expect(vi.mocked(bridge.SearchLocalFavorites).mock.calls.slice(-2).map(c => c[2])).toEqual([1, 0]);
+  expect(counts.every((n) => n === 1)).toBe(true);
+  expect(
+    vi
+      .mocked(bridge.SearchLocalFavorites)
+      .mock.calls.slice(-2)
+      .map((c) => c[2]),
+  ).toEqual([1, 0]);
   stop();
 });
-it.each(["pause", "beginClose"] as const)("%s flushes the latest seek before its trailing timer", async command => {
+it.each(["pause", "beginClose"] as const)("%s flushes the latest seek before its trailing timer", async (command) => {
   vi.useFakeTimers();
   try {
     const { store, bridge, engine } = setup(Promise.resolve(saved));
-    await store.hydrate(); await store.play(); engine.emit("playing");
-    store.seek(45678); store[command](); await store.flush();
-    expect(vi.mocked(bridge.SaveQueue).mock.calls.at(-1)?.[0]).toMatchObject({ currentEntryId: "old-entry", positionMs: 45678 });
+    await store.hydrate();
+    await store.play();
+    engine.emit("playing");
+    store.seek(45678);
+    store[command]();
+    await store.flush();
+    expect(vi.mocked(bridge.SaveQueue).mock.calls.at(-1)?.[0]).toMatchObject({
+      currentEntryId: "old-entry",
+      positionMs: 45678,
+    });
     const count = vi.mocked(bridge.SaveQueue).mock.calls.length;
     await vi.advanceTimersByTimeAsync(1000);
     expect(bridge.SaveQueue).toHaveBeenCalledTimes(count);
     store.dispose();
-  } finally { vi.useRealTimers(); }
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
-it.each(["ids", "favorites", "history"] as const)("keeps library writes disabled until every retried %s read succeeds", async failed => {
-  const { store, bridge } = setup();
-  const ids = bridge.GetLocalFavoriteIDs = vi.fn(async () => [track.neteaseSongId]);
-  const favorites = bridge.SearchLocalFavorites = vi.fn(async () => ({ tracks: [track], hasMore: false, nextAddedOrder: 0, nextSongId: "" }));
-  const history = bridge.SearchLocalHistory = vi.fn(async () => ({ entries: [{ historyEntryId: "prior", track, playedAt: 1 }], hasMore: false }));
-  const failing = { ids, favorites, history }[failed];
-  failing.mockRejectedValueOnce(new Error("unavailable")).mockRejectedValueOnce(new Error("still unavailable"));
-  await store.hydrate(); await store.retryLibrary("history");
-  expect(store.getSnapshot().libraryReady).toBe(false);
-  expect(store.getSnapshot().libraryError).not.toBe("");
-  if(failed!=="ids")expect(ids).not.toHaveBeenCalled();
-  store.toggleFavorite(track); store.clearHistory(); await store.flush();
-  expect(bridge.SetLocalFavorite).not.toHaveBeenCalled(); expect(bridge.ClearLocalHistory).not.toHaveBeenCalled();
-  await store.retryLibrary("history");
-  expect(store.getSnapshot()).toMatchObject({ libraryReady: true, libraryError: "", favorites: [track] });
-  expect(store.getSnapshot().history[0].historyEntryId).toBe("prior");
-  expect(store.isFavorite(track)).toBe(true);
-  expect(ids).toHaveBeenCalledTimes(failed==="ids"?3:1); expect(favorites).toHaveBeenCalledTimes(3); expect(history).toHaveBeenCalledTimes(3);
-});
+it.each(["ids", "favorites", "history"] as const)(
+  "keeps library writes disabled until every retried %s read succeeds",
+  async (failed) => {
+    const { store, bridge } = setup();
+    const ids = (bridge.GetLocalFavoriteIDs = vi.fn(async () => [track.neteaseSongId]));
+    const favorites = (bridge.SearchLocalFavorites = vi.fn(async () => ({
+      tracks: [track],
+      hasMore: false,
+      nextAddedOrder: 0,
+      nextSongId: "",
+    })));
+    const history = (bridge.SearchLocalHistory = vi.fn(async () => ({
+      entries: [{ historyEntryId: "prior", track, playedAt: 1 }],
+      hasMore: false,
+    })));
+    const failing = { ids, favorites, history }[failed];
+    failing.mockRejectedValueOnce(new Error("unavailable")).mockRejectedValueOnce(new Error("still unavailable"));
+    await store.hydrate();
+    await store.retryLibrary("history");
+    expect(store.getSnapshot().libraryReady).toBe(false);
+    expect(store.getSnapshot().libraryError).not.toBe("");
+    if (failed !== "ids") expect(ids).not.toHaveBeenCalled();
+    store.toggleFavorite(track);
+    store.clearHistory();
+    await store.flush();
+    expect(bridge.SetLocalFavorite).not.toHaveBeenCalled();
+    expect(bridge.ClearLocalHistory).not.toHaveBeenCalled();
+    await store.retryLibrary("history");
+    expect(store.getSnapshot()).toMatchObject({ libraryReady: true, libraryError: "", favorites: [track] });
+    expect(store.getSnapshot().history[0].historyEntryId).toBe("prior");
+    expect(store.isFavorite(track)).toBe(true);
+    expect(ids).toHaveBeenCalledTimes(failed === "ids" ? 3 : 1);
+    expect(favorites).toHaveBeenCalledTimes(3);
+    expect(history).toHaveBeenCalledTimes(3);
+  },
+);
 
 it.each([
   ["GD_BUDGET_EXHAUSTED", "GD 备用音源解析时间已用尽，请稍后重试。"],
@@ -1469,15 +1767,21 @@ it.each([
 ])("translates a rejected %s resolution into a fixed user message", async (code, message) => {
   const { store, bridge, engine } = setup(Promise.resolve(saved));
   vi.mocked(bridge.ResolveStream).mockRejectedValueOnce(new Error(code));
-  await store.hydrate(); await store.play();
+  await store.hydrate();
+  await store.play();
   expect(store.getSnapshot()).toMatchObject({ playback: "paused", error: message });
   expect(engine.setSource).not.toHaveBeenCalled();
 });
 it("does not expose arbitrary or code-prefixed Wails rejection payloads", async () => {
-  for (const raw of ["GD_BUDGET_EXHAUSTED https://secret.example/?token=private", "cookies=private", "GD_RATE_LIMITED: private"]) {
+  for (const raw of [
+    "GD_BUDGET_EXHAUSTED https://secret.example/?token=private",
+    "cookies=private",
+    "GD_RATE_LIMITED: private",
+  ]) {
     const { store, bridge } = setup(Promise.resolve(saved));
     vi.mocked(bridge.ResolveStream).mockRejectedValueOnce(new Error(raw));
-    await store.hydrate(); await store.play();
+    await store.hydrate();
+    await store.play();
     expect(store.getSnapshot().error).toBe("播放失败，请重试或选择其他歌曲。");
     expect(store.getSnapshot().error).not.toContain(raw);
   }
@@ -1497,14 +1801,31 @@ it("global region polling never requests settings-only cache statistics", async 
 it("settings exit and reentry serialize actual cache reads and discard retired store updates", async () => {
   vi.useFakeTimers();
   const { store, bridge } = setup();
-  const audio = (usedBytes: number) => ({ available: true, enabled: true, maxBytes: 1000, usedBytes, cachedTracks: 1, activeDownloads: 0 });
-  const resources = (usedBytes: number) => ({ available: true, enabled: true, maxBytes: 1000, usedBytes, cachedCovers: 1, cachedLyrics: 1 });
+  const audio = (usedBytes: number) => ({
+    available: true,
+    enabled: true,
+    maxBytes: 1000,
+    usedBytes,
+    cachedTracks: 1,
+    activeDownloads: 0,
+  });
+  const resources = (usedBytes: number) => ({
+    available: true,
+    enabled: true,
+    maxBytes: 1000,
+    usedBytes,
+    cachedCovers: 1,
+    cachedLyrics: 1,
+  });
   const oldAudio = deferred<ReturnType<typeof audio>>();
   const oldResources = deferred<ReturnType<typeof resources>>();
   const nextAudio = deferred<ReturnType<typeof audio>>();
   const nextResources = deferred<ReturnType<typeof resources>>();
   bridge.GetAudioCacheStats = vi.fn().mockReturnValueOnce(oldAudio.promise).mockReturnValueOnce(nextAudio.promise);
-  bridge.GetResourceCacheStats = vi.fn().mockReturnValueOnce(oldResources.promise).mockReturnValueOnce(nextResources.promise);
+  bridge.GetResourceCacheStats = vi
+    .fn()
+    .mockReturnValueOnce(oldResources.promise)
+    .mockReturnValueOnce(nextResources.promise);
   let stop = () => {};
   try {
     stop = startSettingsCachePolling(store);
@@ -1527,13 +1848,30 @@ it("settings exit and reentry serialize actual cache reads and discard retired s
     expect(store.getSnapshot().resourceCacheStats).toBeNull();
     expect(bridge.GetAudioCacheStats).toHaveBeenCalledTimes(2);
     expect(vi.getTimerCount()).toBe(0);
-  } finally { stop(); vi.useRealTimers(); }
+  } finally {
+    stop();
+    vi.useRealTimers();
+  }
 });
 
 it("newer manual cache refreshes survive stale in-flight settings results", async () => {
   const { store, bridge } = setup();
-  const audio = (usedBytes: number) => ({ available: true, enabled: true, maxBytes: 1000, usedBytes, cachedTracks: 1, activeDownloads: 0 });
-  const resources = (usedBytes: number) => ({ available: true, enabled: true, maxBytes: 1000, usedBytes, cachedCovers: 1, cachedLyrics: 1 });
+  const audio = (usedBytes: number) => ({
+    available: true,
+    enabled: true,
+    maxBytes: 1000,
+    usedBytes,
+    cachedTracks: 1,
+    activeDownloads: 0,
+  });
+  const resources = (usedBytes: number) => ({
+    available: true,
+    enabled: true,
+    maxBytes: 1000,
+    usedBytes,
+    cachedCovers: 1,
+    cachedLyrics: 1,
+  });
   const oldAudio = deferred<ReturnType<typeof audio>>();
   const oldResources = deferred<ReturnType<typeof resources>>();
   bridge.GetAudioCacheStats = vi.fn().mockReturnValueOnce(oldAudio.promise).mockResolvedValue(audio(200));
@@ -1548,5 +1886,7 @@ it("newer manual cache refreshes survive stale in-flight settings results", asyn
     await Promise.resolve();
     expect(store.getSnapshot().cacheStats?.usedBytes).toBe(200);
     expect(store.getSnapshot().resourceCacheStats?.usedBytes).toBe(200);
-  } finally { stop(); }
+  } finally {
+    stop();
+  }
 });

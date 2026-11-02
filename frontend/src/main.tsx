@@ -22,17 +22,29 @@ if (role === "unknown") {
   const store = new PlayerStore(desktopBridge, new AudioEngine());
   const stopDesktop = bindDesktopPublisher(store, desktopBridge, Events);
   const stopMediaSession = bindMediaSession(store);
-  const stopPlayerCommands = Events.On("otoneigo:player-command", event => {
+  const stopPlayerCommands = Events.On("otoneigo:player-command", (event) => {
     if (event.data === "toggle-lyrics-lock") toggleDesktopSetting(store, "lyricsLocked");
     else playerCommand(store, event.data);
   });
-  window.addEventListener("pagehide", () => { stopDesktop(); stopMediaSession(); stopPlayerCommands(); }, { once: true });
+  window.addEventListener(
+    "pagehide",
+    () => {
+      stopDesktop();
+      stopMediaSession();
+      stopPlayerCommands();
+    },
+    { once: true },
+  );
   const prepareClose = createCloseHandler(
     store,
-    () => { root.inert = true; },
+    () => {
+      root.inert = true;
+    },
     (token) => Events.Emit("otoneigo:close-ready", token),
   );
-  Events.On("otoneigo:prepare-close", (event) => { void prepareClose(event.data); });
+  Events.On("otoneigo:prepare-close", (event) => {
+    void prepareClose(event.data);
+  });
   createRoot(root).render(
     <PlayerProvider store={store}>
       <App bridge={desktopBridge} />

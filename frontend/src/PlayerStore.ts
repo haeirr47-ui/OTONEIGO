@@ -1,4 +1,10 @@
-import { normalizeAudioCache, normalizeResourceCache, fromResolvedCover, validRemoteCover, validateStreamURL } from "./wire";
+import {
+  normalizeAudioCache,
+  normalizeResourceCache,
+  fromResolvedCover,
+  validRemoteCover,
+  validateStreamURL,
+} from "./wire";
 import type { AudioCacheStats, ResourceCacheStats, SearchHistoryEntry } from "./contracts";
 import { PlaylistStore } from "./PlaylistStore";
 import { normalizeDesktopSettings } from "./desktopWire";
@@ -53,7 +59,12 @@ export interface PlayerState {
   regionError: string;
   capabilities: Capabilities | null;
 }
-const historySnapshot = (entry: HistoryEntry): HistoryEntry => ({ historyEntryId: entry.historyEntryId, track: trackSnapshot(entry.track), playedAt: entry.playedAt, listenedMs: entry.listenedMs });
+const historySnapshot = (entry: HistoryEntry): HistoryEntry => ({
+  historyEntryId: entry.historyEntryId,
+  track: trackSnapshot(entry.track),
+  playedAt: entry.playedAt,
+  listenedMs: entry.listenedMs,
+});
 const emptyQueue = (): QueueSnapshot => ({
   entries: [],
   currentEntryId: null,
@@ -64,10 +75,22 @@ const emptyQueue = (): QueueSnapshot => ({
 });
 export class PlayerStore {
   private state: PlayerState = {
-    resourceCacheStats: null, resourceCacheMessage: "", coverRevision: 0,
-    searchHistory: [], searchHistoryError: "", favoritesHasMore: false, favoritesLoading: false,
-    favoritesPage: 1, historyPage: 1, favoritesQuery: "", historyQuery: "",
-    cacheStats: null, cacheMessage: "", historyHasMore: false, historyLoading: false, historyClearing: false,
+    resourceCacheStats: null,
+    resourceCacheMessage: "",
+    coverRevision: 0,
+    searchHistory: [],
+    searchHistoryError: "",
+    favoritesHasMore: false,
+    favoritesLoading: false,
+    favoritesPage: 1,
+    historyPage: 1,
+    favoritesQuery: "",
+    historyQuery: "",
+    cacheStats: null,
+    cacheMessage: "",
+    historyHasMore: false,
+    historyLoading: false,
+    historyClearing: false,
     queue: emptyQueue(),
     hydration: "loading",
     playback: "paused",
@@ -142,8 +165,7 @@ export class PlayerStore {
         }
       }),
       engine.on("waiting", () => {
-        if (this.state.playback === "playing")
-          this.patch({ playback: "loading" });
+        if (this.state.playback === "playing") this.patch({ playback: "loading" });
       }),
       engine.on("timeupdate", () => this.progress()),
       engine.on("ended", () => {
@@ -152,9 +174,16 @@ export class PlayerStore {
         const track = this.state.queue.entries[this.state.queue.currentIndex]?.track;
         const expected = Math.max(stream?.durationMs || 0, track?.durationMs || 0);
         const position = this.engine.currentTime;
-        if (this.sourceToken && stream?.cacheToken === this.sourceToken && stream.status === "full" &&
-            Number.isFinite(expected) && expected > 0 && Number.isFinite(position) && position >= 0 &&
-            expected - position > Math.max(2000, expected * 0.02)) {
+        if (
+          this.sourceToken &&
+          stream?.cacheToken === this.sourceToken &&
+          stream.status === "full" &&
+          Number.isFinite(expected) &&
+          expected > 0 &&
+          Number.isFinite(position) &&
+          position >= 0 &&
+          expected - position > Math.max(2000, expected * 0.02)
+        ) {
           this.failPlayback("缓存音频提前结束，已将本次缓存标记为无效。请重新播放。");
           return;
         }
@@ -175,7 +204,8 @@ export class PlayerStore {
   isClosing = () => this.closing;
   // Read the one existing executor. Pending startup retains the restored queue position.
   getPlaybackPosition = () => {
-    const position = this.state.playback === "paused" || this.starting ? this.state.queue.positionMs : this.engine.currentTime;
+    const position =
+      this.state.playback === "paused" || this.starting ? this.state.queue.positionMs : this.engine.currentTime;
     return Number.isFinite(position) ? Math.max(0, Math.min(86400000, Math.round(position))) : 0;
   };
   beginClose() {
@@ -185,7 +215,9 @@ export class PlayerStore {
   }
   private patch(patch: Partial<PlayerState>) {
     this.state = { ...this.state, ...patch };
-    this.listeners.forEach((fn) => fn());
+    this.listeners.forEach((fn) => {
+      fn();
+    });
   }
   hydrate() {
     if (this.hydrationPromise) return this.hydrationPromise;
@@ -207,15 +239,18 @@ export class PlayerStore {
       .catch(() => {
         this.patch({
           hydration: "failed",
-          error:
-            "播放队列读取失败。为保护已有队列，暂时无法修改；请重新启动后重试。",
+          error: "播放队列读取失败。为保护已有队列，暂时无法修改；请重新启动后重试。",
         });
       });
     const policyLoad = Promise.resolve()
       .then(() => this.bridge.GetPlaybackQualityPolicy())
-      .catch((): PlaybackQualityPolicy => ({
-        premiumAllowed: false, selectableQualities: ["exhigh"], maxBitrate: 320000,
-      }));
+      .catch(
+        (): PlaybackQualityPolicy => ({
+          premiumAllowed: false,
+          selectableQualities: ["exhigh"],
+          maxBitrate: 320000,
+        }),
+      );
     const settingsLoad = Promise.all([this.bridge.GetSettings(), policyLoad])
       .then(([saved, qualityPolicy]) => {
         const settings = this.normalizeSettings(saved, qualityPolicy);
@@ -224,8 +259,7 @@ export class PlayerStore {
       })
       .catch(() =>
         this.patch({
-          settingsError:
-            "设置读取失败，请重新启动后重试。为保护已保存的设置，暂时无法播放或修改设置。",
+          settingsError: "设置读取失败，请重新启动后重试。为保护已保存的设置，暂时无法播放或修改设置。",
         }),
       );
     const libraryLoad = this.loadLibrary();
@@ -247,25 +281,37 @@ export class PlayerStore {
   }
   private loadLibrary() {
     if (this.libraryHydration) return this.libraryHydration;
-    this.libraryHydration = Promise.all([
-      this.fetchFavoritePage("", 0, ""), this.fetchHistoryPage("", 0, ""),
-    ]).then(async ([favorites, history]) => {
-      // Page reads may quarantine damaged rows. Read membership afterwards so
-      // the initial heart state cannot retain IDs removed by that recovery.
-      const ids = this.bridge.GetLocalFavoriteIDs ? await this.bridge.GetLocalFavoriteIDs() : (await this.bridge.GetLocalFavorites()).map(t => t.neteaseSongId);
-      this.favoriteIDs = new Set(ids);
-      this.favoriteNext = { order: favorites.nextAddedOrder, id: favorites.nextSongId };
-      this.historyCursor = history.entries.at(-1);
-      this.patch({ favorites: favorites.tracks.map(trackSnapshot), favoritesHasMore: favorites.hasMore,
-        history: history.entries.map(historySnapshot), historyHasMore: history.hasMore, libraryReady: true, libraryError: "" });
-    }).catch(() => this.patch({ libraryError: "本地音乐资料读取失败，请重试。" }));
-    void this.libraryHydration.finally(() => { this.libraryHydration = undefined; });
+    this.libraryHydration = Promise.all([this.fetchFavoritePage("", 0, ""), this.fetchHistoryPage("", 0, "")])
+      .then(async ([favorites, history]) => {
+        // Page reads may quarantine damaged rows. Read membership afterwards so
+        // the initial heart state cannot retain IDs removed by that recovery.
+        const ids = this.bridge.GetLocalFavoriteIDs
+          ? await this.bridge.GetLocalFavoriteIDs()
+          : (await this.bridge.GetLocalFavorites()).map((t) => t.neteaseSongId);
+        this.favoriteIDs = new Set(ids);
+        this.favoriteNext = { order: favorites.nextAddedOrder, id: favorites.nextSongId };
+        this.historyCursor = history.entries.at(-1);
+        this.patch({
+          favorites: favorites.tracks.map(trackSnapshot),
+          favoritesHasMore: favorites.hasMore,
+          history: history.entries.map(historySnapshot),
+          historyHasMore: history.hasMore,
+          libraryReady: true,
+          libraryError: "",
+        });
+      })
+      .catch(() => this.patch({ libraryError: "本地音乐资料读取失败，请重试。" }));
+    void this.libraryHydration.finally(() => {
+      this.libraryHydration = undefined;
+    });
     return this.libraryHydration;
   }
   retryLibrary(kind: "favorites" | "history") {
     if (this.closing) return Promise.resolve();
     if (!this.state.libraryReady) return this.loadLibrary();
-    return kind === "favorites" ? this.readFavorites(this.state.favoritesPage, true) : this.readHistory(this.state.historyPage, true);
+    return kind === "favorites"
+      ? this.readFavorites(this.state.favoritesPage, true)
+      : this.readHistory(this.state.historyPage, true);
   }
   private flushSeek() {
     if (this.seekTimer === undefined) return;
@@ -276,10 +322,7 @@ export class PlayerStore {
       ...queue,
       // Wails decodes this field into Go int64; HTML media times can be fractional.
       positionMs: Number.isFinite(queue.positionMs)
-        ? Math.max(
-            0,
-            Math.min(Number.MAX_SAFE_INTEGER, Math.round(queue.positionMs)),
-          )
+        ? Math.max(0, Math.min(Number.MAX_SAFE_INTEGER, Math.round(queue.positionMs)))
         : 0,
       revision: this.state.queue.revision + 1,
       entries: queue.entries.map((e) => ({
@@ -295,8 +338,10 @@ export class PlayerStore {
     }
     // Match encoding/json.Marshal's HTML and JavaScript-separator escaping before UTF-8 counting.
     // Pick and normalize exactly the same metadata that commit sends to native persistence.
-    const json = JSON.stringify(this.queueSnapshot(queue)).replace(/[<>&\u2028\u2029]/g,
-      character => "\\u" + character.charCodeAt(0).toString(16).padStart(4, "0"));
+    const json = JSON.stringify(this.queueSnapshot(queue)).replace(
+      /[<>&\u2028\u2029]/g,
+      (character) => "\\u" + character.charCodeAt(0).toString(16).padStart(4, "0"),
+    );
     if (new TextEncoder().encode(json).length > 2 * 1024 * 1024) {
       this.patch({ error: "播放队列资料容量已满，请先移除部分歌曲。" });
       return false;
@@ -313,13 +358,18 @@ export class PlayerStore {
       .catch(() => {})
       .then(() => this.bridge.SaveQueue(snapshot))
       .then(() => this.patch({ saveError: "" }))
-      .catch(() =>
-        this.patch({ saveError: "队列保存失败，最近的更改可能尚未保存。" }),
-      );
+      .catch(() => this.patch({ saveError: "队列保存失败，最近的更改可能尚未保存。" }));
   }
   flush() {
     this.flushSeek();
-    return Promise.all([this.saves, this.settingsSaves, this.librarySaves, this.searchHistorySaves, this.playlists.flush(), ...this.sourceReleases]);
+    return Promise.all([
+      this.saves,
+      this.settingsSaves,
+      this.librarySaves,
+      this.searchHistorySaves,
+      this.playlists.flush(),
+      ...this.sourceReleases,
+    ]);
   }
   add(track: TrackSnapshot) {
     if (this.closing) return null;
@@ -344,11 +394,14 @@ export class PlayerStore {
       this.patch({ error: "播放队列最多容纳 1000 首歌曲，请先移除部分歌曲。" });
       return false;
     }
-    const added = tracks.map(track => ({ queueEntryId: crypto.randomUUID(), track: trackSnapshot(track) }));
-    const next = { ...q, entries: replace ? added : [...q.entries, ...added],
-      currentEntryId: replace ? added[0].queueEntryId : q.currentEntryId ?? added[0].queueEntryId,
+    const added = tracks.map((track) => ({ queueEntryId: crypto.randomUUID(), track: trackSnapshot(track) }));
+    const next = {
+      ...q,
+      entries: replace ? added : [...q.entries, ...added],
+      currentEntryId: replace ? added[0].queueEntryId : (q.currentEntryId ?? added[0].queueEntryId),
       currentIndex: replace || q.currentIndex < 0 ? 0 : q.currentIndex,
-      positionMs: replace ? 0 : q.positionMs };
+      positionMs: replace ? 0 : q.positionMs,
+    };
     // A rejected replacement must not pause audio or invalidate pending stream resolution.
     if (!this.canAddQueue(next)) return false;
     if (replace) {
@@ -385,15 +438,12 @@ export class PlayerStore {
   }
   setMode(playMode: QueueSnapshot["playMode"]) {
     if (this.closing) return;
-    if (this.state.hydration === "ready")
-      this.commit({ ...this.state.queue, playMode });
+    if (this.state.hydration === "ready") this.commit({ ...this.state.queue, playMode });
   }
   async select(id: string) {
     if (this.closing) return;
     if (this.state.hydration !== "ready") return;
-    const index = this.state.queue.entries.findIndex(
-      (e) => e.queueEntryId === id,
-    );
+    const index = this.state.queue.entries.findIndex((e) => e.queueEntryId === id);
     if (index < 0) return;
     this.stop();
     this.commit({
@@ -429,11 +479,7 @@ export class PlayerStore {
     if (this.pendingSettings) {
       const requestedGeneration = this.generation;
       await this.settingsSaves;
-      if (
-        this.closing || requestedGeneration !== this.generation ||
-        this.pendingSettings ||
-        this.state.settingsError
-      )
+      if (this.closing || requestedGeneration !== this.generation || this.pendingSettings || this.state.settingsError)
         return;
     }
     const q = this.state.queue;
@@ -473,15 +519,14 @@ export class PlayerStore {
         this.state.settings.preferredQuality,
         controller.signal,
       );
-      if (generation !== this.generation) { this.releaseToken(stream.cacheToken); return; }
+      if (generation !== this.generation) {
+        this.releaseToken(stream.cacheToken);
+        return;
+      }
       this.sourceToken = stream.cacheToken;
       validateStreamURL(stream);
       this.patch({ stream });
-      if (
-        !stream.url ||
-        stream.status === "unavailable" ||
-        stream.status === "unauthorized"
-      ) {
+      if (!stream.url || stream.status === "unavailable" || stream.status === "unauthorized") {
         this.starting = false;
         this.releaseSource();
         this.patch({
@@ -496,8 +541,7 @@ export class PlayerStore {
       // A seek while resolution was pending must win over the original saved position.
       await this.engine.setSource(stream.url, this.state.queue.positionMs, {
         expectedDurationMs: entry.track.durationMs,
-        requireComplete:
-          stream.provider === "gd-netease" || stream.status === "full",
+        requireComplete: stream.provider === "gd-netease" || stream.status === "full",
         deadlineAt: stream.resolutionDeadlineAt,
       });
       if (generation !== this.generation) return;
@@ -528,10 +572,8 @@ export class PlayerStore {
   }
   seek(positionMs: number) {
     if (this.closing) return;
-    if (this.state.hydration !== "ready" || !this.state.queue.currentEntryId)
-      return;
-    const track =
-      this.state.queue.entries[this.state.queue.currentIndex]?.track;
+    if (this.state.hydration !== "ready" || !this.state.queue.currentEntryId) return;
+    const track = this.state.queue.entries[this.state.queue.currentIndex]?.track;
     const maximum = this.engine.duration || track?.durationMs || 0;
     const position = Number.isFinite(positionMs) ? Math.round(Math.max(0, Math.min(positionMs, maximum))) : 0;
     if (this.state.playback !== "paused") this.engine.seek(position);
@@ -541,13 +583,11 @@ export class PlayerStore {
     this.seekTimer = setTimeout(() => this.flushSeek(), 250);
   }
   private progress() {
-    if (this.closing || this.state.playback === "paused" || this.state.hydration !== "ready")
-      return;
+    if (this.closing || this.state.playback === "paused" || this.state.hydration !== "ready") return;
     const position = this.engine.currentTime;
     if (this.state.playback === "playing") {
       const delta = position - this.progressAnchor;
-      if (Number.isFinite(delta) && delta > 0 && delta <= 5000)
-        this.listenedMs += delta;
+      if (Number.isFinite(delta) && delta > 0 && delta <= 5000) this.listenedMs += delta;
       this.progressAnchor = position;
       if (!this.historyRecorded && this.listenedMs >= 500) this.recordHistory();
     }
@@ -564,11 +604,7 @@ export class PlayerStore {
     let index = (q.currentIndex + 1) % q.entries.length;
     if (ended && q.playMode === "repeat-one") index = q.currentIndex;
     if (q.playMode === "shuffle" && q.entries.length > 1)
-      index =
-        (q.currentIndex +
-          1 +
-          Math.floor(Math.random() * (q.entries.length - 1))) %
-        q.entries.length;
+      index = (q.currentIndex + 1 + Math.floor(Math.random() * (q.entries.length - 1))) % q.entries.length;
     await this.select(q.entries[index].queueEntryId);
   }
   setVolume(volume: number) {
@@ -578,16 +614,15 @@ export class PlayerStore {
     if (this.closing) return;
     const q = this.state.queue;
     if (q.entries.length)
-      return this.select(
-        q.entries[(q.currentIndex - 1 + q.entries.length) % q.entries.length]
-          .queueEntryId,
-      );
+      return this.select(q.entries[(q.currentIndex - 1 + q.entries.length) % q.entries.length].queueEntryId);
   }
   setSettings(update: Partial<LocalSettings>) {
     if (this.closing) return;
     if (!this.state.settings || !this.state.qualityPolicy) return;
-    if (update.preferredQuality !== undefined &&
-        !this.state.qualityPolicy.selectableQualities.includes(update.preferredQuality)) {
+    if (
+      update.preferredQuality !== undefined &&
+      !this.state.qualityPolicy.selectableQualities.includes(update.preferredQuality)
+    ) {
       this.patch({ settingsError: "该音质不可手动选择。320 kbps 以上音质需登录并确认会员。" });
       return;
     }
@@ -612,7 +647,10 @@ export class PlayerStore {
           const settings = this.normalizeSettings(saved, this.state.qualityPolicy!);
           this.engine.setVolume(settings.volume);
           this.patch({ settings, settingsError: "" });
-          if (update.resourceCache) { this.invalidateCovers(); void this.refreshResourceCacheStats(); }
+          if (update.resourceCache) {
+            this.invalidateCovers();
+            void this.refreshResourceCacheStats();
+          }
         }
       })
       .catch(() =>
@@ -625,8 +663,16 @@ export class PlayerStore {
       });
   }
   private normalizeSettings(settings: LocalSettings, policy: PlaybackQualityPolicy): LocalSettings {
-    return { ...settings, desktop: normalizeDesktopSettings(settings.desktop), resourceCache: normalizeResourceCache(settings.resourceCache), audioCache: normalizeAudioCache(settings.audioCache), closeToTray: settings.closeToTray ?? false, preferredQuality:
-      policy.selectableQualities.includes(settings.preferredQuality) ? settings.preferredQuality : "exhigh" };
+    return {
+      ...settings,
+      desktop: normalizeDesktopSettings(settings.desktop),
+      resourceCache: normalizeResourceCache(settings.resourceCache),
+      audioCache: normalizeAudioCache(settings.audioCache),
+      closeToTray: settings.closeToTray ?? false,
+      preferredQuality: policy.selectableQualities.includes(settings.preferredQuality)
+        ? settings.preferredQuality
+        : "exhigh",
+    };
   }
   private cancelPendingStartup() {
     if (!this.starting) return;
@@ -642,15 +688,8 @@ export class PlayerStore {
     });
   }
   private acceptRegion(region: RegionStatus) {
-    if (
-      this.state.region &&
-      region.networkGeneration < this.state.region.networkGeneration
-    )
-      return;
-    if (
-      this.state.region &&
-      region.networkGeneration !== this.state.region.networkGeneration
-    )
+    if (this.state.region && region.networkGeneration < this.state.region.networkGeneration) return;
+    if (this.state.region && region.networkGeneration !== this.state.region.networkGeneration)
       this.cancelPendingStartup();
     this.patch({ region, regionError: "" });
   }
@@ -665,8 +704,7 @@ export class PlayerStore {
     try {
       this.acceptRegion(await this.bridge.RefreshRegion(signal));
     } catch {
-      if (!signal?.aborted)
-        this.patch({ regionError: "地区检测未完成，请稍后重试。" });
+      if (!signal?.aborted) this.patch({ regionError: "地区检测未完成，请稍后重试。" });
     }
   }
   isFavorite(track: TrackSnapshot) {
@@ -689,15 +727,29 @@ export class PlayerStore {
         if (this.bridge.SearchLocalFavorites) {
           this.patch({ libraryError: "" });
           void this.readFavorites(this.state.favoritesPage, true);
-        } else this.patch({ favorites: liked ? [snapshot, ...this.state.favorites.filter(t => t.neteaseSongId !== snapshot.neteaseSongId)].slice(0, 200)
-          : this.state.favorites.filter(t => t.neteaseSongId !== snapshot.neteaseSongId), libraryError: "" });
-
+        } else
+          this.patch({
+            favorites: liked
+              ? [snapshot, ...this.state.favorites.filter((t) => t.neteaseSongId !== snapshot.neteaseSongId)].slice(
+                  0,
+                  200,
+                )
+              : this.state.favorites.filter((t) => t.neteaseSongId !== snapshot.neteaseSongId),
+            libraryError: "",
+          });
       })
-      .catch(error => this.patch({ favoritesLoading: false, libraryError: error instanceof Error && error.message === "LOCAL_METADATA_REQUIRES_NEWER_VERSION" ? "此记录包含较新版本的数据，请更新客户端后修改。" : "收藏保存失败，请重试。" }));
+      .catch((error) =>
+        this.patch({
+          favoritesLoading: false,
+          libraryError:
+            error instanceof Error && error.message === "LOCAL_METADATA_REQUIRES_NEWER_VERSION"
+              ? "此记录包含较新版本的数据，请更新客户端后修改。"
+              : "收藏保存失败，请重试。",
+        }),
+      );
   }
   private recordHistory() {
-    const track =
-      this.state.queue.entries[this.state.queue.currentIndex]?.track;
+    const track = this.state.queue.entries[this.state.queue.currentIndex]?.track;
     if (!track || !this.state.libraryReady) return;
     this.historyRecorded = true;
     const entry: HistoryEntry = {
@@ -711,7 +763,9 @@ export class PlayerStore {
       .then(async () => {
         await this.bridge.AddLocalHistory(entry);
         this.patch({
-          history: this.bridge.SearchLocalHistory ? this.state.history : [entry, ...this.state.history.filter(e => e.historyEntryId !== entry.historyEntryId)],
+          history: this.bridge.SearchLocalHistory
+            ? this.state.history
+            : [entry, ...this.state.history.filter((e) => e.historyEntryId !== entry.historyEntryId)],
           libraryError: "",
         });
         if (this.bridge.SearchLocalHistory) void this.readHistory(this.state.historyPage, true);
@@ -721,7 +775,12 @@ export class PlayerStore {
   clearHistory() {
     if (this.closing || this.historyClearing) return;
     if (!this.state.libraryReady) return;
-    const previous = { cursors: this.historyCursors, cursor: this.historyCursor, page: this.state.historyPage, hasMore: this.state.historyHasMore };
+    const previous = {
+      cursors: this.historyCursors,
+      cursor: this.historyCursor,
+      page: this.state.historyPage,
+      hasMore: this.state.historyHasMore,
+    };
     this.historyGeneration++;
     this.historyRequest?.abort();
     this.historyCursors = [{ playedAt: 0, id: "" }];
@@ -734,18 +793,27 @@ export class PlayerStore {
         this.historyCursor = undefined;
         this.patch({ history: [], historyPage: 1, historyHasMore: false, libraryError: "" });
       })
-       .catch(() => {
+      .catch(() => {
         this.historyCursors = previous.cursors;
         this.historyCursor = previous.cursor;
-        this.patch({ historyPage: previous.page, historyHasMore: previous.hasMore, libraryError: "播放历史清除失败，请重试。" });
+        this.patch({
+          historyPage: previous.page,
+          historyHasMore: previous.hasMore,
+          libraryError: "播放历史清除失败，请重试。",
+        });
       })
-      .finally(() => { this.historyClearing = false; this.patch({ historyLoading: false, historyClearing: false }); });
+      .finally(() => {
+        this.historyClearing = false;
+        this.patch({ historyLoading: false, historyClearing: false });
+      });
   }
   private releaseToken(token?: string, failed = false) {
     if (!token || !/^[a-f0-9]{32}$/.test(token)) return;
     const operation = failed ? this.bridge.ReportPlaybackSourceFailure : this.bridge.ReleasePlaybackSource;
     if (!operation) return;
-    const call = Promise.resolve().then(() => operation.call(this.bridge, token)).catch(() => {});
+    const call = Promise.resolve()
+      .then(() => operation.call(this.bridge, token))
+      .catch(() => {});
     this.sourceReleases.add(call);
     void call.finally(() => this.sourceReleases.delete(call));
   }
@@ -771,28 +839,57 @@ export class PlayerStore {
       const result = await this.bridge.ClearAudioCache();
       this.patch({ cacheMessage: `已清理 ${result.removedTracks} 首音频缓存。正在播放的文件将在播放结束后清理。` });
       await this.refreshCacheStats();
-    } catch { this.patch({ cacheMessage: "音频缓存暂时无法清理，请稍后重试。" }); }
+    } catch {
+      this.patch({ cacheMessage: "音频缓存暂时无法清理，请稍后重试。" });
+    }
   }
   async minimizeToTray() {
     if (this.closing) return;
-    try { if (!this.bridge.MinimizeToTray) throw new Error(); await this.bridge.MinimizeToTray(); }
-    catch { this.patch({ cacheMessage: "暂时无法隐藏到托盘，窗口将保持打开。" }); }
+    try {
+      if (!this.bridge.MinimizeToTray) throw new Error();
+      await this.bridge.MinimizeToTray();
+    } catch {
+      this.patch({ cacheMessage: "暂时无法隐藏到托盘，窗口将保持打开。" });
+    }
   }
   async loadMoreHistory() {
     if (this.bridge.SearchLocalHistory) return this.navigateHistory(1);
     if (this.closing) return;
-    if (!this.state.libraryReady || this.historyClearing || this.state.historyLoading || !this.state.historyHasMore || !this.bridge.ListLocalHistoryBefore) return;
+    if (
+      !this.state.libraryReady ||
+      this.historyClearing ||
+      this.state.historyLoading ||
+      !this.state.historyHasMore ||
+      !this.bridge.ListLocalHistoryBefore
+    )
+      return;
     const generation = this.historyGeneration;
     const cursor = this.historyCursor;
     this.patch({ historyLoading: true });
     try {
       const page = await this.bridge.ListLocalHistoryBefore(200, cursor?.playedAt ?? 0, cursor?.historyEntryId ?? "");
       if (generation !== this.historyGeneration) return;
-      const seen = new Set(this.state.history.map(e => e.historyEntryId));
+      const seen = new Set(this.state.history.map((e) => e.historyEntryId));
       this.historyCursor = page.entries.at(-1) ?? cursor;
-      this.patch({ history: [...this.state.history, ...page.entries.filter(e => { if (seen.has(e.historyEntryId)) return false; seen.add(e.historyEntryId); return true; }).map(historySnapshot)], historyHasMore: page.hasMore, libraryError: "" });
-    } catch { if (generation === this.historyGeneration) this.patch({ libraryError: "播放历史读取失败，请重试。" }); }
-    finally { if (generation === this.historyGeneration) this.patch({ historyLoading: false }); }
+      this.patch({
+        history: [
+          ...this.state.history,
+          ...page.entries
+            .filter((e) => {
+              if (seen.has(e.historyEntryId)) return false;
+              seen.add(e.historyEntryId);
+              return true;
+            })
+            .map(historySnapshot),
+        ],
+        historyHasMore: page.hasMore,
+        libraryError: "",
+      });
+    } catch {
+      if (generation === this.historyGeneration) this.patch({ libraryError: "播放历史读取失败，请重试。" });
+    } finally {
+      if (generation === this.historyGeneration) this.patch({ historyLoading: false });
+    }
   }
   resumeLibraryQuery(kind: "favorites" | "history") {
     if (kind === "favorites" && this.favoritePageInterrupted) {
@@ -818,19 +915,34 @@ export class PlayerStore {
   }
   private fetchFavoritePage(query: string, order: number, id: string, signal?: AbortSignal) {
     if (this.bridge.SearchLocalFavorites) return this.bridge.SearchLocalFavorites(query, 200, order, id, signal);
-    return this.bridge.GetLocalFavorites().then(tracks => ({ tracks: tracks.filter(t => this.matches(t, query)), hasMore: false, nextAddedOrder: 0, nextSongId: "" }));
+    return this.bridge.GetLocalFavorites().then((tracks) => ({
+      tracks: tracks.filter((t) => this.matches(t, query)),
+      hasMore: false,
+      nextAddedOrder: 0,
+      nextSongId: "",
+    }));
   }
   private fetchHistoryPage(query: string, playedAt: number, id: string, signal?: AbortSignal) {
     if (this.bridge.SearchLocalHistory) return this.bridge.SearchLocalHistory(query, 200, playedAt, id, signal);
     if (this.bridge.ListLocalHistoryBefore) return this.bridge.ListLocalHistoryBefore(200, playedAt, id);
-    return this.bridge.ListLocalHistory(200, 0).then(entries => ({ entries: entries.filter(e => this.matches(e.track, query)), hasMore: false }));
+    return this.bridge
+      .ListLocalHistory(200, 0)
+      .then((entries) => ({ entries: entries.filter((e) => this.matches(e.track, query)), hasMore: false }));
   }
   private matches(track: TrackSnapshot, query: string) {
-    return `${track.name} ${track.artists.map(a => a.name).join(" ")} ${track.album?.name ?? ""}`.toLocaleLowerCase().includes(query.toLocaleLowerCase());
+    return `${track.name} ${track.artists.map((a) => a.name).join(" ")} ${track.album?.name ?? ""}`
+      .toLocaleLowerCase()
+      .includes(query.toLocaleLowerCase());
   }
   queryFavorites(query: string) {
     if (this.closing) return Promise.resolve();
-    try { query = normalizeLocalQuery(query); } catch { this.cancelLibraryQuery("favorites"); this.patch({ libraryError: "搜索关键词不能超过 512 字节。" }); return Promise.resolve(); }
+    try {
+      query = normalizeLocalQuery(query);
+    } catch {
+      this.cancelLibraryQuery("favorites");
+      this.patch({ libraryError: "搜索关键词不能超过 512 字节。" });
+      return Promise.resolve();
+    }
     this.favoriteCursors = [{ order: 0, id: "" }];
     this.patch({ favoritesQuery: query });
     return this.readFavorites(1);
@@ -846,25 +958,46 @@ export class PlayerStore {
     if (this.closing) return;
     const gen = ++this.favoritesGeneration;
     this.favoritesRequest?.abort();
-    const request = this.favoritesRequest = new AbortController();
+    const request = new AbortController();
+    this.favoritesRequest = request;
     const cursor = this.favoriteCursors[page - 1];
     const query = this.state.favoritesQuery;
-    this.patch({ favoritesLoading: true, ...(preserve ? {} : { favoritesHasMore: false, favorites: [], favoritesPage: page }) });
+    this.patch({
+      favoritesLoading: true,
+      ...(preserve ? {} : { favoritesHasMore: false, favorites: [], favoritesPage: page }),
+    });
     try {
       await this.librarySaves;
       if (gen !== this.favoritesGeneration) return;
       const result = await this.fetchFavoritePage(query, cursor.order, cursor.id, request.signal);
       if (gen !== this.favoritesGeneration || this.closing) return;
-      if (!result.tracks.length && page > 1) { await this.readFavorites(page - 1, true); return; }
+      if (!result.tracks.length && page > 1) {
+        await this.readFavorites(page - 1, true);
+        return;
+      }
       this.favoriteCursors.length = page;
       this.favoriteNext = { order: result.nextAddedOrder, id: result.nextSongId };
-      this.patch({ favoritesPage: page, favorites: result.tracks.map(trackSnapshot), favoritesHasMore: result.hasMore, libraryError: "" });
-    } catch { if (gen === this.favoritesGeneration) this.patch({ libraryError: "收藏读取失败，请重试。" }); }
-    finally { if (gen === this.favoritesGeneration) this.patch({ favoritesLoading: false }); }
+      this.patch({
+        favoritesPage: page,
+        favorites: result.tracks.map(trackSnapshot),
+        favoritesHasMore: result.hasMore,
+        libraryError: "",
+      });
+    } catch {
+      if (gen === this.favoritesGeneration) this.patch({ libraryError: "收藏读取失败，请重试。" });
+    } finally {
+      if (gen === this.favoritesGeneration) this.patch({ favoritesLoading: false });
+    }
   }
   queryHistory(query: string) {
     if (this.closing || this.historyClearing) return Promise.resolve();
-    try { query = normalizeLocalQuery(query); } catch { this.cancelLibraryQuery("history"); this.patch({ libraryError: "搜索关键词不能超过 512 字节。" }); return Promise.resolve(); }
+    try {
+      query = normalizeLocalQuery(query);
+    } catch {
+      this.cancelLibraryQuery("history");
+      this.patch({ libraryError: "搜索关键词不能超过 512 字节。" });
+      return Promise.resolve();
+    }
     this.historyCursors = [{ playedAt: 0, id: "" }];
     this.patch({ historyQuery: query });
     return this.readHistory(1);
@@ -873,64 +1006,105 @@ export class PlayerStore {
     if (this.historyClearing || this.state.historyLoading || (direction === 1 && !this.state.historyHasMore)) return;
     const page = this.state.historyPage + direction;
     if (page < 1) return;
-    if (direction === 1) this.historyCursors[page - 1] = { playedAt: this.historyCursor?.playedAt ?? 0, id: this.historyCursor?.historyEntryId ?? "" };
+    if (direction === 1)
+      this.historyCursors[page - 1] = {
+        playedAt: this.historyCursor?.playedAt ?? 0,
+        id: this.historyCursor?.historyEntryId ?? "",
+      };
     await this.readHistory(page);
   }
   private async readHistory(page: number, preserve = false) {
     if (this.closing) return;
     const gen = ++this.historyGeneration;
     this.historyRequest?.abort();
-    const request = this.historyRequest = new AbortController();
+    const request = new AbortController();
+    this.historyRequest = request;
     const cursor = this.historyCursors[page - 1];
     if (!cursor || this.historyClearing) return;
     const query = this.state.historyQuery;
-    this.patch({ historyLoading: true, ...(preserve ? {} : { historyHasMore: false, history: [], historyPage: page }) });
+    this.patch({
+      historyLoading: true,
+      ...(preserve ? {} : { historyHasMore: false, history: [], historyPage: page }),
+    });
     try {
       await this.librarySaves;
       if (gen !== this.historyGeneration) return;
       const result = await this.fetchHistoryPage(query, cursor.playedAt, cursor.id, request.signal);
       if (gen !== this.historyGeneration || this.closing) return;
-      if (!result.entries.length && page > 1) { await this.readHistory(page - 1, true); return; }
+      if (!result.entries.length && page > 1) {
+        await this.readHistory(page - 1, true);
+        return;
+      }
       this.historyCursors.length = page;
       this.historyCursor = result.entries.at(-1);
-      this.patch({ historyPage: page, history: result.entries.map(historySnapshot), historyHasMore: result.hasMore, libraryError: "" });
-    } catch { if (gen === this.historyGeneration) this.patch({ libraryError: "播放历史读取失败，请重试。" }); }
-    finally { if (gen === this.historyGeneration) this.patch({ historyLoading: false }); }
+      this.patch({
+        historyPage: page,
+        history: result.entries.map(historySnapshot),
+        historyHasMore: result.hasMore,
+        libraryError: "",
+      });
+    } catch {
+      if (gen === this.historyGeneration) this.patch({ libraryError: "播放历史读取失败，请重试。" });
+    } finally {
+      if (gen === this.historyGeneration) this.patch({ historyLoading: false });
+    }
   }
-  getSearchHistoryGeneration() { return this.searchHistoryGeneration; }
+  getSearchHistoryGeneration() {
+    return this.searchHistoryGeneration;
+  }
   private async refreshSearchHistory(gen: number) {
     if (!this.bridge.ListSearchHistory) return;
     try {
       const entries = await this.bridge.ListSearchHistory(20);
-      if (gen === this.searchHistoryGeneration) this.patch({ searchHistory: entries.slice(0, 20), searchHistoryError: "" });
-    } catch { if (gen === this.searchHistoryGeneration) this.patch({ searchHistoryError: "搜索记录读取失败，请重试。" }); }
+      if (gen === this.searchHistoryGeneration)
+        this.patch({ searchHistory: entries.slice(0, 20), searchHistoryError: "" });
+    } catch {
+      if (gen === this.searchHistoryGeneration) this.patch({ searchHistoryError: "搜索记录读取失败，请重试。" });
+    }
   }
   recordSearchQuery(query: string, gen: number) {
-    try { query = normalizeLocalQuery(query); } catch { this.patch({ searchHistoryError: "搜索关键词不能超过 512 字节。" }); return; }
+    try {
+      query = normalizeLocalQuery(query);
+    } catch {
+      this.patch({ searchHistoryError: "搜索关键词不能超过 512 字节。" });
+      return;
+    }
     if (this.closing || !query || gen !== this.searchHistoryGeneration || !this.bridge.RecordSearchQuery) return;
-    this.searchHistorySaves = this.searchHistorySaves.catch(() => {}).then(async () => {
-      if (gen !== this.searchHistoryGeneration) return;
-      await this.bridge.RecordSearchQuery!(query);
-      await this.refreshSearchHistory(gen);
-    }).catch(() => this.patch({ searchHistoryError: "搜索记录保存失败。" }));
+    this.searchHistorySaves = this.searchHistorySaves
+      .catch(() => {})
+      .then(async () => {
+        if (gen !== this.searchHistoryGeneration) return;
+        await this.bridge.RecordSearchQuery!(query);
+        await this.refreshSearchHistory(gen);
+      })
+      .catch(() => this.patch({ searchHistoryError: "搜索记录保存失败。" }));
   }
-  deleteSearchQuery(query: string) { this.mutateSearchHistory(() => this.bridge.DeleteSearchQuery?.(query)); }
-  clearSearchHistory() { this.mutateSearchHistory(() => this.bridge.ClearSearchHistory?.()); }
+  deleteSearchQuery(query: string) {
+    this.mutateSearchHistory(() => this.bridge.DeleteSearchQuery?.(query));
+  }
+  clearSearchHistory() {
+    this.mutateSearchHistory(() => this.bridge.ClearSearchHistory?.());
+  }
   private mutateSearchHistory(write: () => Promise<void> | undefined) {
     if (this.closing) return;
     const gen = ++this.searchHistoryGeneration;
     this.patch({ searchHistory: [], searchHistoryError: "" });
-    this.searchHistorySaves = this.searchHistorySaves.catch(() => {}).then(async () => {
-      await write();
-      await this.refreshSearchHistory(gen);
-    }).catch(() => this.patch({ searchHistoryError: "搜索记录删除失败，请重试。" }));
+    this.searchHistorySaves = this.searchHistorySaves
+      .catch(() => {})
+      .then(async () => {
+        await write();
+        await this.refreshSearchHistory(gen);
+      })
+      .catch(() => this.patch({ searchHistoryError: "搜索记录删除失败，请重试。" }));
   }
   resolveCover(ref: string) {
     if (!validRemoteCover(ref)) return Promise.resolve("/default_cover.svg");
     let pending = this.covers.get(ref);
     if (!pending) {
-      pending = Promise.resolve().then(() => this.bridge.ResolveCover ? this.bridge.ResolveCover(ref) : ref)
-        .then(fromResolvedCover).catch(() => ref);
+      pending = Promise.resolve()
+        .then(() => (this.bridge.ResolveCover ? this.bridge.ResolveCover(ref) : ref))
+        .then(fromResolvedCover)
+        .catch(() => ref);
       this.covers.set(ref, pending);
       if (this.covers.size > 256) this.covers.delete(this.covers.keys().next().value!);
     }
@@ -940,12 +1114,13 @@ export class PlayerStore {
     this.covers.delete(ref);
   }
   recoverCover(ref: string, failedSource: string) {
-    if (!validRemoteCover(ref) || !/^\/artwork\/[a-f0-9]{64}$/.test(failedSource)) return Promise.resolve(validRemoteCover(ref) ? ref : "/default_cover.svg");
+    if (!validRemoteCover(ref) || !/^\/artwork\/[a-f0-9]{64}$/.test(failedSource))
+      return Promise.resolve(validRemoteCover(ref) ? ref : "/default_cover.svg");
     const key = ref + "|" + failedSource;
     let recovery = this.coverRecoveries.get(key);
     if (!recovery) {
       const remembered = this.covers.get(ref);
-      recovery = Promise.resolve(remembered).then(current => {
+      recovery = Promise.resolve(remembered).then((current) => {
         // Another visible consumer may already have refreshed this failed asset.
         if (current && current !== failedSource) return current;
         this.invalidateCover(ref);
@@ -953,7 +1128,9 @@ export class PlayerStore {
       });
       this.coverRecoveries.set(key, recovery);
       const shared = recovery;
-      void recovery.finally(() => { if (this.coverRecoveries.get(key) === shared) this.coverRecoveries.delete(key); });
+      void recovery.finally(() => {
+        if (this.coverRecoveries.get(key) === shared) this.coverRecoveries.delete(key);
+      });
       if (this.coverRecoveries.size > 256) this.coverRecoveries.delete(this.coverRecoveries.keys().next().value!);
     }
     return recovery;
@@ -980,27 +1157,27 @@ export class PlayerStore {
       this.invalidateCovers();
       this.patch({ resourceCacheMessage: `已清理 ${result.removedCovers} 张封面和 ${result.removedLyrics} 首歌词。` });
       await this.refreshResourceCacheStats();
-    } catch { this.patch({ resourceCacheMessage: "封面与歌词缓存暂时无法清理，请重试。" }); }
+    } catch {
+      this.patch({ resourceCacheMessage: "封面与歌词缓存暂时无法清理，请重试。" });
+    }
   }
   dispose() {
     this.favoritesRequest?.abort();
     this.historyRequest?.abort();
     this.stop();
-    this.unbind.forEach((fn) => fn());
+    this.unbind.forEach((fn) => {
+      fn();
+    });
     this.listeners.clear();
   }
 }
 function playbackError(code?: string) {
   if (code === "GD_BUDGET_EXHAUSTED") return "GD 备用音源解析时间已用尽，请稍后重试。";
   if (code === "GD_RATE_LIMITED") return "GD 备用音源请求过于频繁，请稍后重试。";
-	if (code === "COMPATIBILITY_COOLDOWN")
-		return "海外兼容请求暂时冷却，请稍后重试。";
-  if (code === "TRIAL_ONLY")
-    return "当前音源仅提供试听片段，未开始播放。请选择其他歌曲。";
-  if (code === "STREAM_DURATION_MISMATCH")
-    return "当前音源的完整时长无法确认，未开始播放。请选择其他歌曲。";
+  if (code === "COMPATIBILITY_COOLDOWN") return "海外兼容请求暂时冷却，请稍后重试。";
+  if (code === "TRIAL_ONLY") return "当前音源仅提供试听片段，未开始播放。请选择其他歌曲。";
+  if (code === "STREAM_DURATION_MISMATCH") return "当前音源的完整时长无法确认，未开始播放。请选择其他歌曲。";
   if (code === "REGION_RESTRICTED") return "这首歌在当前地区暂时无法播放。";
-  if (code === "NETWORK_ERROR" || code === "RESOLVE_TIMEOUT")
-    return "网络连接未完成，请稍后重试。";
+  if (code === "NETWORK_ERROR" || code === "RESOLVE_TIMEOUT") return "网络连接未完成，请稍后重试。";
   return "暂时无法获取这首歌的播放地址，请重试或选择其他歌曲。";
 }

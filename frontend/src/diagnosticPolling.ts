@@ -13,7 +13,10 @@ export function startDiagnosticPolling<T>(read: () => Promise<T>, accept: (value
     }
   }
   void poll();
-  return () => { active = false; clearTimeout(timer); };
+  return () => {
+    active = false;
+    clearTimeout(timer);
+  };
 }
 
 type CacheStatsReader = {
@@ -25,19 +28,26 @@ type CacheStatsReader = {
 const pendingSettingsReads = new WeakMap<CacheStatsReader, Promise<void>>();
 export function startSettingsCachePolling(store: CacheStatsReader) {
   let active = true;
-  const stop = startDiagnosticPolling(async () => {
-    const previous = pendingSettingsReads.get(store);
-    if (previous) await previous;
-    if (!active) return;
-    const pending = Promise.all([
-      store.refreshCacheStats(() => active),
-      store.refreshResourceCacheStats(() => active),
-    ]).then(() => {});
-    pendingSettingsReads.set(store, pending);
-    try { await pending; }
-    finally {
-      if (pendingSettingsReads.get(store) === pending) pendingSettingsReads.delete(store);
-    }
-  }, () => {});
-  return () => { active = false; stop(); };
+  const stop = startDiagnosticPolling(
+    async () => {
+      const previous = pendingSettingsReads.get(store);
+      if (previous) await previous;
+      if (!active) return;
+      const pending = Promise.all([
+        store.refreshCacheStats(() => active),
+        store.refreshResourceCacheStats(() => active),
+      ]).then(() => {});
+      pendingSettingsReads.set(store, pending);
+      try {
+        await pending;
+      } finally {
+        if (pendingSettingsReads.get(store) === pending) pendingSettingsReads.delete(store);
+      }
+    },
+    () => {},
+  );
+  return () => {
+    active = false;
+    stop();
+  };
 }

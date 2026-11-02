@@ -1,14 +1,9 @@
 // Adapted from OTONEI src/services/AudioEngine.ts, MIT, Copyright (c) 2026 voici5986.
 // See frontend/THIRD_PARTY_NOTICES.md. One HTMLAudioElement; no WebAudio/CORS mode.
-export type EngineEvent =
-  "playing" | "pause" | "ended" | "timeupdate" | "error" | "waiting";
+export type EngineEvent = "playing" | "pause" | "ended" | "timeupdate" | "error" | "waiting";
 export interface AudioExecutor {
   on(event: EngineEvent, callback: () => void): () => void;
-  setSource(
-    url: string,
-    positionMs: number,
-    options?: SourceOptions,
-  ): Promise<void>;
+  setSource(url: string, positionMs: number, options?: SourceOptions): Promise<void>;
   pause(preserveSource?: boolean): void;
   seek(positionMs: number): void;
   setVolume(volume: number): void;
@@ -22,10 +17,7 @@ export interface SourceOptions {
 }
 export class PlaybackRequestReplacedError extends Error {}
 export class MediaStartupError extends Error {
-  constructor(
-    readonly code:
-      "TRIAL_ONLY" | "STREAM_DURATION_MISMATCH" | "RESOLVE_TIMEOUT",
-  ) {
+  constructor(readonly code: "TRIAL_ONLY" | "STREAM_DURATION_MISMATCH" | "RESOLVE_TIMEOUT") {
     super(code);
   }
 }
@@ -40,27 +32,20 @@ export class AudioEngine implements AudioExecutor {
   constructor(audio = new Audio()) {
     this.audio = audio;
     audio.preload = "metadata";
-    for (const event of [
-      "playing",
-      "pause",
-      "ended",
-      "timeupdate",
-      "error",
-      "waiting",
-    ] as const) {
+    for (const event of ["playing", "pause", "ended", "timeupdate", "error", "waiting"] as const) {
       audio.addEventListener(event, () => {
         if (!this.active || !audio.getAttribute("src")) return;
-        if (event === "playing" && (audio.paused || !this.playbackRequested))
-          return;
+        if (event === "playing" && (audio.paused || !this.playbackRequested)) return;
         // Events already queued for a removed resource must agree with current media state.
         if (event === "ended" && !audio.ended) return;
         if (event === "error" && !audio.error) return;
-        this.listeners.get(event)?.forEach((fn) => fn());
+        this.listeners.get(event)?.forEach((fn) => {
+          fn();
+        });
       });
     }
     audio.addEventListener("loadedmetadata", () => {
-      if (this.active && this.pendingPosition !== null)
-        this.seek(this.pendingPosition);
+      if (this.active && this.pendingPosition !== null) this.seek(this.pendingPosition);
     });
   }
   on(event: EngineEvent, callback: () => void) {
@@ -71,11 +56,7 @@ export class AudioEngine implements AudioExecutor {
       set.delete(callback);
     };
   }
-  setSource(
-    url: string,
-    positionMs: number,
-    options: SourceOptions = {},
-  ): Promise<void> {
+  setSource(url: string, positionMs: number, options: SourceOptions = {}): Promise<void> {
     this.pause();
     const generation = this.generation;
     const deadlineAt = options.deadlineAt ?? Date.now() + 12000;
@@ -110,19 +91,11 @@ export class AudioEngine implements AudioExecutor {
           void this.audio.play().then(
             () => {
               if (validRequest())
-                finish(
-                  Date.now() >= deadlineAt
-                    ? new MediaStartupError("RESOLVE_TIMEOUT")
-                    : undefined,
-                );
+                finish(Date.now() >= deadlineAt ? new MediaStartupError("RESOLVE_TIMEOUT") : undefined);
             },
             (error) => {
               if (validRequest())
-                finish(
-                  (error as Error)?.name === "AbortError"
-                    ? new PlaybackRequestReplacedError()
-                    : error,
-                );
+                finish((error as Error)?.name === "AbortError" ? new PlaybackRequestReplacedError() : error);
             },
           );
         } catch (error) {
@@ -133,22 +106,13 @@ export class AudioEngine implements AudioExecutor {
         if (!validRequest()) return;
         const expected = options.expectedDurationMs ?? 0;
         const actual = this.audio.duration * 1000;
-        if (
-          !Number.isFinite(expected) ||
-          expected <= 0 ||
-          !Number.isFinite(actual) ||
-          actual <= 0
-        ) {
+        if (!Number.isFinite(expected) || expected <= 0 || !Number.isFinite(actual) || actual <= 0) {
           finish(new MediaStartupError("STREAM_DURATION_MISMATCH"));
           return;
         }
         if (Math.abs(actual - expected) > Math.max(2000, expected * 0.02)) {
           finish(
-            new MediaStartupError(
-              actual <= 31000 && actual < expected
-                ? "TRIAL_ONLY"
-                : "STREAM_DURATION_MISMATCH",
-            ),
+            new MediaStartupError(actual <= 31000 && actual < expected ? "TRIAL_ONLY" : "STREAM_DURATION_MISMATCH"),
           );
           return;
         }
@@ -158,15 +122,10 @@ export class AudioEngine implements AudioExecutor {
       };
       const playing = () => {
         if (validRequest() && this.playbackRequested && !this.audio.paused)
-          finish(
-            Date.now() >= deadlineAt
-              ? new MediaStartupError("RESOLVE_TIMEOUT")
-              : undefined,
-          );
+          finish(Date.now() >= deadlineAt ? new MediaStartupError("RESOLVE_TIMEOUT") : undefined);
       };
       const failed = () => {
-        if (validRequest() && this.audio.error)
-          finish(new Error("MEDIA_ERROR"));
+        if (validRequest() && this.audio.error) finish(new Error("MEDIA_ERROR"));
       };
       this.cancelStartup = () => finish(new PlaybackRequestReplacedError());
       if (!Number.isFinite(deadlineAt) || Date.now() >= deadlineAt) {
@@ -175,8 +134,7 @@ export class AudioEngine implements AudioExecutor {
       }
       if (
         options.requireComplete &&
-        (!Number.isFinite(options.expectedDurationMs) ||
-          (options.expectedDurationMs ?? 0) <= 0)
+        (!Number.isFinite(options.expectedDurationMs) || (options.expectedDurationMs ?? 0) <= 0)
       ) {
         finish(new MediaStartupError("STREAM_DURATION_MISMATCH"));
         return;
@@ -187,8 +145,7 @@ export class AudioEngine implements AudioExecutor {
       );
       this.audio.addEventListener("playing", playing);
       this.audio.addEventListener("error", failed);
-      if (options.requireComplete)
-        this.audio.addEventListener("loadedmetadata", metadata);
+      if (options.requireComplete) this.audio.addEventListener("loadedmetadata", metadata);
       this.pendingPosition = positionMs;
       this.audio.src = url;
       this.active = true;
@@ -224,13 +181,9 @@ export class AudioEngine implements AudioExecutor {
     this.audio.volume = Math.max(0, Math.min(1, volume));
   }
   get currentTime() {
-    return Number.isFinite(this.audio.currentTime)
-      ? Math.max(0, Math.round(this.audio.currentTime * 1000))
-      : 0;
+    return Number.isFinite(this.audio.currentTime) ? Math.max(0, Math.round(this.audio.currentTime * 1000)) : 0;
   }
   get duration() {
-    return Number.isFinite(this.audio.duration)
-      ? this.audio.duration * 1000
-      : 0;
+    return Number.isFinite(this.audio.duration) ? this.audio.duration * 1000 : 0;
   }
 }

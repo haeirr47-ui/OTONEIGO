@@ -15,10 +15,14 @@ describe("overlay keyboard boundaries", () => {
   });
   it("excludes disabled controls, hidden/inert ancestry, CSS-hidden controls and negative tab indices", () => {
     vi.stubGlobal("getComputedStyle", () => ({ visibility: "visible" }));
-    const element = (overrides: object = {}) => ({
-      tabIndex: 0, matches: () => false, closest: () => null,
-      getClientRects: () => [{}], ...overrides,
-    }) as unknown as HTMLElement;
+    const element = (overrides: object = {}) =>
+      ({
+        tabIndex: 0,
+        matches: () => false,
+        closest: () => null,
+        getClientRects: () => [{}],
+        ...overrides,
+      }) as unknown as HTMLElement;
     try {
       expect(isOverlayTabStop(element())).toBe(true);
       expect(isOverlayTabStop(element({ tabIndex: -1 }))).toBe(false);
@@ -34,10 +38,9 @@ describe("overlay keyboard boundaries", () => {
 });
 
 it("aligns dense translated timestamps to the nearest original, preferring exact matches", () => {
-  expect(alignLyrics(
-    "[00:10.000]first\n[00:10.500]second\n[00:20.000]unmatched",
-    "[00:10.000]第一\n[00:10.500]第二",
-  )).toEqual([
+  expect(
+    alignLyrics("[00:10.000]first\n[00:10.500]second\n[00:20.000]unmatched", "[00:10.000]第一\n[00:10.500]第二"),
+  ).toEqual([
     { time: 10000, text: "first", translated: "第一" },
     { time: 10500, text: "second", translated: "第二" },
     { time: 20000, text: "unmatched", translated: undefined },
