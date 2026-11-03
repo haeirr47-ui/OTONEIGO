@@ -1,6 +1,14 @@
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/toolchain.ps1"
 Invoke-ProjectToolchain {
+    # Native tray/taskbar integration is verified against this exact Wails release.
+    # Updating it is a separate native-acceptance batch, never a routine patch bump.
+    $wailsVersion = @(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)
+    Assert-ExitCode 'Read pinned Wails version'
+    $frontendRuntime = (Get-Content -Raw -LiteralPath 'frontend/package.json' | ConvertFrom-Json).dependencies.'@wailsio/runtime'
+    if ($wailsVersion.Count -ne 1 -or $wailsVersion[0] -ne 'v3.0.0' -or $frontendRuntime -ne '3.0.0') {
+        throw 'Wails Go/runtime must remain pinned to 3.0.0 until a separate native acceptance batch approves an upgrade.'
+    }
     New-Item -ItemType Directory -Force 'output/p0' | Out-Null
     $compiled = @(go list -deps ./...)
     Assert-ExitCode 'List compiled packages'
