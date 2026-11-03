@@ -10,7 +10,7 @@
     "test": "vitest run",
     "format": "biome format --write .",
     "format:check": "biome format .",
-    "lint": "biome lint ."
+    "lint": "biome lint --error-on-warnings ."
   },
   "packageManager": "pnpm@12.16.1",
   "engines": {

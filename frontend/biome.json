@@ -35,16 +35,7 @@
   "linter": {
     "enabled": true,
     "rules": {
-      "preset": "recommended",
-      "correctness": {
-        "useExhaustiveDependencies": "warn"
-      },
-      "suspicious": {
-        "noArrayIndexKey": "warn"
-      },
-      "a11y": {
-        "useSemanticElements": "warn"
-      }
+      "preset": "recommended"
     }
   },
   "overrides": [
@@ -52,6 +43,9 @@
       "includes": ["**/*.test.ts", "**/*.test.tsx"],
       "linter": {
         "rules": {
+          "style": {
+            "noNonNullAssertion": "off"
+          },
           "correctness": {
             "noComponentHookFactories": "off"
           },
