@@ -340,7 +340,7 @@ export class PlayerStore {
     // Pick and normalize exactly the same metadata that commit sends to native persistence.
     const json = JSON.stringify(this.queueSnapshot(queue)).replace(
       /[<>&\u2028\u2029]/g,
-      (character) => "\\u" + character.charCodeAt(0).toString(16).padStart(4, "0"),
+      (character) => `\\u${character.charCodeAt(0).toString(16).padStart(4, "0")}`,
     );
     if (new TextEncoder().encode(json).length > 2 * 1024 * 1024) {
       this.patch({ error: "播放队列资料容量已满，请先移除部分歌曲。" });
@@ -380,7 +380,7 @@ export class PlayerStore {
       ...q,
       entries: [...q.entries, { queueEntryId: id, track: trackSnapshot(track) }],
       currentEntryId: q.currentEntryId ?? id,
-      currentIndex: q.currentIndex < 0 ? 0 : q.currentIndex,
+      currentIndex: Math.max(q.currentIndex, 0),
     };
     if (!this.canAddQueue(next)) return null;
     this.commit(next);
@@ -618,21 +618,20 @@ export class PlayerStore {
   }
   setSettings(update: Partial<LocalSettings>) {
     if (this.closing) return;
-    if (!this.state.settings || !this.state.qualityPolicy) return;
-    if (
-      update.preferredQuality !== undefined &&
-      !this.state.qualityPolicy.selectableQualities.includes(update.preferredQuality)
-    ) {
+    const policy = this.state.qualityPolicy;
+    const current = this.state.settings;
+    if (!current || !policy) return;
+    if (update.preferredQuality !== undefined && !policy.selectableQualities.includes(update.preferredQuality)) {
       this.patch({ settingsError: "该音质不可手动选择。320 kbps 以上音质需登录并确认会员。" });
       return;
     }
-    const settings = { ...this.state.settings, ...update };
+    const settings = { ...current, ...update };
     const revision = ++this.settingsRevision;
     if (
-      settings.preferredQuality !== this.state.settings.preferredQuality ||
-      settings.regionMode !== this.state.settings.regionMode ||
-      settings.gdEnabled !== this.state.settings.gdEnabled ||
-      settings.audioCache?.enabled !== this.state.settings.audioCache?.enabled
+      settings.preferredQuality !== current.preferredQuality ||
+      settings.regionMode !== current.regionMode ||
+      settings.gdEnabled !== current.gdEnabled ||
+      settings.audioCache?.enabled !== current.audioCache?.enabled
     )
       this.cancelPendingStartup();
     if (update.resourceCache) this.invalidateCovers();
@@ -644,7 +643,7 @@ export class PlayerStore {
       .then(() => this.bridge.SetSettings(settings))
       .then((saved) => {
         if (revision === this.settingsRevision) {
-          const settings = this.normalizeSettings(saved, this.state.qualityPolicy!);
+          const settings = this.normalizeSettings(saved, this.state.qualityPolicy ?? policy);
           this.engine.setVolume(settings.volume);
           this.patch({ settings, settingsError: "" });
           if (update.resourceCache) {
@@ -1069,12 +1068,13 @@ export class PlayerStore {
       this.patch({ searchHistoryError: "搜索关键词不能超过 512 字节。" });
       return;
     }
-    if (this.closing || !query || gen !== this.searchHistoryGeneration || !this.bridge.RecordSearchQuery) return;
+    const recordSearchQuery = this.bridge.RecordSearchQuery;
+    if (this.closing || !query || gen !== this.searchHistoryGeneration || !recordSearchQuery) return;
     this.searchHistorySaves = this.searchHistorySaves
       .catch(() => {})
       .then(async () => {
         if (gen !== this.searchHistoryGeneration) return;
-        await this.bridge.RecordSearchQuery!(query);
+        await recordSearchQuery(query);
         await this.refreshSearchHistory(gen);
       })
       .catch(() => this.patch({ searchHistoryError: "搜索记录保存失败。" }));
@@ -1106,7 +1106,10 @@ export class PlayerStore {
         .then(fromResolvedCover)
         .catch(() => ref);
       this.covers.set(ref, pending);
-      if (this.covers.size > 256) this.covers.delete(this.covers.keys().next().value!);
+      if (this.covers.size > 256) {
+        const oldest = this.covers.keys().next().value;
+        if (oldest !== undefined) this.covers.delete(oldest);
+      }
     }
     return pending;
   }
@@ -1116,7 +1119,7 @@ export class PlayerStore {
   recoverCover(ref: string, failedSource: string) {
     if (!validRemoteCover(ref) || !/^\/artwork\/[a-f0-9]{64}$/.test(failedSource))
       return Promise.resolve(validRemoteCover(ref) ? ref : "/default_cover.svg");
-    const key = ref + "|" + failedSource;
+    const key = `${ref}|${failedSource}`;
     let recovery = this.coverRecoveries.get(key);
     if (!recovery) {
       const remembered = this.covers.get(ref);
@@ -1131,7 +1134,10 @@ export class PlayerStore {
       void recovery.finally(() => {
         if (this.coverRecoveries.get(key) === shared) this.coverRecoveries.delete(key);
       });
-      if (this.coverRecoveries.size > 256) this.coverRecoveries.delete(this.coverRecoveries.keys().next().value!);
+      if (this.coverRecoveries.size > 256) {
+        const oldest = this.coverRecoveries.keys().next().value;
+        if (oldest !== undefined) this.coverRecoveries.delete(oldest);
+      }
     }
     return recovery;
   }

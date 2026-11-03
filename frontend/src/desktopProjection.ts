@@ -14,7 +14,7 @@ export function truncateUTF8(value: string, maximum: number): string {
     bytes = 0;
   for (const character of value) {
     if (character === "\0") continue;
-    const code = character.codePointAt(0)!;
+    const code = character.codePointAt(0) ?? 0;
     const safe = code >= 0xd800 && code <= 0xdfff ? "\uFFFD" : character;
     const size = new TextEncoder().encode(safe).length;
     if (bytes + size > maximum) break;
@@ -127,7 +127,7 @@ export function handleDesktopCommand(store: PlayerStore, epoch: number, value: u
       store.setVolume(c.value);
       break;
     case "toggle-favorite":
-      store.toggleFavorite(track!);
+      if (track) store.toggleFavorite(track);
       break;
     case "toggle-lyrics-lock":
       toggleDesktopSetting(store, "lyricsLocked");

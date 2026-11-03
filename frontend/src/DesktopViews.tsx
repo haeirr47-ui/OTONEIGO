@@ -1,5 +1,5 @@
 // Compact presentation reuses OTONEI's cover, heart, transport icons and theme. MIT, voici5986.
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { Events } from "@wailsio/runtime";
 import {
   FaHeart,
@@ -20,9 +20,10 @@ import { time } from "./format";
 
 function DesktopCover({ bridge, coverRef }: { bridge: DesktopBridge; coverRef: string }) {
   const [source, setSource] = useState("/default_cover.svg");
+  const [imageKey, setImageKey] = useState("");
   const attempt = useRef(0),
     generation = useRef(0);
-  const recover = async () => {
+  const recover = useCallback(async () => {
     const current = generation.current;
     if (!coverRef || !bridge.ResolveCover || attempt.current >= 2) {
       setSource("/default_cover.svg");
@@ -39,8 +40,7 @@ function DesktopCover({ bridge, coverRef }: { bridge: DesktopBridge; coverRef: s
     } catch {
       if (current === generation.current) setSource("/default_cover.svg");
     }
-  };
-  const [imageKey, setImageKey] = useState("");
+  }, [bridge, coverRef]);
   useEffect(() => {
     generation.current++;
     attempt.current = 0;
@@ -49,7 +49,7 @@ function DesktopCover({ bridge, coverRef }: { bridge: DesktopBridge; coverRef: s
     return () => {
       generation.current++;
     };
-  }, [coverRef, bridge]);
+  }, [recover]);
   return (
     <img
       key={imageKey}
@@ -81,6 +81,7 @@ export function DesktopViewContent({
       .DispatchDesktopCommand({ epoch: s.epoch, command: name, songId: s.songId, value })
       .catch(() => onError("操作暂未完成，请重试。"));
   };
+  const hideView = bridge.HideDesktopView;
   const native = (operation: (() => Promise<void>) | undefined) => {
     if (operation) void operation().catch(() => onError("窗口操作暂未完成，请重试。"));
   };
@@ -121,7 +122,7 @@ export function DesktopViewContent({
         type="button"
         aria-label={kind === "mini" ? "隐藏迷你播放器" : "隐藏桌面歌词"}
         title="隐藏窗口"
-        onClick={() => native(bridge.HideDesktopView ? () => bridge.HideDesktopView!(kind) : undefined)}
+        onClick={() => native(hideView ? () => hideView(kind) : undefined)}
       >
         <FaTimes />
       </button>
@@ -129,7 +130,7 @@ export function DesktopViewContent({
   );
   const status = s?.closing
     ? "播放器正在退出…"
-    : !s || !s.ready
+    : !s?.ready
       ? "正在连接播放器…"
       : s.error || (s.playback === "loading" ? "正在缓冲…" : "");
   if (kind === "lyrics")

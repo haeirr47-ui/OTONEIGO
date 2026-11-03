@@ -81,6 +81,7 @@ export function LibraryPanel({ kind }: { kind: "favorites" | "history" }) {
         )}
       </div>
       {kind === "favorites" && (
+        // biome-ignore lint/a11y/useSemanticElements: segmented button group; fieldset would introduce form/legend semantics and default styling.
         <div className="library-tabs" role="group" aria-label="本地收藏分类">
           <button type="button" aria-pressed={tab === "tracks"} onClick={() => setTab("tracks")}>
             收藏歌曲

@@ -19,6 +19,7 @@ export function PlaylistPanel() {
   const [rename, setRename] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const playlist = selected ? state.details[selected] : undefined;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: selected resets the form even when two playlists share a name; the name itself is also a trigger.
   useEffect(() => {
     setRename(playlist?.name ?? "");
     setConfirmDelete(false);
@@ -92,6 +93,7 @@ export function PlaylistPanel() {
               </button>
             </div>
             {confirmDelete && (
+              // biome-ignore lint/a11y/useSemanticElements: this is a confirmation panel, not a form field group; fieldset would add border/legend semantics.
               <div className="alert-light" role="group" aria-label="确认删除歌单">
                 <p>确定删除“{playlist.name}”？播放队列中的歌曲会继续保留。</p>
                 <button
@@ -250,7 +252,7 @@ function AddToPlaylistDialog({
     const release = containOverlayFocus(
       [root.current],
       container,
-      root.current.querySelector<HTMLElement>("button")!,
+      root.current.querySelector<HTMLElement>("button") ?? root.current,
       () => closeRef.current(),
     );
     return () => {

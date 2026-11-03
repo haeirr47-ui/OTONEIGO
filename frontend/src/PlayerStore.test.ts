@@ -1372,7 +1372,7 @@ describe("local search keyword write ordering", () => {
 it("coalesces cover resolution without mutating persisted metadata and evicts after clear/policy changes", async () => {
   const { store, bridge } = setup();
   const original = "https://p1.music.126.net/cover.jpg";
-  const artwork = "/artwork/" + "a".repeat(64);
+  const artwork = `/artwork/${"a".repeat(64)}`;
   const pending = deferred<string>();
   bridge.ResolveCover = vi.fn(() => pending.promise);
   bridge.ClearResourceCache = async () => ({ removedCovers: 1, removedLyrics: 2 });
@@ -1400,7 +1400,7 @@ it("coalesces cover resolution without mutating persisted metadata and evicts af
 it("drops runtime artwork references from snapshot persistence", async () => {
   const { store, bridge } = setup();
   await store.hydrate();
-  store.add({ ...track, coverRef: "/artwork/" + "a".repeat(64) });
+  store.add({ ...track, coverRef: `/artwork/${"a".repeat(64)}` });
   await store.flush();
   expect(vi.mocked(bridge.SaveQueue).mock.calls.at(-1)![0].entries[0].track.coverRef).toBeUndefined();
 });
@@ -1434,8 +1434,8 @@ it("resumes a cancelled page when its library view returns", async () => {
 it("recovers an LRU-evicted artwork once for shared consumers and keeps runtime URLs out of snapshots", async () => {
   const { store, bridge } = setup();
   const original = "https://p1.music.126.net/cover.jpg";
-  const artwork = "/artwork/" + "a".repeat(64);
-  const refreshed = "/artwork/" + "b".repeat(64);
+  const artwork = `/artwork/${"a".repeat(64)}`;
+  const refreshed = `/artwork/${"b".repeat(64)}`;
   const pending = deferred<string>();
   bridge.ResolveCover = vi.fn().mockResolvedValueOnce(artwork).mockReturnValueOnce(pending.promise);
   await store.hydrate();
@@ -1480,7 +1480,7 @@ it("validates search inputs using UTF-8 bytes before calling SQLite", async () =
 it("can recover the same deterministic artwork hash after a later independent eviction", async () => {
   const { store, bridge } = setup();
   const original = "https://p1.music.126.net/cover.jpg";
-  const artwork = "/artwork/" + "a".repeat(64);
+  const artwork = `/artwork/${"a".repeat(64)}`;
   bridge.ResolveCover = vi.fn(async () => artwork);
   await store.hydrate();
   await store.resolveCover(original);

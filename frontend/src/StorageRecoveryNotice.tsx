@@ -39,8 +39,9 @@ export function StorageRecoveryNotice({ bridge }: { bridge: DesktopBridge }) {
   const [status, setStatus] = useState<StorageRecoveryStatus | null>(null);
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => {
-    if (!bridge.GetStorageRecoveryStatus) return;
-    return startDiagnosticPolling(() => bridge.GetStorageRecoveryStatus!(), setStatus);
+    const readStatus = bridge.GetStorageRecoveryStatus;
+    if (!readStatus) return;
+    return startDiagnosticPolling(() => readStatus(), setStatus);
   }, [bridge]);
   return (
     <StorageRecoveryMessage

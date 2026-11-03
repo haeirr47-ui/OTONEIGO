@@ -306,7 +306,7 @@ export function validateStreamURL(stream: { url?: unknown; cacheToken?: unknown;
     if (typeof token !== "string" || !/^[a-f0-9]{32}$/.test(token)) throw new Error("Invalid cache lease");
     if (
       typeof stream.url !== "string" ||
-      !new RegExp("^http://127\\.0\\.0\\.1:[1-9][0-9]{0,4}/media/" + token + "$").test(stream.url)
+      !new RegExp(`^http://127\\.0\\.0\\.1:[1-9][0-9]{0,4}/media/${token}$`).test(stream.url)
     )
       throw new Error("Invalid cache source");
     const url = new URL(stream.url);

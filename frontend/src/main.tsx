@@ -11,7 +11,8 @@ import { PlayerProvider } from "./PlayerContext";
 import { bindMediaSession, playerCommand } from "./mediaSession";
 import { createCloseHandler } from "./prepareClose";
 import "./styles.css";
-const root = document.getElementById("root")!;
+const root = document.getElementById("root");
+if (!root) throw new Error("Missing #root element");
 const role = windowRole(window.location.search);
 if (role === "unknown") {
   createRoot(root).render(<main role="alert">无法打开此窗口，请从主窗口重试。</main>);

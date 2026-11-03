@@ -181,6 +181,7 @@ function Cover({ track, onClick, large = false }: { track?: TrackSnapshot; onCli
   const [imageAttempt, setImageAttempt] = useState(0);
   const coverAttempt = useRef({ generation: 0, retried: false });
   const imageRef = useRef<HTMLImageElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: coverRevision is a cache-clear trigger; the body re-resolves through the store instead of reading it.
   useEffect(() => {
     let active = true;
     const attempt = { generation: coverAttempt.current.generation + 1, retried: false };
@@ -281,6 +282,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
     if (line.time <= q.positionMs) active = index;
   });
   const lyricRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: active and expanded are display triggers; the DOM class is the actual scroll input.
   useEffect(() => {
     lyricRef.current?.querySelector(".active")?.scrollIntoView({ block: "center", behavior: "smooth" });
   }, [active, expanded]);
@@ -296,11 +298,13 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
       return;
     }
     const roots = queueOpen ? [dialog] : [dialog, footer];
+    const parent = footer.parentElement;
+    if (!parent) return;
     const initial =
       previous === "queue" && !queueOpen && restore?.isConnected
         ? restore
         : dialog.querySelector<HTMLElement>("button");
-    return containOverlayFocus(roots, footer.parentElement!, initial || dialog, () => {
+    return containOverlayFocus(roots, parent, initial || dialog, () => {
       if (queueOpen) setQueueOpen(false);
       else setExpanded(false);
     });
@@ -360,6 +364,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                   <div className="lyric-line no-lyrics">歌词暂时无法加载</div>
                 ) : lyrics.length ? (
                   lyrics.map((line, index) => (
+                    // biome-ignore lint/suspicious/noArrayIndexKey: lyrics are immutable per track and never reordered; duplicate timestamps are possible, so the index is the only collision-free identity.
                     <div key={index} className={`lyric-line ${index === active ? "active" : ""}`} data-time={line.time}>
                       <div>{line.text || "♪"}</div>
                       {line.translated && <div className="translated-lyric">{line.translated}</div>}
@@ -430,12 +435,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
           </section>
         </>
       )}
-      <footer
-        ref={footerRef}
-        role="region"
-        className={`audio-player ${expanded ? "expanded" : "collapsed"}`}
-        aria-label="播放器"
-      >
+      <section ref={footerRef} className={`audio-player ${expanded ? "expanded" : "collapsed"}`} aria-label="播放器">
         <div className="player-inner">
           <div className="progress-control-container">
             <input
@@ -540,7 +540,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
             </div>
           </div>
         </div>
-      </footer>
+      </section>
     </>
   );
 }

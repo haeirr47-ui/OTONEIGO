@@ -310,7 +310,7 @@ export function validRemoteCover(value: string) {
 export function normalizeLocalQuery(value: string) {
   const query = value.replace(/^\p{White_Space}+|\p{White_Space}+$/gu, "");
   for (const character of query) {
-    const code = character.codePointAt(0)!;
+    const code = character.codePointAt(0) ?? 0;
     if (code >= 0xd800 && code <= 0xdfff) throw new Error("Invalid search query");
   }
   if (new TextEncoder().encode(query).length > 512) throw new Error("Invalid search query");

@@ -7,6 +7,15 @@ import { LibraryPanel, SettingsPanel } from "./LibraryPanels";
 import { StorageRecoveryNotice } from "./StorageRecoveryNotice";
 import { OtoneiNavigation, OtoneiHeader, OtoneiPlayer, TrackCard } from "./OtoneiPresentation";
 export { time } from "./format";
+// The bridge does not deduplicate search pages; keep the first occurrence so React keys stay unique.
+function uniqueTracks(tracks: TrackSnapshot[]) {
+  const seen = new Set<string>();
+  return tracks.filter((track) => {
+    if (seen.has(track.neteaseSongId)) return false;
+    seen.add(track.neteaseSongId);
+    return true;
+  });
+}
 export function App({ bridge }: { bridge: DesktopBridge }) {
   const { state, store } = usePlayer();
   const q = state.queue;
@@ -133,9 +142,9 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
                 </p>
               )}
               <div className="music-list">
-                {result?.tracks.map((track, index) => (
+                {uniqueTracks(result?.tracks ?? []).map((track) => (
                   <TrackCard
-                    key={`${track.neteaseSongId}-${index}`}
+                    key={track.neteaseSongId}
                     track={track}
                     onPlay={() => add(track, true)}
                     onAdd={() => add(track)}
@@ -143,7 +152,7 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
                   />
                 ))}
               </div>
-              {(!result || !result.tracks.length) && (
+              {!result?.tracks.length && (
                 <div className="alert-light empty-search">
                   <img src="/logo.svg" alt="" width="64" height="64" />
                   <h2>{result ? "没有找到歌曲" : "从一次搜索开始"}</h2>
@@ -177,10 +186,17 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
       </main>
       <div className="notices" aria-live="polite">
         <StorageRecoveryNotice bridge={bridge} />
-        {[state.error, state.saveError, state.settingsError, state.libraryError]
-          .filter(Boolean)
-          .map((message, index) => (
-            <p key={index} role="alert" className="error">
+        {(
+          [
+            ["error", state.error],
+            ["save", state.saveError],
+            ["settings", state.settingsError],
+            ["library", state.libraryError],
+          ] as const
+        )
+          .filter(([, message]) => Boolean(message))
+          .map(([key, message]) => (
+            <p key={key} role="alert" className="error">
               {message}
             </p>
           ))}

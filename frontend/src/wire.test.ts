@@ -257,9 +257,9 @@ it("accepts only cache URLs matching a bounded private lease and rejects private
   for (const change of [
     { cacheToken: "bad" },
     { cacheToken: undefined },
-    { url: stream.url + "?x=1" },
-    { url: stream.url + "#x" },
-    { url: stream.url + "/x" },
+    { url: `${stream.url}?x=1` },
+    { url: `${stream.url}#x` },
+    { url: `${stream.url}/x` },
     { url: stream.url.replace("18392", "99999") },
     { url: stream.url.replace("127.0.0.1", "localhost") },
     { url: "file:///C:/private.mp3" },
@@ -315,7 +315,7 @@ it("strictly decodes resource sources and paged local search responses", async (
       { query: "词", searchedAt: 1 },
     ]),
   ).toThrow();
-  expect(fromResolvedCover("/artwork/" + "a".repeat(64))).toContain("/artwork/");
+  expect(fromResolvedCover(`/artwork/${"a".repeat(64)}`)).toContain("/artwork/");
   expect(fromResolvedCover("https://img.y.music.126.net/test.webp")).toContain("test.webp");
   for (const value of [
     "http://p1.music.126.net/a.jpg",
@@ -341,11 +341,11 @@ it("strictly decodes resource sources and paged local search responses", async (
 it("matches the native 512-byte query boundary without imposing a 200-character limit", async () => {
   const { fromSearchHistory } = await import("./wire");
   const { normalizeLocalQuery } = await import("./contracts");
-  for (const query of ["a".repeat(201), "a".repeat(512), "中".repeat(170) + "ab", "😀".repeat(128)]) {
+  for (const query of ["a".repeat(201), "a".repeat(512), `${"中".repeat(170)}ab`, "😀".repeat(128)]) {
     expect(fromSearchHistory([{ query, searchedAt: 1 }])[0].query).toBe(query);
     expect(normalizeLocalQuery(query)).toBe(query);
   }
-  for (const query of ["a".repeat(513), "中".repeat(171), "😀".repeat(128) + "a", "\ud800"]) {
+  for (const query of ["a".repeat(513), "中".repeat(171), `${"😀".repeat(128)}a`, "\ud800"]) {
     expect(() => fromSearchHistory([{ query, searchedAt: 1 }])).toThrow();
     expect(() => normalizeLocalQuery(query)).toThrow();
   }

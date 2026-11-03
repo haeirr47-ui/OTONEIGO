@@ -40,7 +40,8 @@ export function bindMediaSession(
       void store.previous();
     },
     seekto: (details) => {
-      if (Number.isFinite(details.seekTime)) store.seek(details.seekTime! * 1000);
+      const seekTime = details.seekTime;
+      if (seekTime !== undefined && Number.isFinite(seekTime)) store.seek(seekTime * 1000);
     },
     seekforward: (details) => seekRelative(details.seekOffset ?? 10),
     seekbackward: (details) => seekRelative(-(details.seekOffset ?? 10)),

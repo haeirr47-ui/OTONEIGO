@@ -75,7 +75,7 @@ vi.mock("../bindings/github.com/voici5986/otoneigo/internal/appservice/appservic
   DeleteSearchQuery: vi.fn(async () => {}),
   ClearSearchHistory: vi.fn(async () => {}),
   ResolveCover: vi.fn(() => {
-    const promise = Promise.resolve("/artwork/" + "a".repeat(64));
+    const promise = Promise.resolve(`/artwork/${"a".repeat(64)}`);
     return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
   }),
   GetResourceCacheStats: vi.fn(async () => ({

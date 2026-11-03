@@ -7,6 +7,7 @@ import type { DesktopBridge, DesktopSettings } from "./contracts";
 export function DesktopSettingsPanel({ bridge }: { bridge: DesktopBridge }) {
   const { state, store } = usePlayer();
   const options = normalizeDesktopSettings(state.settings?.desktop);
+  const showView = bridge.ShowDesktopView;
   const [message, setMessage] = useState("");
   const update = (value: Partial<DesktopSettings>) => updateDesktopSettings(store, value);
   const run = async (operation: (() => Promise<void>) | undefined) => {
@@ -25,14 +26,14 @@ export function DesktopSettingsPanel({ bridge }: { bridge: DesktopBridge }) {
         <button
           type="button"
           disabled={!bridge.ShowDesktopView}
-          onClick={() => void run(() => bridge.ShowDesktopView!("mini"))}
+          onClick={() => void run(showView && (() => showView("mini")))}
         >
           打开迷你播放器
         </button>
         <button
           type="button"
           disabled={!bridge.ShowDesktopView}
-          onClick={() => void run(() => bridge.ShowDesktopView!("lyrics"))}
+          onClick={() => void run(showView && (() => showView("lyrics")))}
         >
           打开桌面歌词
         </button>
