@@ -26,7 +26,7 @@ export async function nativeHarness(){
   }
   assert.ok(page,'native application page created after CDP startup');
   async function initialise(){
-    await page.locator('footer[aria-label="播放器"]').waitFor();
+    await page.locator('.audio-player[aria-label="播放器"]').waitFor();
     await page.evaluate(async()=>{
       // The SDK module installs its own event map. Restore the app dispatcher
       // immediately so tray and normal-close handlers remain the actual ones.

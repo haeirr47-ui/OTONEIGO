@@ -435,7 +435,13 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
           </section>
         </>
       )}
-      <section ref={footerRef} className={`audio-player ${expanded ? "expanded" : "collapsed"}`} aria-label="播放器">
+      {/* biome-ignore lint/a11y/useSemanticElements: 播放器是页面底部的 footer landmark；role="region" 为 aria-label 提供可访问名称，改成 section 会丢失 footer 语义并破坏验收脚本的 footer 选择器。 */}
+      <footer
+        ref={footerRef}
+        role="region"
+        className={`audio-player ${expanded ? "expanded" : "collapsed"}`}
+        aria-label="播放器"
+      >
         <div className="player-inner">
           <div className="progress-control-container">
             <input
@@ -540,7 +546,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
             </div>
           </div>
         </div>
-      </section>
+      </footer>
     </>
   );
 }
