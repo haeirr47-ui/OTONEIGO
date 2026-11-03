@@ -1,5 +1,7 @@
 # 当前架构与 P0 边界
 
+2026-11-03 维护补充：缓存目录锁统一由 `internal/dirlock` 管理；本工程 panic 入口接入独立、有界且默认脱敏的 `internal/crashreport`。网络/解码任务按经过审计的失败路径隔离，内部状态异常记录后终止；完整范围与限制见[维护加固](maintenance-hardening.md)。Wails Go/runtime 继续固定 3.0.0，补丁依赖升级不代表重新通过所有历史原生验收。
+
 > 2026-11-02 / 0.5.3 源码同步。实现状态与验收状态分别记录；真实网络、原生 WebView2 和阶段结论以 [P0 验证记录](p0-validation.md)为准，本文不新增实测通过声明。
 
 项目根目录是唯一 Go module `github.com/voici5986/otoneigo`，前端位于 `frontend/`。React 通过 Wails 3 生成绑定调用同进程 Go 服务，不运行独立本地 HTTP API 进程。三个参考副本保持只读、被 Git 忽略。

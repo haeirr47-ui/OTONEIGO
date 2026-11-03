@@ -1,162 +1,166 @@
 [
   {
-    "path": "OTONEI/package.json",
+    "path": "reference/OTONEI/package.json",
     "sha256": "3457be774e7e9f863e7218b412190e33ef66509c00cfc2d45a4c31e83eda1130"
   },
   {
-    "path": "OTONEI/LICENSE",
+    "path": "reference/OTONEI/LICENSE",
     "sha256": "1bbc3a42021327fd9dea1508120bd757d430f4f96d1181e0d4d1d215b5ed8230"
   },
   {
-    "path": "OTONEI/src/services/AudioEngine.ts",
+    "path": "reference/OTONEI/src/services/AudioEngine.ts",
     "sha256": "b4c2906d183ca8dcb371b2373f5bd2b74919a846fc2b28c38e744658c4eb9914"
   },
   {
-    "path": "OTONEI/src/styles/theme.css",
+    "path": "reference/OTONEI/src/styles/theme.css",
     "sha256": "503df0ad34f5ea2a1ba6b0da550b35a5498aa7c607f80de8dcb1bf0d9443d539"
   },
   {
-    "path": "go-musicfox-master/vendor/modules.txt",
+    "path": "reference/go-musicfox-master/vendor/modules.txt",
     "sha256": "383ed182839c5cbd088665606611ea2cf782b933d2def09fcb46c2e4229ced4a"
   },
   {
-    "path": "go-musicfox-master/vendor/github.com/go-musicfox/netease-music/LICENSE.md",
+    "path": "reference/go-musicfox-master/vendor/github.com/go-musicfox/netease-music/LICENSE.md",
     "sha256": "d9b7b059053d42fe27485b6db0b09ea9fa9fb71e4cb8ad99a0d7dfa27bf773b4"
   },
   {
-    "path": "go-musicfox-master/vendor/github.com/go-musicfox/netease-music/util/cryto.go",
+    "path": "reference/go-musicfox-master/vendor/github.com/go-musicfox/netease-music/util/cryto.go",
     "sha256": "435bde4015c5ba3640daf7441f3b36f538af2f17c4389446ddcef7073f5562fa"
   },
   {
-    "path": "go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/search_service.go",
+    "path": "reference/go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/search_service.go",
     "sha256": "c14784c372ac23bef3825c1d39fa70425a34993520695c5c78d7412274ebbc7e"
   },
   {
-    "path": "go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/song_url_v1_service.go",
+    "path": "reference/go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/song_url_v1_service.go",
     "sha256": "5a7eb33102c70e4e0a9f5007577dc13431512c2c5daef3308116468bb39ddc54"
   },
   {
-    "path": "go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/lyric_service.go",
+    "path": "reference/go-musicfox-master/vendor/github.com/go-musicfox/netease-music/service/lyric_service.go",
     "sha256": "fabf0841d1a953f33d909335d6b188edb51d24a1d2bf33a2f0c46017ec192c8d"
   },
   {
-    "path": "OTONEI/public/logo.svg",
-    "sha256": "5081cfd6b83d020d280c91769d5241fddd33cdcc6e5d29fe218f0a394a543939"
+    "path": "reference/OTONEI/public/logo.svg",
+    "sha256": "5081cfd6b83d020d280c91769d5241fddd33cdcc6e5d29fe218f0a394a543939",
+    "missing": true
   },
   {
-    "path": "NetEaseMusicWorldNext-master/manifest.json",
+    "path": "reference/NetEaseMusicWorldNext-master/manifest.json",
     "sha256": "c7dcb29bda4b167fc76b7fc148bfb0b2f6e517e8fd4ff2728f74c909405e915b"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/background.js",
+    "path": "reference/NetEaseMusicWorldNext-master/background.js",
     "sha256": "963d4fcf72a6ac90dcb4b97352609078bf95c6f608e6d5b674194a3ac80f89c0"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/page-script.js",
+    "path": "reference/NetEaseMusicWorldNext-master/page-script.js",
     "sha256": "bc92f01ade4bf55953b030d129dc9666d159b31ccf33d9f44531d68cacc5b29e"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/content-script.js",
+    "path": "reference/NetEaseMusicWorldNext-master/content-script.js",
     "sha256": "757034e8597a2267da6a2a14fd147f79626cbdce81175c7e8edf9b3a57f62200"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/rules.json",
+    "path": "reference/NetEaseMusicWorldNext-master/rules.json",
     "sha256": "7ea7d9a71e2a46f031189139bbfe321295fa06ae2bf55c7472df571f389c1501"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/README.md",
+    "path": "reference/NetEaseMusicWorldNext-master/README.md",
     "sha256": "ac247ac59808976274e63839d72928526955ea19bbedfe0fbc307fd071740377"
   },
   {
-    "path": "NetEaseMusicWorldNext-master/LICENSE",
+    "path": "reference/NetEaseMusicWorldNext-master/LICENSE",
     "sha256": "8ceb4b9ee5adedde47b31e975c1d90c73ad27b6b165a1dcd80c7c545eb65b903"
   },
   {
-    "path": "OTONEI/src/App.jsx",
+    "path": "reference/OTONEI/src/App.jsx",
     "sha256": "ffb0d28e025d3f04b97726abf608c5cd5bad52cac4156976bcdbc38c481ed23b"
   },
   {
-    "path": "OTONEI/src/components/DesktopNavbar.jsx",
+    "path": "reference/OTONEI/src/components/DesktopNavbar.jsx",
     "sha256": "6b73679e00dea5c838d9e5df822c77daec95628a398a01e063afa6427ce0f48c"
   },
   {
-    "path": "OTONEI/src/components/MobileBottomNav.jsx",
+    "path": "reference/OTONEI/src/components/MobileBottomNav.jsx",
     "sha256": "b8a11dd877e3fff1ec514a1a8244646691e69b1d9c43110f7f87dbdaeca12e3e"
   },
   {
-    "path": "OTONEI/src/components/Header.jsx",
+    "path": "reference/OTONEI/src/components/Header.jsx",
     "sha256": "25f816cea4d32c5902e2af594adff62069abdf3c8b7136a1a00f10d140530044"
   },
   {
-    "path": "OTONEI/src/components/SearchResultItem.tsx",
+    "path": "reference/OTONEI/src/components/SearchResultItem.tsx",
     "sha256": "0bd58f363c8957b1c9a5466d491846b8fb6a6b985be1c6a6343a795f2fae9242"
   },
   {
-    "path": "OTONEI/src/components/DesktopPlayerView.jsx",
+    "path": "reference/OTONEI/src/components/DesktopPlayerView.jsx",
     "sha256": "27fc2181322369e93099647976b3f00cebc64f1549802709086f33fb84bfe6fd"
   },
   {
-    "path": "OTONEI/src/components/DesktopPlayerControl.jsx",
+    "path": "reference/OTONEI/src/components/DesktopPlayerControl.jsx",
     "sha256": "0e2d46774e5d95b68f60cff9a5bba3819ee094b8d2fbc898e5eae513b1ae655b"
   },
   {
-    "path": "OTONEI/src/components/DesktopExpandedView.jsx",
+    "path": "reference/OTONEI/src/components/DesktopExpandedView.jsx",
     "sha256": "7595be10dfbb03e57b1bce426e84a408bd04fa9e703b6e95d08d505746dbd88f"
   },
   {
-    "path": "OTONEI/src/components/DesktopAlbumCover.tsx",
+    "path": "reference/OTONEI/src/components/DesktopAlbumCover.tsx",
     "sha256": "8be4c01c3ff18b66d2454d6f33ce8f190e83b4c464577d14e615808c562a31ea"
   },
   {
-    "path": "OTONEI/src/components/PlayerSubComponents.jsx",
+    "path": "reference/OTONEI/src/components/PlayerSubComponents.jsx",
     "sha256": "9b6b0f849421319ad756027b3e4e01638f7db4b21ca60048f9abc53304bbdfb9"
   },
   {
-    "path": "OTONEI/src/components/HeartButton.jsx",
+    "path": "reference/OTONEI/src/components/HeartButton.jsx",
     "sha256": "8d505a3af5383388778775bd1a418e20f9bcc9616a12ce7178b27745278c80b1"
   },
   {
-    "path": "OTONEI/src/index.css",
+    "path": "reference/OTONEI/src/index.css",
     "sha256": "f3acd3deeb6164dba059b21cc42ce3e189b93d432d607835d2880660fb959ded"
   },
   {
-    "path": "OTONEI/src/styles/App.css",
+    "path": "reference/OTONEI/src/styles/App.css",
     "sha256": "2173a97462408ddc7389435d209c4fecc737b02917361c50340adf6130e385e7"
   },
   {
-    "path": "OTONEI/src/styles/AudioPlayer.base.css",
+    "path": "reference/OTONEI/src/styles/AudioPlayer.base.css",
     "sha256": "1e92c0ad7df7615109c3d6d91c7127176242da6c8a5e322d575713a5a4605f06"
   },
   {
-    "path": "OTONEI/src/styles/AudioPlayer.desktop.css",
+    "path": "reference/OTONEI/src/styles/AudioPlayer.desktop.css",
     "sha256": "531dae35e2c86dd385df667fb7fcc4035ed35afd44c5d7f1d3305bded12e5f41"
   },
   {
-    "path": "OTONEI/src/styles/Header.desktop.css",
+    "path": "reference/OTONEI/src/styles/Header.desktop.css",
     "sha256": "f3772121c80ec23cab2966cb790922b421eab7c1e3173834294e4540a9c45601"
   },
   {
-    "path": "OTONEI/src/styles/Navigation.desktop.css",
+    "path": "reference/OTONEI/src/styles/Navigation.desktop.css",
     "sha256": "fae4718472d77655eff59d12bb0c61de8326ec4291f28763428be08ff95064fd"
   },
   {
-    "path": "OTONEI/src/styles/Navigation.mobile.css",
+    "path": "reference/OTONEI/src/styles/Navigation.mobile.css",
     "sha256": "410ca385d2fded04088c93df18fdb7c8184bd4a087d38b3a6611735ccfba9eb8"
   },
   {
-    "path": "OTONEI/src/styles/primitives.css",
+    "path": "reference/OTONEI/src/styles/primitives.css",
     "sha256": "d6bbf71253169a1006e462b358e6020c3d1ebd85e8c49185887867b5a435b8c3"
   },
   {
-    "path": "OTONEI/public/MiSansVF.woff2",
-    "sha256": "784b908d4ff18eaf17b91ec74f88571963367013b5324c03ba17464e86dbe169"
+    "path": "reference/OTONEI/public/MiSansVF.woff2",
+    "sha256": "784b908d4ff18eaf17b91ec74f88571963367013b5324c03ba17464e86dbe169",
+    "missing": true
   },
   {
-    "path": "OTONEI/public/default_cover.svg",
-    "sha256": "bdce150e0d9cfee16e88e69446cab2c7bffa543f1981869f89f256f7dbffe051"
+    "path": "reference/OTONEI/public/default_cover.svg",
+    "sha256": "bdce150e0d9cfee16e88e69446cab2c7bffa543f1981869f89f256f7dbffe051",
+    "missing": true
   },
   {
-    "path": "OTONEI/public/lyric.svg",
-    "sha256": "be060d67b7a53b62efe31e2ced7dbfbf088256a3cb4428a545c98b5696ff572d"
+    "path": "reference/OTONEI/public/lyric.svg",
+    "sha256": "be060d67b7a53b62efe31e2ced7dbfbf088256a3cb4428a545c98b5696ff572d",
+    "missing": true
   }
 ]

@@ -1,5 +1,7 @@
 # OTONEIGO
 
+2026-11-03 维护补充：缓存共享目录锁、脱敏本地崩溃记录及补丁依赖策略见[维护加固](docs/maintenance-hardening.md)。报告默认位于 `%LOCALAPPDATA%\OTONEIGO\log\crash-*.txt`，最多五份；不自动上传。
+
 当前补丁版：[0.5.3免安装ZIP](bin/OTONEIGO-0.5.3-windows-x64.zip)。缓存队列、会话提示、取流重试和访问写入审计见[逐项记录](docs/audit-fixes-0.5.3.md)。
 
 独立的 Windows 网易云音乐客户端，在 OTONEI 现有 React 界面组件、布局和主题上适配与扩展，使用 React + Wails 3 + Go + SQLite。

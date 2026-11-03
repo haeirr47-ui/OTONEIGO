@@ -1,5 +1,7 @@
 # P0 许可与来源记录
 
+2026-11-03：补丁更新 SQLite 1.61.1、coder/websocket 1.8.15、godbus 5.2.4；Wails/runtime 3.0.0 与 x/sys 0.49.0 保持。共享目录锁和崩溃记录为本工程独立代码，未引入新依赖或复制参考项目代码；本批构建需重新生成通知清单，旧 ZIP 仍代表其历史版本。策略和来源见[维护加固](maintenance-hardening.md)。
+
 > 2026-11-02 / 0.5.3 源码同步。下述既有审计结果保留原批次含义；0.5.0 的最终构建、审计和 ZIP 证据另行记录，不能由历史通过外推；0.4.0 最终 production 构建、依赖审计及随包通知/ZIP 哈希核对已通过，以 [P0 记录](p0-validation.md) 为准。
 
 新工程以 MIT 许可维护，保留 [根 LICENSE](../LICENSE) 的版权声明。原项目目录保持只读并由 Git 忽略，不作为新仓库源码整体纳入。
@@ -13,6 +15,8 @@
 | Wails 3.0.0、React 19.3.1、SQLite driver 及传递依赖 | 桌面运行时、UI、数据库 | 版本锁定；依赖与许可文件清单由审计脚本记录 |
 
 精确本地参考文件 SHA-256 见 [source-provenance.json](source-provenance.json)。原方案中的远程提交号是规划阶段的证据，不视为当前本地归档逐字来源的证明；没有把顶层 GPL 项目的许可当成 vendor 内部独立 MIT 项目的许可。
+
+2026-11-03 校验同步了清单的 `reference/` 前缀，未改原哈希：当前归档中现存 36 份文件均匹配。归档 `OTONEI/public/` 下的 logo.svg、MiSansVF.woff2、default_cover.svg、lyric.svg 四份原件当前缺失，清单对这 4 条标注 `"missing": true`；产品 `frontend/public/` 保留的同名副本均与历史哈希一致。后者不能替代“参考原件仍存在”的证明，本批未补写或修改参考目录。
 
 第三份参考的实际入口是 `background.js` 的动态规则和 `content-script.js` 注入的 `page-script.js`；`rules.json` 没有被 manifest 声明为静态规则资源。它没有实现公网出口地区自动检测。仅参考公开协议机制，未复制 GPL 实现；独立 header 和 GD 的有限媒体样本证据不代表普遍播放权限或服务可用性；具体范围见 [海外 P0 方案](overseas-compatibility-p0.md)。本轮未增加相关运行时依赖。
 
