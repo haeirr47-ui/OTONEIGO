@@ -4,6 +4,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/voici5986/otoneigo/internal/crashreport"
 )
 
 // CloseGate allows one bounded frontend persistence attempt before native close.
@@ -45,7 +47,10 @@ func (g *CloseGate) Request() (allow bool, token string) {
 	g.attempt++
 	token = strconv.FormatUint(g.attempt, 10)
 	g.token = token
-	g.timer = time.AfterFunc(g.timeout, func() { g.Acknowledge(token) })
+	g.timer = time.AfterFunc(g.timeout, func() {
+		defer crashreport.Fatal("close-gate")
+		g.Acknowledge(token)
+	})
 	return false, token
 }
 

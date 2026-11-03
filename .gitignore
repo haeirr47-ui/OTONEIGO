@@ -13,6 +13,7 @@
 **/coverage/
 *.log
 playback.jsonl*
+crash-*.txt
 *.db
 *.db-shm
 *.db-wal

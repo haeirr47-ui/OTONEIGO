@@ -13,6 +13,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"golang.org/x/sys/windows"
 )
 
@@ -25,6 +26,7 @@ var (
 	notificationSequence atomic.Uintptr
 	// Windows callback thunks cannot be freed: allocate exactly one for all controllers.
 	notificationCallback = syscall.NewCallback(func(contextID, row, kind uintptr) uintptr {
+		defer crashreport.Fatal("region-network")
 		if value, ok := notificationContexts.Load(contextID); ok {
 			select {
 			case value.(chan struct{}) <- struct{}{}:

@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/voici5986/otoneigo/internal/audioinfo"
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/domain"
 )
 
@@ -190,6 +191,7 @@ func (c *Client) Resolve(ctx context.Context, id, q string) (domain.ResolvedStre
 	}
 }
 func (c *Client) run(ctx context.Context, key, id, q string, f *flight) {
+	defer crashreport.Fatal("gd-flight")
 	v, err := c.resolve(ctx, id, q, f)
 	c.mu.Lock()
 	defer c.mu.Unlock()

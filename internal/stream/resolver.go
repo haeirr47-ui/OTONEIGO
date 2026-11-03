@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/domain"
 )
 
@@ -122,7 +123,11 @@ func phase(ctx context.Context, d time.Duration, call func(context.Context) (dom
 	ctx, cancel := context.WithTimeout(ctx, d)
 	defer cancel()
 	ch := make(chan reply, 1)
-	go func() { v, e := call(ctx); ch <- reply{v, e} }()
+	go func() {
+		defer crashreport.Fatal("resolve-phase")
+		v, e := call(ctx)
+		ch <- reply{v, e}
+	}()
 	select {
 	case <-ctx.Done():
 		return domain.ResolvedStream{}, ctx.Err()
@@ -316,7 +321,11 @@ func (r *Resolver) resolve(parent context.Context, id, quality string, prepare f
 	cool := time.Now().Before(r.coolUntil)
 	r.mu.Unlock()
 	if networkReady != nil {
-		go func() { invalidateFallback(fallback); close(networkReady) }()
+		go func() {
+			defer crashreport.Fatal("resolve-invalidate")
+			invalidateFallback(fallback)
+			close(networkReady)
+		}()
 	}
 	settings := r.settings()
 	if closed {
@@ -325,6 +334,7 @@ func (r *Resolver) resolve(parent context.Context, id, quality string, prepare f
 	watcherDone := make(chan struct{})
 	defer close(watcherDone)
 	go func() {
+		defer crashreport.Fatal("resolve-watch")
 		select {
 		case <-invalid:
 			cancel()

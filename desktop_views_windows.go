@@ -4,6 +4,7 @@ package main
 
 import (
 	"errors"
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/desktopstate"
 	"github.com/voici5986/otoneigo/internal/domain"
 	"github.com/wailsapp/wails/v3/pkg/application"
@@ -99,6 +100,7 @@ func (d *desktopController) ApplyDesktopSettings() {
 	// Settings notifications are drained outside AppService's commit mutex.
 	// Queue UI work so concurrent native geometry callbacks remain responsive.
 	go func() {
+		defer crashreport.Fatal("desktop-settings")
 		v := d.views
 		if v.exiting.Load() || d.closed.Load() {
 			return
@@ -291,6 +293,7 @@ func (v *desktopViewsController) enqueuePlacement(kind string, p domain.WindowPl
 		t.Stop()
 	}
 	v.timers[kind] = time.AfterFunc(350*time.Millisecond, func() {
+		defer crashreport.Fatal("desktop-placement")
 		v.saveMu.Lock()
 		defer v.saveMu.Unlock()
 		v.timerMu.Lock()
@@ -322,6 +325,7 @@ func (v *desktopViewsController) flushPositions() {
 	}
 }
 func (v *desktopViewsController) refresh() {
+	defer crashreport.Fatal("desktop-refresh")
 	ticker := time.NewTicker(250 * time.Millisecond)
 	defer ticker.Stop()
 	for {

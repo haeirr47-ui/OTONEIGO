@@ -24,6 +24,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/domain"
 )
 
@@ -402,6 +403,7 @@ func (m *Manager) getLocked(ctx context.Context, key, kind string) []byte {
 // Local first-use validation has its own capacity, so slow network downloads
 // cannot delay an otherwise available cached cover.
 func (m *Manager) validateCover(e entry, flight *validation) {
+	defer crashreport.Fatal("resource-validate")
 	defer m.wg.Done()
 	defer flight.cancel()
 	defer func() {
@@ -426,10 +428,17 @@ func (m *Manager) validateCover(e entry, flight *validation) {
 	if !current {
 		return
 	}
-	b, err := readBounded(m.filename(e.Key), e.Size)
 	var mime string
-	if err == nil && int64(len(b)) == e.Size && digest(b) == e.Digest {
-		mime, err = coverMIME(b)
+	var err error
+	// Only payload reads and codecs are recoverable; cleanup stays outside.
+	if crashreport.Contain("resource-validate", func() {
+		b, readErr := readBounded(m.filename(e.Key), e.Size)
+		err = readErr
+		if err == nil && int64(len(b)) == e.Size && digest(b) == e.Digest {
+			mime, err = coverMIME(b)
+		}
+	}) {
+		mime, err = "", errCache
 	}
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -518,6 +527,7 @@ func (m *Manager) run(ctx context.Context, key, kind string, fetch func(context.
 		gen := m.generation
 		m.wg.Add(1)
 		go func() {
+			defer crashreport.Fatal("resource-fetch")
 			defer m.wg.Done()
 			workCtx, cancel := context.WithTimeout(m.ctx, 30*time.Second)
 			defer cancel()
@@ -531,18 +541,21 @@ func (m *Manager) run(ctx context.Context, key, kind string, fetch func(context.
 			}
 			select {
 			case workers <- struct{}{}:
-				b, err = fetch(workCtx)
-				// Keep complete image decoding inside the bounded worker slot,
-				// and entirely outside the shared state mutex.
-				if err == nil {
-					if kind == "cover" {
-						mime, err = coverMIME(b)
-						valid = err == nil
-					} else {
-						valid = validData(kind, b)
+				if crashreport.Contain("resource-fetch", func() {
+					defer func() { <-workers }()
+					b, err = fetch(workCtx)
+					// Decode outside the shared state mutex, within the worker slot.
+					if err == nil {
+						if kind == "cover" {
+							mime, err = coverMIME(b)
+							valid = err == nil
+						} else {
+							valid = validData(kind, b)
+						}
 					}
+				}) {
+					b, mime, valid, err = nil, "", false, errCache
 				}
-				<-workers
 			case <-workCtx.Done():
 				err = workCtx.Err()
 			}
@@ -731,6 +744,7 @@ func (m *Manager) ApplySettings() {
 
 func (m *Manager) Handler(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		defer crashreport.FatalHTTP("resource-handler")
 		if !strings.HasPrefix(r.URL.Path, "/artwork/") {
 			if next != nil {
 				next.ServeHTTP(w, r)

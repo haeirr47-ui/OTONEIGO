@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/voici5986/otoneigo/internal/audioinfo"
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/domain"
 )
 
@@ -158,7 +159,11 @@ func New(o Options) (*Manager, error) {
 	m.host = listener.Addr().String()
 	m.server = &http.Server{Handler: http.HandlerFunc(m.serve), ReadHeaderTimeout: 5 * time.Second, IdleTimeout: 30 * time.Second, WriteTimeout: 6 * time.Minute, MaxHeaderBytes: 16 * 1024}
 	m.wg.Add(2)
-	go func() { defer m.wg.Done(); _ = m.server.Serve(listener) }()
+	go func() {
+		defer crashreport.Fatal("audio-server")
+		defer m.wg.Done()
+		_ = m.server.Serve(listener)
+	}()
 	go m.reap()
 	return m, nil
 }
@@ -497,6 +502,7 @@ func (m *Manager) Close() error {
 	return flushErr
 }
 func (m *Manager) reap() {
+	defer crashreport.Fatal("audio-reaper")
 	defer m.wg.Done()
 	t := time.NewTicker(time.Second)
 	defer t.Stop()
@@ -777,6 +783,7 @@ func (m *Manager) prune() {
 }
 
 func (m *Manager) download(key string, j *job) {
+	defer crashreport.Fatal("audio-download")
 	defer m.wg.Done()
 	ctx, cancel := context.WithTimeout(m.ctx, 5*time.Minute)
 	m.mu.Lock()
@@ -802,16 +809,24 @@ func (m *Manager) download(key string, j *job) {
 			}
 		}
 	}()
+	// This guard runs before failure cleanup takes mu. An invariant panic may
+	// have left mu held; trying to clean it up first would hide the crash forever.
+	defer crashreport.Fatal("audio-download")
 	req, e := http.NewRequestWithContext(ctx, http.MethodGet, j.stream.URL, nil)
 	if e != nil {
 		return
 	}
 	req.Header.Set("Accept-Encoding", "identity")
-	resp, e := m.client.Do(req)
+	var resp *http.Response
+	if crashreport.Contain("audio-fetch", func() { resp, e = m.client.Do(req) }) {
+		return
+	}
 	if e != nil {
 		return
 	}
-	defer resp.Body.Close()
+	defer func() {
+		crashreport.Contain("audio-fetch", func() { _ = resp.Body.Close() })
+	}()
 	size := resp.ContentLength
 	if resp.StatusCode != 200 || size <= 0 || size > maxAudio || j.stream.ContentLengthBytes > 0 && j.stream.ContentLengthBytes != size {
 		return
@@ -836,7 +851,11 @@ func (m *Manager) download(key string, j *job) {
 	prefix := make([]byte, 0, audioinfo.PrefixLimit)
 	prefixOK := false
 	for {
-		n, re := resp.Body.Read(buf)
+		var n int
+		var re error
+		if crashreport.Contain("audio-fetch", func() { n, re = resp.Body.Read(buf) }) {
+			return
+		}
 		if n > 0 {
 			if written+int64(n) > size {
 				return
@@ -972,6 +991,7 @@ func parseRange(s string, size int64) (int64, int64, error) {
 	return start, end, nil
 }
 func (m *Manager) serve(w http.ResponseWriter, r *http.Request) {
+	defer crashreport.FatalHTTP("audio-handler")
 	if r.Host != m.host || r.URL.RawQuery != "" || r.URL.RawPath != "" || !strings.HasPrefix(r.URL.Path, "/media/") {
 		http.NotFound(w, r)
 		return
@@ -996,6 +1016,8 @@ func (m *Manager) serve(w http.ResponseWriter, r *http.Request) {
 	m.pins[key]++
 	m.wg.Add(1)
 	defer func() { m.unpin(key); m.wg.Done() }()
+	// A panic while mu is held must be recorded before unpin tries to lock it.
+	defer crashreport.FatalHTTP("audio-handler")
 	l.used = true
 	en := m.entries[key]
 	j := m.jobs[key]

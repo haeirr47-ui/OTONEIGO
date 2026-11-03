@@ -19,6 +19,7 @@ import (
 
 	"github.com/voici5986/otoneigo/internal/appservice"
 	"github.com/voici5986/otoneigo/internal/catalog"
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/diagnostics"
 	"github.com/voici5986/otoneigo/internal/domain"
 	"github.com/voici5986/otoneigo/internal/gd"
@@ -39,6 +40,7 @@ var assets embed.FS
 const gdReleaseValidated = true
 
 func main() {
+	defer crashreport.Fatal("main")
 	// Framework/native diagnostics may contain payloads; our recorder accepts
 	// only a fixed, sanitized metadata schema.
 	log.SetOutput(io.Discard)
@@ -50,6 +52,9 @@ func main() {
 			os.Exit(1)
 		}
 		dataDir = filepath.Join(local, "OTONEIGO")
+	}
+	if crashes, err := crashreport.Open(filepath.Join(dataDir, "log")); err == nil {
+		crashreport.Install(crashes)
 	}
 	store, err := storage.Open(filepath.Join(dataDir, "library.db"))
 	if err != nil {
@@ -176,6 +181,7 @@ func main() {
 	var closeOnce sync.Once
 	var closeGate *lifecycle.CloseGate
 	shutdown := func() {
+		defer crashreport.Fatal("shutdown")
 		closeOnce.Do(func() {
 			if closeGate != nil {
 				closeGate.Stop()
@@ -196,14 +202,21 @@ func main() {
 			_ = recorder.Close()
 		})
 	}
-	defer shutdown()
+	defer func() {
+		// Do not enter potentially poisoned subsystem locks after a fatal panic.
+		if value := recover(); value != nil {
+			crashreport.Terminate("main", value)
+		}
+		shutdown()
+	}()
 	absoluteDir, _ := filepath.Abs(dataDir)
 	instanceHash := sha256.Sum256([]byte(strings.ToLower(filepath.Clean(absoluteDir))))
 
 	var windowRef atomic.Pointer[application.WebviewWindow]
 	app := application.New(application.Options{
-		Name:        "OTONEIGO",
-		Description: "网易云音乐 · Windows 本地客户端",
+		Name:         "OTONEIGO",
+		Description:  "网易云音乐 · Windows 本地客户端",
+		PanicHandler: handleApplicationPanic,
 		// Framework transport diagnostics may contain bound-method payloads.
 		Logger:   slog.New(slog.NewTextHandler(io.Discard, nil)),
 		Services: []application.Service{application.NewService(service)},
@@ -291,4 +304,14 @@ func startupError() {
 	message, _ := windows.UTF16PtrFromString("无法读取本地数据或启动窗口。请确认磁盘空间和应用数据目录权限后重试。")
 	title, _ := windows.UTF16PtrFromString("OTONEIGO")
 	_, _ = windows.MessageBox(0, message, title, windows.MB_OK|windows.MB_ICONERROR)
+}
+
+// Wails has already recovered on this goroutine. Never serialize its raw error
+// or StackTrace/FullStackTrace: they can contain request payloads and arguments.
+func handleApplicationPanic(details *application.PanicDetails) {
+	var value any
+	if details != nil {
+		value = details.Error
+	}
+	crashreport.Terminate("wails-callback", value)
 }

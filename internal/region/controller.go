@@ -9,6 +9,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/voici5986/otoneigo/internal/crashreport"
 	"github.com/voici5986/otoneigo/internal/domain"
 )
 
@@ -107,7 +108,12 @@ func (c *Controller) Refresh(ctx context.Context) (domain.RegionStatus, error) {
 	stop := context.AfterFunc(c.ctx, cancel)
 	defer stop()
 	defer cancel()
-	country, err := c.detect(requestCtx)
+	var country string
+	var err error
+	// Detection owns no controller locks or shared-state mutations.
+	if crashreport.Contain("region-detect", func() { country, err = c.detect(requestCtx) }) {
+		country, err = "", errors.New("REGION_DETECTION_FAILED")
+	}
 	c.mu.Lock()
 	if !c.closed && gen == c.status.NetworkGeneration {
 		c.status.Detecting = false
@@ -163,6 +169,7 @@ func (c *Controller) detect(ctx context.Context) (string, error) {
 	return country, nil
 }
 func (c *Controller) networkChanged() {
+	defer crashreport.Fatal("region-network")
 	c.mu.Lock()
 	if c.closed {
 		c.mu.Unlock()
@@ -182,6 +189,7 @@ func (c *Controller) networkChanged() {
 	c.changes = make(chan struct{})
 	c.mu.Unlock()
 	go func() {
+		defer crashreport.Fatal("region-refresh")
 		if pending != nil {
 			select {
 			case <-pending:
@@ -203,10 +211,22 @@ func (c *Controller) Start(ctx context.Context) {
 	c.started = true
 	c.monitorDone.Add(1)
 	c.mu.Unlock()
-	context.AfterFunc(ctx, c.Close)
-	go func() { _, _ = c.Refresh(c.ctx) }()
-	go func() { defer c.monitorDone.Done(); _ = c.options.Monitor(c.ctx, c.networkChanged) }()
+	context.AfterFunc(ctx, func() {
+		defer crashreport.Fatal("region-loop")
+		c.Close()
+	})
 	go func() {
+		defer crashreport.Fatal("region-refresh")
+		_, _ = c.Refresh(c.ctx)
+	}()
+	go func() {
+		defer crashreport.Fatal("region-monitor")
+		defer c.monitorDone.Done()
+		// A failed monitor retires after its own cleanup; polling remains active.
+		crashreport.Contain("region-monitor", func() { _ = c.options.Monitor(c.ctx, c.networkChanged) })
+	}()
+	go func() {
+		defer crashreport.Fatal("region-loop")
 		ticker := time.NewTicker(30 * time.Second)
 		defer ticker.Stop()
 		for {
