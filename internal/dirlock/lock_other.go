@@ -1,11 +1,12 @@
 //go:build !windows
 
-package resourcecache
+package dirlock
 
 import (
 	"errors"
-	"golang.org/x/sys/unix"
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 func lockFile(f *os.File) (func() error, error) {
@@ -13,13 +14,13 @@ func lockFile(f *os.File) (func() error, error) {
 		if errors.Is(err, unix.EWOULDBLOCK) || errors.Is(err, unix.EAGAIN) {
 			return nil, ErrInUse
 		}
-		return nil, errCache
+		return nil, errLock
 	}
 	return func() error {
 		err := unix.Flock(int(f.Fd()), unix.LOCK_UN)
 		ce := f.Close()
 		if err != nil || ce != nil {
-			return errCache
+			return errLock
 		}
 		return nil
 	}, nil

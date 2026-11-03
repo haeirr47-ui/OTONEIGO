@@ -1,11 +1,12 @@
 //go:build windows
 
-package mediacache
+package dirlock
 
 import (
 	"errors"
-	"golang.org/x/sys/windows"
 	"os"
+
+	"golang.org/x/sys/windows"
 )
 
 func lockFile(f *os.File) (func() error, error) {
@@ -15,13 +16,13 @@ func lockFile(f *os.File) (func() error, error) {
 		if errors.Is(err, windows.ERROR_LOCK_VIOLATION) {
 			return nil, ErrInUse
 		}
-		return nil, errCache
+		return nil, errLock
 	}
 	return func() error {
 		err := windows.UnlockFileEx(h, 0, 1, 0, &overlapped)
 		ce := f.Close()
 		if err != nil || ce != nil {
-			return errCache
+			return errLock
 		}
 		return nil
 	}, nil
