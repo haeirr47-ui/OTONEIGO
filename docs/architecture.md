@@ -50,6 +50,16 @@ flowchart LR
 
 ## 状态、媒体与存储
 
+### 播放器选择性订阅（2026-11-05）
+
+`PlayerContext` 继续传递稳定的唯一 `PlayerStore`，只执行命令的调用者使用 `usePlayerStore()`；展示状态使用 `usePlayerSelector(selector, isEqual?)`。选择结果默认按 `Object.is` 比较，组合结果可使用浅比较；同一快照的选择结果必须缓存，选择器或比较函数变化时重新计算。`usePlayer()` 保留完整状态订阅兼容接口，不作为高频展示路径的默认入口。store 仍统一通知监听器，优化目标是减少无关 React 渲染，不保证减少通知次数或整体 CPU/内存占用。
+
+`App` 不订阅播放位置或整个 queue；歌曲卡片只订阅 `PlayerState.currentSongId`（queue 变更时从当前 entry 派生一次）并与自身歌曲 ID 比较，不再每张卡片在每次通知时遍历 entries；封面仅订阅封面修订，收藏按钮按自身歌曲 ID 选择成员资格及资料就绪状态。进度、时间和歌词使用局部订阅，避免位置变化驱动整个播放器、队列列表或搜索结果更新。父组件传入的回调及组合选择结果也需保持稳定，不能仅添加 `memo` 后假定隔离有效。
+
+完整收藏 ID 成员集合纳入 `PlayerState.favoriteIDs` 的不可变快照，加载或成功写入时替换集合，旧快照不被后续写入修改；分页 metadata 不作为全库成员资格来源。该集合仅是现有 SQLite 收藏关系的内存投影，不增加第二份持久化协议、队列所有者或音频执行器。动态挂载、浏览器 fixture 与原生 WebView2 验证的范围分别记录在 [P0 验证记录](p0-validation.md)。
+
+进度、定位和模式等不改变条目内容的保存继续复用已归一化的运行时 entries/track 引用，避免每五秒持久化重新触发播放器整体更新；结构编辑仍替换条目数组。传给 `SaveQueue` 的数据仍独立复制并归一化位置、revision 和 metadata，持久化快照与运行时引用不共享，不通过停止通知或降低保存可靠性换取渲染减少。
+
 `PlayerStore` 唯一持有运行时队列；Go 仅存快照。`AudioEngine` 只有一个 HTMLAudioElement，不设置匿名 CORS 模式、不使用 WebAudio。切歌/暂停、网络 generation 与策略变化会取消待解析/待启动请求，generation 拦截迟到结果；已在播放的媒体不会因地区观测迟到自动换源。解析返回的 deadline 也约束媒体启动；所有 `status=full` 结果和全部 GD 结果都对同一实际 Audio 元数据检查时长完整性。API 返回 URL、元数据检查与真正完整播放是三种证据。
 
 SQLite schema 7 提供本地收藏、历史、设置、关键词历史和队列元数据。收藏/历史按歌曲、歌手、专辑在 SQLite 整库检索，无需网络 hydrate；收藏按 added_order 降序及 song_id 升序、历史按 (played_at, entry_id) 降序游标分页，每页最多 200 条。前端替换当前页 metadata，保留游标用于前后翻页，不无限累积 DOM；独立完整收藏 ID 集合负责爱心判断。不自动裁剪收藏、播放历史或关键词历史；关键词界面只显示最近 20 条，不代表数据库保留上限。历史在 `playing` 状态累计至少 500 毫秒有效媒体时间增量后写入，每次播放尝试最多一次；不是 resolve 成功即写入，也不向网易云上报。队列先读后写、revision 串行保存、暂停恢复；详情见 [storage.md](storage.md)。

@@ -1,5 +1,21 @@
 # 当前验证记录 — 0.5.4 交付 / 历史证据分期
 
+## 播放器选择性订阅（2026-11-05）
+
+本批仅调整 React 订阅与运行时快照引用：`usePlayerStore` 用于命令，`usePlayerSelector` 用于稳定的选择结果，兼容完整订阅保留；收藏完整 ID 集合进入不可变状态。App、歌曲卡片、收藏按钮、封面和设置/歌单读取所需字段，进度/时间/歌词在局部更新。进度保存复用运行时条目引用，但 `SaveQueue` 仍获得独立归一化副本。唯一队列、唯一音频执行器、网络源选择及 SQLite schema 7 不变。
+
+新增 store 回归覆盖分页外收藏成员、成功/失败写入和旧快照不变，以及 seek/timeupdate 保存后的运行时引用稳定、独立持久化副本和整数毫秒。现有前端 Vitest 共 193 项、14 文件通过；Go 全量测试与 vet 通过。构建和动态渲染证据以本节后续记录为准，不将静态 SSR 输出当作动态订阅验收。
+
+复核调整：歌曲卡片的高亮改读 `PlayerState.currentSongId`（`patch` 收到新 queue 时从当前 entry 派生一次），不再每张卡片在每次通知时遍历 `entries`；同一批次把选择器的 `isEqual` 要求写进代码注释，并让验收脚本按 `PLAYER_SELECTOR_BROWSER` → 本机 Chrome → Playwright 自带浏览器解析路径。该调整由既有 store 测试与重跑的浏览器验收覆盖，未新增测试项。
+
+最终 `./scripts/verify.ps1` exit=0：Go 格式/全量测试/vet、前端格式/lint/193 项测试、47 方法/31 模型绑定生成、TypeScript、Vite 与 Windows production 构建、11 份上游许可及依赖排除门禁全部通过。前端 production 为 73 modules，JS 376.44 kB（gzip 115.22 kB；复核调整后同法构建为 376.52 kB / gzip 115.27 kB）；此体积不是 CPU 或内存测量。当前 EXE 已重建，原有 ZIP 仍代表此前批次，未重新打包。
+
+`node scripts/player-selector-acceptance.mjs` 另在实际挂载的 Chrome DOM 中通过 32 项断言，报告 `output/playwright/player-selector-report.json`。测试仅在 Vite 验收转换中注入产品函数渲染计数，替换标记必须唯一且所有计数器先确认确实运行；生产代码不带计数器。确认搜索实际生成歌曲卡片、普通位置变化不渲染 App/TrackCard、seek 去抖保存和 timeupdate 持久化不渲染 OtoneiPlayer、组合选择值不变时跳过渲染、收藏对应项更新/失败保留、已挂载卡片换歌曲后回调收到新参数，以及选择器参数变化、Provider 换 store、SSR 与旧 hook 兼容。该工具需要既有 `.tools/browser` Playwright 和 Chrome（可用 `PLAYER_SELECTOR_BROWSER` 指定路径），不纳入常规无浏览器依赖的 verify；fixture 的桥接/音频是假实现，此报告只证明 React 订阅和 DOM 行为，原生媒体证明单独如下。复核调整后重跑仍为 32 项断言，渲染计数 App 3 / OtoneiPlayer 2 / TrackCard 5 / Cover 6 / FavoriteButton 14 不变（报告已覆盖为最新一次运行）。
+
+`output/playwright/native-player-selectors-20261105-171444-report.json` 与同名前缀的 `-host-report.json`：真实 Wails WebView2、SQLite 和媒体通道，无 RPC 或媒体响应替换，进程级不可达代理；数据从既有测试 profile 复制到独立目录，源文件哈希未变。两份真实缓存 MP3 的长度/hash 在启动前检查；播放样本实际时长 267.245714 秒，验证进度、81 秒 seek、暂停/继续、下一首及换曲后仍为单一 HTMLAudioElement、收藏列表当前曲高亮与同曲爱心同步、队列/歌词焦点限制及 Escape 恢复、设置 auto→off→auto。正常关闭 exit=0，SQLite integrity=ok、存储字段隐私扫描通过，最终当前曲 1850977722、已保存位置 2688 ms。入口：`./scripts/native-player-selectors.ps1`（要求隔离缓存 fixture 与当前 `production,p0debug` 验收 EXE）。主机脚本检查 Python 检查进程的退出码，并通过保留的进程句柄清理自有验收进程。
+
+此原生结果是已缓存媒体的功能回归，不是新一次线上网易云/GD 取流或整曲自然结束证明；未测整机 CPU、内存/GC、扬声器听感或长期压力。原有 P0 未测试条件保持。初次验收脚本的页面参数/相对定位问题已修正，早期失败报告保留在 output，不作为通过证据；本节只引用最终重跑报告。没有构建或运行安装器，没有发布、提交或推送。原生矩阵未在复核调整后重跑，它仍代表调整前实现的同一用户可见行为；`currentSongId` 改动由上述 store 测试与浏览器断言覆盖，不宣称原生复验。
+
 ## 2026-11-05 EXE 图标、Windows 资源与 Wails 3.1.0（已出 ZIP）
 
 范围、成因与遗留项见 [0.5.4 审计](audit-fixes-0.5.4.md) 与 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)；不改写下列历史产物的版本或哈希。

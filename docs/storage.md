@@ -17,6 +17,8 @@ SQLite 使用 modernc.org/sqlite v1.61.1、单连接/写锁、WAL、synchronous=
 
 TrackSnapshot 只含字符串网易云 ID、名称、歌手/专辑、时长和无查询参数的 HTTPS 网易云封面引用。媒体 URL、解析结果、Cookie/token 不属于库或队列协议。库 metadata 上限 128 KiB；本地收藏/历史/设置读取允许未知成员，但拒绝尾随JSON、非法UTF8、超限或无效已知字段/身份；异常原值保存在隔离表，不静默丢弃。设置更新合并保留未知值，无法安全改写的收藏或冲突设置明确拒写。
 
+2026-11-05 选择性订阅调整：完整收藏成员集合以 `PlayerState.favoriteIDs: ReadonlySet<string>` 暴露给前端选择器，初始化读取完整 ID，收藏写入成功后复制替换集合并通知。已有快照保持不变，失败写入不提前改变成员资格；当前页 `favorites` metadata 与完整成员集合分别负责分页展示和爱心判断。此集合不写入队列 JSON，不新增数据库表、schema 或浏览器持久化；SQLite 仍是收藏关系的持久化来源。
+
 队列项使用独立 `queueEntryId`，允许同一歌曲重复；含当前 entry/index、循环模式、整数毫秒位置和 JS 安全整数 revision。校验最多 1000 项、2 MiB JSON、字段长度、ID、位置和当前项一致性。前端串行保存完整快照，队列编辑立即提交，进度最多每 5 秒保存一次，暂停保存当前位置。
 
 启动先 LoadQueue；新库 null 表示空队列但不写入，读取失败禁止默认空队列覆盖。恢复保持暂停；用户播放时重新解析地址，加载媒体元数据后恢复位置。本地库和设置单独 hydrate，读取失败会报告错误，不把默认设置自动写回。GD capability 已按有限 MP3 原生样本开放，用户设置默认仍为 false；代码仍在 capability 未开放的构建中归零库内 GD 开关，AppService 拒绝启用未获准能力。
