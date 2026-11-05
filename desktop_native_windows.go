@@ -236,7 +236,8 @@ func (n *desktopNativeUI) Close() {
 }
 
 // ITaskbarList3's first eleven slots follow the Windows SDK COM ABI. The
-// pinned Wails v3.0.0 exposes creation/release but not these progress methods.
+// pinned Wails v3.1.0 exposes creation/release but not these progress methods;
+// pkg/w32 is byte-identical to the 3.0.0 package this layout was verified on.
 type desktopTaskbarLayout struct{ vtable *[11]uintptr }
 type desktopCOMTaskbar struct {
 	raw  *w32.ITaskbarList3

@@ -19,7 +19,7 @@ Invoke-ProjectToolchain {
     go version
     go mod download
     Assert-ExitCode 'Download Go modules'
-    go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0
+    go install github.com/wailsapp/wails/v3/cmd/wails3@v3.1.0
     Assert-ExitCode 'Build project-local Wails CLI'
     if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
         throw 'pnpm 12 is required; install it before running bootstrap.'

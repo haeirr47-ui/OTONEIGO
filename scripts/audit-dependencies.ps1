@@ -3,11 +3,36 @@ $ErrorActionPreference = 'Stop'
 Invoke-ProjectToolchain {
     # Native tray/taskbar integration is verified against this exact Wails release.
     # Updating it is a separate native-acceptance batch, never a routine patch bump.
+    # 2026-11-05 upgrade batch: 3.0.0 -> 3.1.0 was reviewed file by file (pkg/w32,
+    # systemtray_windows.go, internal/webview2 and the Windows single-instance files
+    # are byte-identical) and re-accepted natively before this pin moved.
+    $pinnedWails = 'v3.1.0'
+    $pinnedWailsRuntime = '3.1.0'
     $wailsVersion = @(go list -m -f '{{.Version}}' github.com/wailsapp/wails/v3)
     Assert-ExitCode 'Read pinned Wails version'
-    $frontendRuntime = (Get-Content -Raw -LiteralPath 'frontend/package.json' | ConvertFrom-Json).dependencies.'@wailsio/runtime'
-    if ($wailsVersion.Count -ne 1 -or $wailsVersion[0] -ne 'v3.0.0' -or $frontendRuntime -ne '3.0.0') {
-        throw 'Wails Go/runtime must remain pinned to 3.0.0 until a separate native acceptance batch approves an upgrade.'
+    # The resolved runtime version is read from the tracked lockfile rather than
+    # node_modules, so this gate also works in a checkout that has not installed
+    # frontend dependencies yet. The declared range in package.json is checked too:
+    # bootstrap's --frozen-lockfile catches a drift, but verify.ps1 does not install.
+    $declaredRuntime = (Get-Content -Raw -LiteralPath 'frontend/package.json' | ConvertFrom-Json).dependencies.'@wailsio/runtime'
+    $allowedDeclarations = @($pinnedWailsRuntime, "^$pinnedWailsRuntime")
+    $lockfile = Get-Content -Raw -LiteralPath 'frontend/pnpm-lock.yaml'
+    $resolvedRuntime = @([regex]::Matches($lockfile, "'@wailsio/runtime@(\d+\.\d+\.\d+)'") | ForEach-Object { $_.Groups[1].Value } | Sort-Object -Unique)
+    # README requires go.mod and the project-local CLI to move together; that used to
+    # be a manual promise, so the CLI version is taken from the binary itself.
+    $cliPath = Join-Path (Get-Location) '.tools/bin/wails3.exe'
+    if (-not (Test-Path -LiteralPath $cliPath)) { throw 'Wails CLI is missing; run scripts/bootstrap.ps1 before the dependency audit.' }
+    # The CLI prints its version on stderr, so the merged stream is searched for the
+    # version line instead of trusting stdout alone.
+    $cliOutput = ((& $cliPath version 2>&1) | Out-String)
+    Assert-ExitCode 'Read Wails CLI version'
+    $cliVersion = @($cliOutput -split '\r?\n' | Where-Object { $_ -match '^v\d+\.\d+\.\d+$' } | Select-Object -First 1)
+    if ($cliVersion.Count -ne 1) { throw "Cannot read the Wails CLI version from '$cliPath': $($cliOutput.Trim())" }
+    if ($wailsVersion.Count -ne 1 -or $wailsVersion[0] -ne $pinnedWails -or
+        $resolvedRuntime.Count -ne 1 -or $resolvedRuntime[0] -ne $pinnedWailsRuntime -or
+        $declaredRuntime -notin $allowedDeclarations -or
+        $cliVersion[0] -ne $pinnedWails) {
+        throw "Wails Go/runtime/CLI must remain pinned to $pinnedWails/$pinnedWailsRuntime/$pinnedWails (found go='$($wailsVersion -join ',')', lockfile runtime='$($resolvedRuntime -join ',')', declared='$declaredRuntime', CLI='$($cliVersion -join ',')') until a separate native acceptance batch approves an upgrade."
     }
     New-Item -ItemType Directory -Force 'output/p0' | Out-Null
     $compiled = @(go list -deps ./...)
@@ -64,8 +89,8 @@ Invoke-ProjectToolchain {
         if ($frontendLicenses.Count -eq 0) {
             # The published npm package omits its notice; the same pinned Wails release's
             # full MIT notice is already included by the executable module audit.
-            if ($package.name -eq '@wailsio/runtime' -and $package.version -eq '3.0.0' -and
-                ($inventory | Where-Object { $_.module -eq 'github.com/wailsapp/wails/v3' -and $_.version -eq 'v3.0.0' })) {
+            if ($package.name -eq '@wailsio/runtime' -and $package.version -eq $pinnedWailsRuntime -and
+                ($inventory | Where-Object { $_.module -eq 'github.com/wailsapp/wails/v3' -and $_.version -eq $pinnedWails })) {
                 $frontendInventory += [ordered]@{ package = $package.name; version = $package.version; licenseSource = 'Wails Go module notice' }
                 continue
             }

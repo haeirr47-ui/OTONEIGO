@@ -152,10 +152,12 @@ func (d *desktopController) Close() {
 
 var desktopFindWindowEx = windows.NewLazySystemDLL("user32.dll").NewProc("FindWindowExW")
 
-// Wails v3.0.0 exposes no tray readiness API. Its sole tray uses ID 1 and a
-// message-only window. Query only this process's windows, without changing them.
-// Failure (including shell restart/overflow lookup failure) leaves normal close
-// behavior in place. Keep this bounded adapter aligned with the pinned Wails API.
+// Wails v3.1.0 exposes no tray readiness API. Its sole tray uses ID 1 and a
+// message-only window; systemtray_windows.go is byte-identical to the 3.0.0 file
+// this adapter was written against. Query only this process's windows, without
+// changing them. Failure (including shell restart/overflow lookup failure) leaves
+// normal close behavior in place. Keep this bounded adapter aligned with the
+// pinned Wails API.
 func desktopTrayAvailable(windowClass string) bool {
 	className, err := windows.UTF16PtrFromString(windowClass)
 	if err != nil || windowClass == "" {
