@@ -11,7 +11,7 @@
 - 交付：`bin/OTONEIGO-0.5.4-windows-x64.zip` 19,530,458 字节，SHA-256 `db34731819d359b35d5955371e55a275b23bcc8bead47ad6e7345dd67278afd6`；包内 `OTONEIGO.exe` 逐字节等于最后生产构建（SHA-256 `9b5257e4ec06ed6c45fa092939e0d4950a963270beda69b0682f4fcaa84eee57`），逐项包内/输入哈希由打包脚本写入 `output/packaging/portable-0.5.4-final-report.json`；随包通知已重生成并记录 v3.1.0。
 - 图标资产与 `reference/` 解耦已核实：`frontend/public/logo.svg` 哈希等于 provenance 记录的 OTONEI 原件，构建/打包只读产品内文件；母图与矢量副本哈希已登记到 `docs/source-provenance.json`。
 - 仍未运行：Go race（CGO 关闭）、便携覆盖更新与旧版本启动、安装器/签名/远程发布、多屏或休眠、真实出口切换；账号能力仍关闭。
-- 复核（16:03）：审查后修正 `-SkipBuild` 的 README 版号门禁缺口、`Add-Type` 的 C# 版本依赖，补上母图复现测试与报告 `gateScriptSHA256`，并把上文"同一时刻"改为真实时间线。只重跑了不重建 EXE 的两项（`native-icon054.ps1`、`package-windows.ps1 -SkipBuild`），EXE `9b5257e4…` 与 ZIP `db347318…` 逐字节未变；整链聚合与完整 `verify.ps1` 未重跑，详见 [0.5.4 审计](audit-fixes-0.5.4.md) 复核补记。
+- 复核（16:02–16:12）：审查后修正 `-SkipBuild` 的 README 版号门禁缺口、`Add-Type` 的 C# 版本依赖，补上母图复现测试与报告 `gateScriptSHA256`，并把上文"同一时刻"改为真实时间线。只重跑了不重建 EXE 的两项（`native-icon054.ps1`、`package-windows.ps1 -SkipBuild`），EXE `9b5257e4…` 与 ZIP `db347318…` 逐字节未变；整链聚合与完整 `verify.ps1` 未重跑，详见 [0.5.4 审计](audit-fixes-0.5.4.md) 复核补记。
 
 ## 2026-11-03 维护加固验证（源码批次，未重打 ZIP）
 

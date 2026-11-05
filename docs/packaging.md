@@ -50,7 +50,7 @@ PortableOnly 默认开启。默认流程不下载或运行 NSIS、不生成 setu
 
 0.5.4 未重跑便携覆盖更新与旧版本启动，未执行安装器、签名或远程发布；这些限制不因本批完成而自动取消。
 
-复核补记（2026-11-05 16:03）：`bin/OTONEIGO.exe` 仍是 14:58:45 那次 production 构建的产物（SHA-256 `9b5257e4…a84eee57`，未重建）；打包与资源两份报告由最终脚本重跑生成，ZIP 逐字节不变（19,530,458 字节、`db347318…78afd6`），因此上表的哈希仍然有效。同一次复核把 `installer/README.txt` 的版号检查移入 `scripts/toolchain.ps1` 并让打包路径也调用它，补上母图复现测试与报告里的 `gateScriptSHA256`。未重跑的是 `scripts/native-wails054.ps1` 的整链聚合（它会经 `verify.ps1` 重建 EXE 并改变上述哈希），其 15:00 报告仍是那次运行的原样记录。
+复核补记（2026-11-05 16:02–16:12）：`bin/OTONEIGO.exe` 仍是 14:58:45 那次 production 构建的产物（SHA-256 `9b5257e4…a84eee57`，未重建）；打包与资源两份报告由最终脚本重跑生成，ZIP 逐字节不变（19,530,458 字节、`db347318…78afd6`），因此上表的哈希仍然有效。注意 ZIP 哈希与载荷的最后写入时间绑定（`Compress-Archive` 记录 DOS 时间戳）：复核中重跑 `audit-dependencies.ps1` 即使 `bin/THIRD_PARTY_NOTICES.txt` 内容逐字节相同，只要改写时间变了，重新打包就会得到不同哈希而内容不变；按原时间回填该文件后复现了上表哈希，这也说明"哈希变了"不等于"内容变了"，比对前应先看报告里的条目哈希。同一次复核把 `installer/README.txt` 的版号检查移入 `scripts/toolchain.ps1` 并让打包路径也调用它，补上母图复现测试与报告里的 `gateScriptSHA256`。未重跑的是 `scripts/native-wails054.ps1` 的整链聚合（它会经 `verify.ps1` 重建 EXE 并改变上述哈希），其 15:00 报告仍是那次运行的原样记录。
 
 ## 数据与退出
 

@@ -46,7 +46,7 @@
 
 顺序说明：上述结果由 `scripts/native-wails054.ps1` 一次跑完得到（14:58–15:00），包含重新构建、重新出包与重新跑全部原生矩阵；早期手工分段执行留下的旧报告已被覆盖。
 
-该次运行之后，同批脚本又经过一次复核修改（15:25–15:27 与 16:02–16:03，见 [0.5.4 审计](audit-fixes-0.5.4.md) 的复核补记）。因此 `output/playwright/native-wails054-report.json` 记录的是**修改前**的脚本状态，不能与当前脚本视为同一时刻。复核只重跑了不需要重建 EXE 的两段：`native-icon054.ps1` 与 `package-windows.ps1 -SkipBuild`，`bin/OTONEIGO.exe`（`9b5257e4…a84eee57`，14:58:45）与 ZIP（`db347318…78afd6`）逐字节未变，两份报告已由最终脚本重新生成；打包报告新增的 `gateScriptSHA256` 就是为此可判定而加的。整链聚合未重跑，因为它会经 `verify.ps1` 重建 EXE 并改变上述两个哈希；上面各阶段的结论仍以 15:00 那次运行为准。作为脚本改动的替代证据，复核运行了 `gofmt`、`go vet ./...`、`go test ./...`（含新增的母图复现测试）、`native-icon054.ps1` 与 `package-windows.ps1 -SkipBuild` 的真实执行，未重跑完整 `verify.ps1`（含 production 构建与许可审计）。
+该次运行之后，同批脚本又经过一次复核修改（15:25–15:27 与 16:02–16:12，见 [0.5.4 审计](audit-fixes-0.5.4.md) 的复核补记）。因此 `output/playwright/native-wails054-report.json` 记录的是**修改前**的脚本状态，不能与当前脚本视为同一时刻。复核只重跑了不需要重建 EXE 的两段：`native-icon054.ps1` 与 `package-windows.ps1 -SkipBuild`，`bin/OTONEIGO.exe`（`9b5257e4…a84eee57`，14:58:45）与 ZIP（`db347318…78afd6`）逐字节未变，两份报告已由最终脚本重新生成；打包报告新增的 `gateScriptSHA256` 就是为此可判定而加的。整链聚合未重跑，因为它会经 `verify.ps1` 重建 EXE 并改变上述两个哈希；上面各阶段的结论仍以 15:00 那次运行为准。作为脚本改动的替代证据，复核运行了 `gofmt`、`go vet ./...`、`go test ./...`（含新增的母图复现测试）、`native-icon054.ps1` 与 `package-windows.ps1 -SkipBuild` 的真实执行，未重跑完整 `verify.ps1`（含 production 构建与许可审计）。
 
 ## 未通过项与原因（如实记录）
 

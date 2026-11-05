@@ -38,7 +38,7 @@ DPI 行为不变的依据：Wails `newPlatformApp` 本来就调用 `setupDPIAwar
 
 最终免安装 ZIP 为 19,530,458 字节，SHA-256 `db34731819d359b35d5955371e55a275b23bcc8bead47ad6e7345dd67278afd6`（`bin/OTONEIGO-0.5.4-windows-x64-portable.sha256`）。包内恰好四个白名单文件，`OTONEIGO.exe` 与最后生产构建逐字节一致（SHA-256 `9b5257e4ec06ed6c45fa092939e0d4950a963270beda69b0682f4fcaa84eee57`），逐项包内/输入哈希由 `scripts/package-windows.ps1` 自己写入 `output/packaging/portable-0.5.4-final-report.json`；随包通知已重生成并记录 Wails v3.1.0。该 EXE 的真实启动/初始化/退出验收见 `output/packaging/native-icon-054-report.json`；覆盖更新与旧版本启动未重跑，安装器、签名、远程发布继续暂停。本批不执行自动暂存、提交或推送，Git 状态以仓库实际记录为准。
 
-## 复核补记（2026-11-05 16:03）
+## 复核补记（2026-11-05 16:02–16:12）
 
 代码审查发现上文的"报告与代码状态同一时刻"不成立：本批脚本在首次整链运行（14:58–15:00）之后仍被修改过。按"必须修或必须改正"处理如下，判断项保持原样。
 
