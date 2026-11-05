@@ -52,4 +52,4 @@
 
 ## 交付
 
-仅 [0.5.1免安装ZIP](../bin/OTONEIGO-0.5.1-windows-x64.zip)，19446550字节，SHA-256 `245573a9dbab49c9f93043fa2a1df4f8a3c7524f3a9ddd9a27debf7fbb432df0`。四文件白名单逐项与最终生产输入一致。精确production构建无CDP；最终解压EXE在隔离配置启动、初始化、退出码0及数据保留通过。覆盖更新只放置旧payload再替换文件，没有运行旧应用；详见 [打包说明](packaging.md)和[P0记录](p0-validation.md)。
+仅 [0.5.1免安装ZIP](../../bin/OTONEIGO-0.5.1-windows-x64.zip)，19446550字节，SHA-256 `245573a9dbab49c9f93043fa2a1df4f8a3c7524f3a9ddd9a27debf7fbb432df0`。四文件白名单逐项与最终生产输入一致。精确production构建无CDP；最终解压EXE在隔离配置启动、初始化、退出码0及数据保留通过。覆盖更新只放置旧payload再替换文件，没有运行旧应用；详见 [打包说明](../delivery/packaging.md)和[P0记录](../validation/p0-validation.md)。

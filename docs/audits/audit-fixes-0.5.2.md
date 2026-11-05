@@ -51,6 +51,6 @@
 
 最终Go全量测试/vet、182个前端测试（13文件）、TypeScript/Vite、Windows production构建与13份Go根许可门禁通过；47个Wails方法/31个模型只新增安全恢复计数。Go race因CGO关闭未运行。账号、实际VPN/Tailscale/中国出口、物理多屏/休眠及安装器继续暂停。
 
-最终免安装产物及哈希见[打包说明](packaging.md)与`output/packaging/portable-0.5.2-final-report.json`。schema7升级后旧版不能打开同一数据库；此为本工程内部升级，不是旧产品数据迁移。
+最终免安装产物及哈希见[打包说明](../delivery/packaging.md)与`output/packaging/portable-0.5.2-final-report.json`。schema7升级后旧版不能打开同一数据库；此为本工程内部升级，不是旧产品数据迁移。
 
 最终ZIP为 19468539 字节，SHA-256 `2ad8ab0c028eb10cf8595124d963e6c0ab930857c494776643cbba958235725b`，仅四个白名单文件且各自匹配最终构建输入。精确解压production EXE在含1000封面和未知字段的隔离配置启动/初始化/退出码0，schema7、1004收藏/1006历史、未知字段及资格限制保留；覆盖文件期间数据库hash不变，oldVersionLaunched=false。没有安装器、签名、上传或Git提交。

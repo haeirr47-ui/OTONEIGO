@@ -23,7 +23,7 @@
 
 DPI 行为不变的依据：Wails `newPlatformApp` 本来就调用 `setupDPIAwareness()` 请求 Per-Monitor V2，并在检测到上下文已由清单设定后跳过 API（框架源码注释引用 issue 4803/4835）。清单只是把设定时点从 `application.New` 提前到进程加载，最终上下文相同；新验收实测窗口 DPI 上下文仍等于 `DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2`。Common Controls 6 依赖会让框架的 `TaskDialogAvailable()` 变为真，但本工程未调用任何 Wails 对话框 API（全库检索 `MessageDialog/ErrorDialog/ConfirmDialog/Dialogs` 无命中），崩溃与错误提示仍走 `windows.MessageBox`，因此该路径未被启用。
 
-图标来源与 `reference/` 解耦：矢量标帜早已作为产品资产存在于 `frontend/public/logo.svg`，本批重新计算其 SHA-256，与 `docs/source-provenance.json` 记录的 OTONEI 原件（现标注 `missing: true`）逐字节一致；构建与打包读取的都是产品内文件，删除 `reference/` 后仍可完整重建图标与资源。OTONEI 与本工程同为 MIT、同一版权人，衍生母图已在随包通知中声明。
+图标来源与 `reference/` 解耦：矢量标帜早已作为产品资产存在于 `frontend/public/logo.svg`，本批重新计算其 SHA-256，与 `docs/delivery/source-provenance.json` 记录的 OTONEI 原件（现标注 `missing: true`）逐字节一致；构建与打包读取的都是产品内文件，删除 `reference/` 后仍可完整重建图标与资源。OTONEI 与本工程同为 MIT、同一版权人，衍生母图已在随包通知中声明。
 
 ## 验收
 

@@ -13,9 +13,9 @@ import (
 // The committed master is a build input: `wails3 generate icons` reads it and the
 // resulting .ico is embedded in the executable. Every other gate only counts
 // RT_ICON entries, so a hand-edited PNG would ship unnoticed. This test is what
-// makes the "rendered by cmd/appicon" claim in main.go and docs/packaging.md true
+// makes the "rendered by cmd/appicon" claim in main.go and docs/delivery/packaging.md true
 // rather than asserted; a Go release that changes the encoder also shows up here,
-// because docs/source-provenance.json records the byte hash of the same file.
+// because docs/delivery/source-provenance.json records the byte hash of the same file.
 func TestCommittedIconIsRendererOutput(t *testing.T) {
 	path := filepath.Join("..", "..", "packaging", "windows", "appicon.png")
 	committed, err := os.ReadFile(path)

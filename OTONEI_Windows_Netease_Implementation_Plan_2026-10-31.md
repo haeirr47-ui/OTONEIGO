@@ -5,7 +5,7 @@
 > 项目代号: OTONEIGO (暂按用户确定的新目录命名)  
 > 目标平台: Windows 10/11 x64 优先  
 > 状态: **P0 已开始, 核心门槛未全部通过; 三个参考项目副本保持只读并被 Git 忽略**  
-> 修订说明: 当前工程已接入地区控制器、受限 header 取流编排、schema 5 本地收藏/历史/设置/歌单、SQLite 整库检索、收藏/历史分页、关键词历史、封面/歌词缓存与磁盘音频缓存和固定字段诊断；GD 严格回退已按有限 MP3 原生证据开放 `gdReleaseValidated = true`，用户设置仍默认关闭，账号仍未实现。CDN/no-cache 尚未实现。源码落地不等于 P0 全过或 P1/P2 已交付；真实绑定/原生媒体结果和 A—E 决策见 [P0 验证记录](docs/p0-validation.md)。三个参考副本只读且被 Git 忽略，不读旧用户数据，不做导入/导出/备份/恢复。
+> 修订说明: 当前工程已接入地区控制器、受限 header 取流编排、schema 5 本地收藏/历史/设置/歌单、SQLite 整库检索、收藏/历史分页、关键词历史、封面/歌词缓存与磁盘音频缓存和固定字段诊断；GD 严格回退已按有限 MP3 原生证据开放 `gdReleaseValidated = true`，用户设置仍默认关闭，账号仍未实现。CDN/no-cache 尚未实现。源码落地不等于 P0 全过或 P1/P2 已交付；真实绑定/原生媒体结果和 A—E 决策见 [P0 验证记录](docs/validation/p0-validation.md)。三个参考副本只读且被 Git 忽略，不读旧用户数据，不做导入/导出/备份/恢复。
 
 > 本次决策: **独立仓库、Windows 专项、React + Wails 3 + Go、无 Firebase、仅网易云曲库、GD Music 网易云音源可选备用、彻底移除 UNM**
 
@@ -13,9 +13,9 @@
 
 ## 当前实现索引（2026-11-02 / 0.4.0）
 
-2026-11-02 盘点后，用户明确暂缓全部登录相关功能；非账号工作按[当前实施路线](docs/roadmap.md)依次执行。本轮封面/歌词缓存、整库检索、收藏分页/关键词历史已接入源码；当前版原生资源/查询与强杀耐久、独立海外直兼容启动、最终构建/审计及便携 ZIP/覆盖更新有限用例已通过，后续桌面/发布候选不冒充已经完成。旧阶段复选框保留历史语境，当前状态以实施路线和实际验收记录为准。
+2026-11-02 盘点后，用户明确暂缓全部登录相关功能；非账号工作按[当前实施路线](docs/planning/roadmap.md)依次执行。本轮封面/歌词缓存、整库检索、收藏分页/关键词历史已接入源码；当前版原生资源/查询与强杀耐久、独立海外直兼容启动、最终构建/审计及便携 ZIP/覆盖更新有限用例已通过，后续桌面/发布候选不冒充已经完成。旧阶段复选框保留历史语境，当前状态以实施路线和实际验收记录为准。
 
-本方案保留产品目标、初始设计草案与历史实验。描述“建议/拟议/草案”的接口和目录不是当前 API 清单；当前契约以[架构](docs/architecture.md)、[存储](docs/storage.md)、[适配器](docs/netease-adapter.md)和[海外兼容说明](docs/overseas-compatibility-p0.md)为准，验收以 [P0 记录](docs/p0-validation.md)为准。
+本方案保留产品目标、初始设计草案与历史实验。描述“建议/拟议/草案”的接口和目录不是当前 API 清单；当前契约以[架构](docs/architecture/architecture.md)、[存储](docs/architecture/storage.md)、[适配器](docs/architecture/netease-adapter.md)和[海外兼容说明](docs/compatibility/overseas-compatibility-p0.md)为准，验收以 [P0 记录](docs/validation/p0-validation.md)为准。
 
 | 边界 | 当前实现 | 未交付或待证 |
 | --- | --- | --- |
@@ -77,7 +77,7 @@ P0 分组统一为 A 宿主基础、B 网易云搜索/登录/取流、C 地区�
 | [GD API 参考](https://github.com/voici5986/OTONEI/blob/a54f0bafb9932edfe061acdb6ef1bd55f707c4f0/docs/reference/GD_STUDIO_API.md) | 文档内更新日期 2026-06-26 | 提供 `source=netease` 的 URL 查询及音质字段, 但**不保证 VIP/完整音频/真实高音质**; 参考页注明非商业与调用限制 |
 | [NetEaseMusicWorldNext](https://github.com/kogamitora/NetEaseMusicWorldNext) | 本地 manifest v1.0.0, 文件 SHA-256 见来源清单 | GPL-3.0 Chrome 扩展; 固定请求头与部分 CDN 域名改写; 无自动地区检测, 不复制源码或引入扩展运行时 |
 
-  第三个只读参考 `NetEaseMusicWorldNext-master/` 用于观察播放 header/CDN 机制, 不复制其代码、不引入扩展运行时; 具体观察与限制见[海外兼容说明](docs/overseas-compatibility-p0.md)。隔离试验已验证受限 header 对一个样本有效, 并经测试桥接完成真实 WebView2 播放; 在该 2026-10-31 历史检查点，正式运行代码尚未集成海外检测/兼容、账号或 GD；当前集成状态已由上方 0.4.0 索引取代，账号继续暂停。正式 P1 前须完成 A—E 验证工作与明确 go/no-go 决策; 可选能力失败可禁用/延期, 但未测试不能计为成功或已完成, 也不能宣称可选功能交付。
+  第三个只读参考 `NetEaseMusicWorldNext-master/` 用于观察播放 header/CDN 机制, 不复制其代码、不引入扩展运行时; 具体观察与限制见[海外兼容说明](docs/compatibility/overseas-compatibility-p0.md)。隔离试验已验证受限 header 对一个样本有效, 并经测试桥接完成真实 WebView2 播放; 在该 2026-10-31 历史检查点，正式运行代码尚未集成海外检测/兼容、账号或 GD；当前集成状态已由上方 0.4.0 索引取代，账号继续暂停。正式 P1 前须完成 A—E 验证工作与明确 go/no-go 决策; 可选能力失败可禁用/延期, 但未测试不能计为成功或已完成, 也不能宣称可选功能交付。
 
 ---
 
@@ -169,7 +169,7 @@ flowchart TB
 
   React 只依赖稳定的 TypeScript 服务契约, 不直接操作网易云 Cookie, 也不直接拼装 GD 请求。Go 层负责网络、权限状态分类、来源标签、超时和日志脱敏。React `PlayerContext` (或其等价单一模块) 独占运行时队列; `AudioEngine` 是单一执行器, Go/SQLite 只保存快照, 不建立第二份可变队列。托盘、媒体键和迷你窗口命令都转发到同一状态所有者
 
-  Go 出口检测已实现国家码观测与 CN/overseas/unknown 分类，不依据系统语言/地区，也不传递或持久化原始公网 IP。启动异步检测、15 分钟 TTL、30 秒最短重试、Windows 路由/接口通知及补充检测已接入；实际 VPN/恢复和分流效果仍须验收。`auto/always/off`、白名单、取消和剩余限制以[海外兼容 P0 说明](docs/overseas-compatibility-p0.md)为准。
+  Go 出口检测已实现国家码观测与 CN/overseas/unknown 分类，不依据系统语言/地区，也不传递或持久化原始公网 IP。启动异步检测、15 分钟 TTL、30 秒最短重试、Windows 路由/接口通知及补充检测已接入；实际 VPN/恢复和分流效果仍须验收。`auto/always/off`、白名单、取消和剩余限制以[海外兼容 P0 说明](docs/compatibility/overseas-compatibility-p0.md)为准。
 
 ### 4.2 避免误用「Go API 服务」这一术语
 
@@ -256,7 +256,7 @@ music-client/                        # 独立新仓库, 名称待定
 
   替代路线: 只按需要**独立实现最小网易云适配器**, 不维护原库全部服务接口。若精简派生库的修改和维护量过高, 这条路线值得重新评估
 
-  **完成标准:** 新客户端 Go 构建及传递依赖中均无 UNM; 非许可代码不被意外复制; 出具 `docs/licenses.md` 审计记录。此为工程评估, 对外正式分发前仍需完整检查许可证及内容服务使用条款
+  **完成标准:** 新客户端 Go 构建及传递依赖中均无 UNM; 非许可代码不被意外复制; 出具 `docs/delivery/licenses.md` 审计记录。此为工程评估, 对外正式分发前仍需完整检查许可证及内容服务使用条款
 
 ---
 
@@ -285,7 +285,7 @@ music-client/                        # 独立新仓库, 名称待定
 5. 退出登录清除本地受保护会话, 云端写操作立即不可用; 递增会话 generation、取消在途解析并使该会话 URL 缓存失效, 不清空本地收藏、历史或队列
 6. 若二维码流程被网易云风控拒绝 (如部分客户端曾遇 HTTP 462), 评估独立 WebView2 登录窗口; 必须使用系统受支持的 Cookie 接口处理 HttpOnly Cookie, 不从页面 JS 读取
 
-  go-musicfox 主项目已有对扫码 HTTP 462 的专门处理, 可用作**技术行为参考**, 但其 GPL 代码不可未经合规处理直接复制到新项目。网页登录和 Cookie 获取属于 P0-B 独立账号实验, 不应提前保证成功。扫码/会话/账号只读链路未通过时, 明确标记账号功能未交付并形成禁用/延期决策; 是否进入正式 P1 统一遵循 [A—E 验证与 go/no-go 门槛](docs/overseas-compatibility-p0.md), 不单凭账号可选直接推进。
+  go-musicfox 主项目已有对扫码 HTTP 462 的专门处理, 可用作**技术行为参考**, 但其 GPL 代码不可未经合规处理直接复制到新项目。网页登录和 Cookie 获取属于 P0-B 独立账号实验, 不应提前保证成功。扫码/会话/账号只读链路未通过时, 明确标记账号功能未交付并形成禁用/延期决策; 是否进入正式 P1 统一遵循 [A—E 验证与 go/no-go 门槛](docs/compatibility/overseas-compatibility-p0.md), 不单凭账号可选直接推进。
 
 ### 6.3 本地账号切换
 
@@ -366,7 +366,7 @@ flowchart TD
 
 总 deadline 保持匿名/非会员 26 秒、已验证会员 40 秒；普通、兼容、GD 分别最多 4、5、17/31 秒，各阶段质量链共享本阶段预算。直接兼容不发普通阶段，也不把未用普通预算扩展给兼容或 GD；节流、等待、探测和启动均消耗剩余总预算，不开无限重试链。兼容连续失败三次冷却一分钟，直接兼容冷却时只转合资格 GD 或返回 `COMPATIBILITY_COOLDOWN`。
 
-兼容唯一白名单是无 query/userinfo 的 `POST https://music.163.com/weapi/song/enhance/player/url/v1`，只添加版本化固定 `X-Real-IP`。搜索、元数据、歌词、封面、GD 和地区检测不带该头；登录、QR、认证保持隔离，HTTPS/TLS 验证不变。CDN 改写与上游 no-cache 仍未实现，不改系统代理/DNS/Hosts，不持久化媒体 URL。新路由已由独立 native-egress04 报告验证真实 TH/overseas auto 的 HTTP 尝试顺序及原生启动/媒体时长，不是本轮整首自然结束；现有 0.4 资源/查询、离线及强杀通过是在旧路由下取得，不单独证明此次顺序修正。详见[受控实验设计](docs/overseas-compatibility-p0.md)和 [P0 记录](docs/p0-validation.md)。
+兼容唯一白名单是无 query/userinfo 的 `POST https://music.163.com/weapi/song/enhance/player/url/v1`，只添加版本化固定 `X-Real-IP`。搜索、元数据、歌词、封面、GD 和地区检测不带该头；登录、QR、认证保持隔离，HTTPS/TLS 验证不变。CDN 改写与上游 no-cache 仍未实现，不改系统代理/DNS/Hosts，不持久化媒体 URL。新路由已由独立 native-egress04 报告验证真实 TH/overseas auto 的 HTTP 尝试顺序及原生启动/媒体时长，不是本轮整首自然结束；现有 0.4 资源/查询、离线及强杀通过是在旧路由下取得，不单独证明此次顺序修正。详见[受控实验设计](docs/compatibility/overseas-compatibility-p0.md)和 [P0 记录](docs/validation/p0-validation.md)。
 
 ### 7.3 网易云普通与兼容结果应校验的字段
 
@@ -439,7 +439,7 @@ GET https://music-api.gdstudio.xyz/api.php
 | 已下载音乐 (P3 可选) | 用户选择的文件夹 | 文件来源及授权需记录 |
 | 封面/歌词/短期音频缓存 | 应用缓存目录 | 设置大小与可清理策略 |
 
-  当前数据库为 `%LOCALAPPDATA%\OTONEIGO\library.db`（可用进程环境变量隔离测试），已选无需 CGO 的 modernc SQLite。schema 5 在事务内从本工程旧 schema 升级，保留队列，拒绝未知高版本；不是旧产品迁移。一个连接、进程内单写锁、同数据目录单实例、WAL + synchronous=FULL 支持按操作提交。收藏/历史/设置已实现；正常重启、schema 升级与强杀后已提交状态仍须分别记录原生证据，不能靠关窗刷新或推断宣布通过。详见[存储协议](docs/storage.md)。
+  当前数据库为 `%LOCALAPPDATA%\OTONEIGO\library.db`（可用进程环境变量隔离测试），已选无需 CGO 的 modernc SQLite。schema 5 在事务内从本工程旧 schema 升级，保留队列，拒绝未知高版本；不是旧产品迁移。一个连接、进程内单写锁、同数据目录单实例、WAL + synchronous=FULL 支持按操作提交。收藏/历史/设置已实现；正常重启、schema 升级与强杀后已提交状态仍须分别记录原生证据，不能靠关窗刷新或推断宣布通过。详见[存储协议](docs/architecture/storage.md)。
 
   收藏、历史和队列均保存最小 `TrackSnapshot`: 字符串 `neteaseSongId`、名称、歌手、所需专辑信息、`durationMs` 和封面引用。离线重启或远端下架时仍可显示文本并执行本地搜索, 不依赖联网补齐歌曲详情。快照不保存签名媒体 URL、Cookie 或 token; 凭据只在 Go 的受保护会话存储。封面引用可失效, 不保证离线图片存在。
 
@@ -525,7 +525,7 @@ GET https://music-api.gdstudio.xyz/api.php
 
 ## 11. 分阶段执行计划
 
-  以下是分阶段实施顺序。用户已确定独立目录 `C:\chunwang\vibecoder\OTONEIGO`, 当前已建立独立仓库并开展 P0, 来源与许可证记录随工程保留。正式 P1 前完成[海外兼容说明中的 A—E 验证与决策](docs/overseas-compatibility-p0.md), 且全部核心门槛通过; 需要隔离单项实验时使用 `output/` 下的测试目录, 不要求在 P0 后再次迁移工程。
+  以下是分阶段实施顺序。用户已确定独立目录 `C:\chunwang\vibecoder\OTONEIGO`, 当前已建立独立仓库并开展 P0, 来源与许可证记录随工程保留。正式 P1 前完成[海外兼容说明中的 A—E 验证与决策](docs/compatibility/overseas-compatibility-p0.md), 且全部核心门槛通过; 需要隔离单项实验时使用 `output/` 下的测试目录, 不要求在 P0 后再次迁移工程。
 
 | 阶段 | 核心目标 | 产出 | Go/No-Go 条件 |
 | --- | --- | --- | --- |
@@ -538,7 +538,7 @@ GET https://music-api.gdstudio.xyz/api.php
 
 ### 11.1 P0 手动验证矩阵 (实际结果另记)
 
-  核心与可选实验分组记录, 失败不混为一个结论。当前实测见 [P0 验证记录](docs/p0-validation.md), 本表保留基础用例; [A—E 完整矩阵](docs/overseas-compatibility-p0.md)同时覆盖泰国普通/兼容、中国 exit node A/B、GD 同 ID、匿名/普通/会员、各音质和网络切换。条件缺失明确标“未测试”, 不作为成功或完成; 正式 P1 前需记录延期范围与依据, 核心硬门槛不可豁免。
+  核心与可选实验分组记录, 失败不混为一个结论。当前实测见 [P0 验证记录](docs/validation/p0-validation.md), 本表保留基础用例; [A—E 完整矩阵](docs/compatibility/overseas-compatibility-p0.md)同时覆盖泰国普通/兼容、中国 exit node A/B、GD 同 ID、匿名/普通/会员、各音质和网络切换。条件缺失明确标“未测试”, 不作为成功或完成; 正式 P1 前需记录延期范围与依据, 核心硬门槛不可豁免。
 
 | 分组 | 用例 | 检查与结论 |
 | --- | --- | --- |
@@ -686,7 +686,7 @@ interface MusicClientBridge {
 - [ ] GD: 记录同 ID 音频一致性、br、完整性、限流、WebView2 播放、总超时与取消结果; 形成保留/默认禁用/移除决策
 - [ ] GD 未通过或未证实时默认禁用或移除; 直连可播时不等待 GD, 不因迟到结果曲中换源
 - [ ] P0-C 地域兼容与 P0-E 原生媒体: 泰国普通/兼容、中国出口 A/B、不同账号/质量、分流/网络切换、Go vs 原生 WebView2 媒体分别有记录; 无条件则明确未测试和延期决策, 不记为通过
-- [ ] `auto/always/off`、认证隔离、精确白名单、共享预算、TLS、Range/seek、缓存失效/取消、日志脱敏与冷却按[详细说明](docs/overseas-compatibility-p0.md)审查, 明确启用/禁用/延期
+- [ ] `auto/always/off`、认证隔离、精确白名单、共享预算、TLS、Range/seek、缓存失效/取消、日志脱敏与冷却按[详细说明](docs/compatibility/overseas-compatibility-p0.md)审查, 明确启用/禁用/延期
 - [ ] A—E 验证工作与 go/no-go 报告完成; 可选失败决定禁用/延期不等于能力通过, 未测试分支不计完成, 核心失败仍不得进入 P1
 
 ### 基础 MVP (P2) 硬条件
@@ -719,7 +719,7 @@ interface MusicClientBridge {
 
 当前独立 OTONEIGO 工程已包含上表模块，参考副本继续只读。P0 核心及 A—E 审查结论未由本文代替；不能据源码或本地 fixture 宣布 P1/P2 交付。账号保持禁用，GD 发布 capability 已按有限 MP3 原生样本开放，用户默认关闭。
 
-**2026-10-31 历史检查点（实现状态已由当前索引取代，实验观察保留）：** 当时普通匿名取流不可用，受限 header 单变量实验取得歌曲 `33894312` 的 standard/MP3；测试专用内存桥接送入原生 WebView2，静音播放约 267 秒至自然结束、自动下一首和 81 秒恢复。这不是当时正式客户端集成结果，也不是当前正式绑定路径的验收。完整原始过程与限制继续见 [P0 验证记录](docs/p0-validation.md)。
+**2026-10-31 历史检查点（实现状态已由当前索引取代，实验观察保留）：** 当时普通匿名取流不可用，受限 header 单变量实验取得歌曲 `33894312` 的 standard/MP3；测试专用内存桥接送入原生 WebView2，静音播放约 267 秒至自然结束、自动下一首和 81 秒恢复。这不是当时正式客户端集成结果，也不是当前正式绑定路径的验收。完整原始过程与限制继续见 [P0 验证记录](docs/validation/p0-validation.md)。
 
 2026-11-01 的未拦截原生 GD MP3 已自然结束于 267.245714 秒并自动下一首，保持单 Audio；网易云兼容路径与 GD 同样本整文件 hash 一致，支持有限开放可选 GD，不能外推所有曲目或质量。0.3.0 最终测试/包证据已按该批次归档；0.4.0 当前版资源/查询、实际强杀耐久、生产便携覆盖更新、独立海外直兼容启动与最后构建对应包核对已在有限用例通过；schema 4→5 独立合成 fixture 通过。普通/兼容、地区观测、schema 5 本地库/设置/队列和各质量的结果仍按报告各自条件解释。中国出口、不同账号/权限、录音版本或其他条件不足时明确写未测试及延期依据；A—E 形成 go/no-go，核心全过后才推进正式 P1/P2。账号/云端、CDN/no-cache 明确延期；中国/实体 exit node、物理网络切换及 DPI 组合为未来条件验证，不计通过。本地歌单、缓存与 Windows 后续体验不因当前模块落地自动算完成，全阶段结论继续以 P0 记录为准，不因本批有限通过宣称账号或后续全部阶段交付。
 
@@ -804,7 +804,7 @@ interface MusicClientBridge {
 
 0.3.0 批次已实现 schema 4、收藏 added_order、无自动裁剪的历史游标分页、本地歌单、默认开启的 20 GiB 音频缓存和可选关闭到托盘。该批库的其余业务配额当时未移除；当前精确边界见下方 0.4.0 增量。该批缓存按实际质量档先查后取流（网络路由为当时普通优先，当前顺序由第 7.2 节取代），使用同进程、令牌受限的 loopback 媒体 GET/HEAD/Range 通道；不是独立本地业务 API，不新增队列或音频执行器。渐进 `.part` 经长度/结构/时长和 SHA-256 校验后才提交，活动 pin、清理延期、LRU 与空间检查保护播放。高级媒体缓存按可信会员账号 scope 隔离，当前账号/同步仍禁用；签名媒体 URL 不落盘。
 
-上文 P3 中托盘/缓存的目标已部分提前落地，但完整阶段未因此验收。本批真实 CDN 原生渐进缓存、完整提交、热播与 Range seek 已通过；受控自生成 FLAC/WAV 各 3 秒已在真实 WebView2 自然结束，但不证明真实会员音源或缓存传输。托盘隐藏恢复连续播放通过；实际 WinRT Pause/Play/SkipNext 与进程级离线缓存重启/seek 已通过；普通暂停保留源/元数据，清理等完整释放。最终 Go 测试/vet、132 个前端测试、Windows 生产构建、许可检查及 0.3.0 ZIP/hash 核对通过；历史 MP3 样本和受控 fixture 不扩展为会员权益通过。用户暂缓真实 VPN/Tailscale/中国出口对照，保持未测试；本次仍仅制作 portable ZIP，不运行安装器。最终自动检查、Windows 构建、原生结果及包/hash 对应关系见 [P0 记录](docs/p0-validation.md)。
+上文 P3 中托盘/缓存的目标已部分提前落地，但完整阶段未因此验收。本批真实 CDN 原生渐进缓存、完整提交、热播与 Range seek 已通过；受控自生成 FLAC/WAV 各 3 秒已在真实 WebView2 自然结束，但不证明真实会员音源或缓存传输。托盘隐藏恢复连续播放通过；实际 WinRT Pause/Play/SkipNext 与进程级离线缓存重启/seek 已通过；普通暂停保留源/元数据，清理等完整释放。最终 Go 测试/vet、132 个前端测试、Windows 生产构建、许可检查及 0.3.0 ZIP/hash 核对通过；历史 MP3 样本和受控 fixture 不扩展为会员权益通过。用户暂缓真实 VPN/Tailscale/中国出口对照，保持未测试；本次仍仅制作 portable ZIP，不运行安装器。最终自动检查、Windows 构建、原生结果及包/hash 对应关系见 [P0 记录](docs/validation/p0-validation.md)。
 
 ## 0.4.0 历史增量与验证责任
 
@@ -814,7 +814,7 @@ interface MusicClientBridge {
 
 `cache/resources/` 默认启用、封面/歌词共享 1 GiB，容量可调 64 MiB..1 TiB，独立于默认 20 GiB 音频缓存。封面仅可信 HTTPS 网易云无 query 引用；内部显示图请求固定添加 param=1024y1024，快照、回退与散列键仍用原 canonical 引用，调用者带 query 仍拒绝。JPEG/PNG/GIF 经 4 MiB、尺寸/像素及字节完整解码校验，不依据 HTTP MIME；WebP/AVIF 回退可信原地址。歌词最多 1 MiB，有效缓存立即返回，七天后异步刷新，失败保留旧值并节流五分钟，空结果不永久缓存。资源经原子提交、摘要校验、LRU、目录寿命锁和清理/关闭 generation 管理；封面/歌词分别 4/2 workers，全局最多 64 个在途任务，封面提交达到 60 时保留歌词余量。manifest 不保存源 URL/凭据；封面由既有 Wails 同源 `/artwork/<hash>` 提供校验 buffer，不新增 listener。资源及音频响应 no-store 防止浏览器 HTTP 重复缓存，不代表已实现上游 CDN/no-cache 兼容。
 
-本批源码及有限验收不自动勾选 P0/P1/P2 或后续桌面/发布阶段。schema 4→5 合成 fixture、原生正常退出、实际强杀后已提交数据、离线封面/歌词和最终 production 便携覆盖更新已按独立条件验证；最终 Go 全量测试/vet、149 个前端测试、TypeScript/Vite、Windows production 构建、13 份 Go 许可通知和 ZIP 白名单/哈希核对通过，准确证据见 [P0 记录](docs/p0-validation.md)。上方 0.3.0 的 132 个前端测试、音频/WinRT 与包报告仅作历史证据，不沿用为 0.4.0 通过。账号全部相关功能及云端同步继续暂停，真实 VPN/Tailscale/中国出口对照与安装器仍暂停，不改变系统代理/DNS/Hosts；仍不做用户导入/导出/备份/恢复或旧 OTONEI 数据迁移。
+本批源码及有限验收不自动勾选 P0/P1/P2 或后续桌面/发布阶段。schema 4→5 合成 fixture、原生正常退出、实际强杀后已提交数据、离线封面/歌词和最终 production 便携覆盖更新已按独立条件验证；最终 Go 全量测试/vet、149 个前端测试、TypeScript/Vite、Windows production 构建、13 份 Go 许可通知和 ZIP 白名单/哈希核对通过，准确证据见 [P0 记录](docs/validation/p0-validation.md)。上方 0.3.0 的 132 个前端测试、音频/WinRT 与包报告仅作历史证据，不沿用为 0.4.0 通过。账号全部相关功能及云端同步继续暂停，真实 VPN/Tailscale/中国出口对照与安装器仍暂停，不改变系统代理/DNS/Hosts；仍不做用户导入/导出/备份/恢复或旧 OTONEI 数据迁移。
 
 ### 0.4.0 最终证据摘要与限制
 
@@ -833,23 +833,23 @@ interface MusicClientBridge {
 
 真实原生样本确认主/mini/lyrics Audio构造数1/0/0、隐藏主窗口时钟继续、歌词/控制同步，GD 320kbps样本227.731917秒自然结束并自动下一首；本机225%缩放下穿透/置顶样式、字号/不透明度、非居中位置恢复和工作区重置通过，两浮窗可见或隐藏时真正退出均exit0。完整Go/vet、164前端测试、production构建与13份Go根许可审计通过。0.5 ZIP为19437467字节，SHA-256 `037e2b226abc8d3ef7bd5a19d1b0eec48d22beeb3c907b98c9eb219903167d56`，四白名单文件哈希匹配，正式解压程序启动/退出与本地数据保留通过。
 
-有限通过不自动勾选全部P0/P1/P2。物理多屏/DPI切换、休眠恢复、多小时内存压力未执行；登录/会员/云同步、真实VPN/Tailscale/中国出口、安装器按用户要求继续暂停。候选CDN/no-cache、崩溃报告、签名/更新器和可选本地音频库不冒充已交付；准确当前清单以[实施路线](docs/roadmap.md)和[P0记录](docs/p0-validation.md)为准。不做旧产品迁移、用户导入导出/备份恢复，不暂存提交推送。
+有限通过不自动勾选全部P0/P1/P2。物理多屏/DPI切换、休眠恢复、多小时内存压力未执行；登录/会员/云同步、真实VPN/Tailscale/中国出口、安装器按用户要求继续暂停。候选CDN/no-cache、崩溃报告、签名/更新器和可选本地音频库不冒充已交付；准确当前清单以[实施路线](docs/planning/roadmap.md)和[P0记录](docs/validation/p0-validation.md)为准。不做旧产品迁移、用户导入导出/备份恢复，不暂存提交推送。
 
 
 ## 0.5.1 审计修复
 
-本轮按[逐项核实记录](docs/audit-fixes-0.5.1.md)修复缓存热读、音频锁/写放大、曲库恢复/分页、定位持久化、设置偏好与回调顺序、GD预算/请求合并及边界；没有增加账号/安装器运行范围，不改变来源优先级。Go/vet、178个前端测试、production及许可门禁、真实WebView2/SQLite回归和便携程序启动退出通过；不将合成标签、受控GD链或Windows文件保护原语冒充真实会员、全部上游或安装升级验收。旧批次证据保留各自版本含义。
+本轮按[逐项核实记录](docs/audits/audit-fixes-0.5.1.md)修复缓存热读、音频锁/写放大、曲库恢复/分页、定位持久化、设置偏好与回调顺序、GD预算/请求合并及边界；没有增加账号/安装器运行范围，不改变来源优先级。Go/vet、178个前端测试、production及许可门禁、真实WebView2/SQLite回归和便携程序启动退出通过；不将合成标签、受控GD链或Windows文件保护原语冒充真实会员、全部上游或安装升级验收。旧批次证据保留各自版本含义。
 
 
 ## 0.5.2 当前启动与恢复增量
 
-本轮按[0.5.2核实记录](docs/audit-fixes-0.5.2.md)实现资源懒验证、音频1MiB块摘要/逐块交付、旧索引升级、候选快照、明确主失败保留与日志恢复。schema7隔离逻辑坏行并保留原SQL值，设置可默认回落且提示，未知字段合并/冲突拒写；当前schema不每次扫描完整历史。182前端测试、Go/vet/生产构建/许可与真实原生启动、坏行恢复、索引播放/损坏410、未知字段持久化及退出通过；不把OS缓存微基准说成机械盘，不把短播放说成整曲或会员通过。未更改来源优先级，不新增账号、安装器运行、用户导入导出/备份恢复或旧产品迁移范围。历史版本约定由各自日期记录保留，最新入口以实施路线/审计记录为准。
+本轮按[0.5.2核实记录](docs/audits/audit-fixes-0.5.2.md)实现资源懒验证、音频1MiB块摘要/逐块交付、旧索引升级、候选快照、明确主失败保留与日志恢复。schema7隔离逻辑坏行并保留原SQL值，设置可默认回落且提示，未知字段合并/冲突拒写；当前schema不每次扫描完整历史。182前端测试、Go/vet/生产构建/许可与真实原生启动、坏行恢复、索引播放/损坏410、未知字段持久化及退出通过；不把OS缓存微基准说成机械盘，不把短播放说成整曲或会员通过。未更改来源优先级，不新增账号、安装器运行、用户导入导出/备份恢复或旧产品迁移范围。历史版本约定由各自日期记录保留，最新入口以实施路线/审计记录为准。
 
 
 ## 0.5.3 当前缓存与会话增量
 
-按[0.5.3核实记录](docs/audit-fixes-0.5.3.md)修复共享验证下载槽、永久恢复提示、缓存接纳竞态、Chunks写放大及空闲统计轮询。后台恢复30秒，缓存统计设置页立即/30秒并有退出和旧响应保护；原始隔离数据保留，当前会话签名仅内存。缓存候选失效仅一次原预算无缓存重解析，访问时间侧车与结构故障重试并存。190前端、Go/vet/production/许可、独立复查及真实窗口通过；结构写仍完整清单，未扩大账号、安装器和其他暂停实验范围。
+按[0.5.3核实记录](docs/audits/audit-fixes-0.5.3.md)修复共享验证下载槽、永久恢复提示、缓存接纳竞态、Chunks写放大及空闲统计轮询。后台恢复30秒，缓存统计设置页立即/30秒并有退出和旧响应保护；原始隔离数据保留，当前会话签名仅内存。缓存候选失效仅一次原预算无缓存重解析，访问时间侧车与结构故障重试并存。190前端、Go/vet/production/许可、独立复查及真实窗口通过；结构写仍完整清单，未扩大账号、安装器和其他暂停实验范围。
 
 ## 0.5.4 当前资源与升级增量
 
-本批交付两件事：一是 `OTONEIGO.exe` 的 Windows 资源段（图标、清单、版本信息），由仓库内 `cmd/appicon` 根据 OTONEI 标帜几何生成母图，经标准 `wails3 generate icons`/`generate syso` 流水线嵌入；构建与打包门禁分别校验版本号一致和资源确实存在，图标资产不依赖 `reference/`。二是收尾 Wails 3.0.0→3.1.0：锁定点、wails3 CLI 与许可清单同步，逐文件比对后重跑 audit053 与 desktop05 矩阵。schema、交付四文件白名单、数据目录、来源优先级与账号/安装器暂停范围均未变。live 网易云取流阶段断言因服务对匿名请求返回 UNAUTHORIZED 而未能在本机复验，自然结束/自动连播尾段也未执行；这些限制按原样记录于 [Wails 3.1.0 升级记录](docs/wails-3.1.0-upgrade.md) 与 [0.5.4 逐项核实](docs/audit-fixes-0.5.4.md)，不当作已验收。
+本批交付两件事：一是 `OTONEIGO.exe` 的 Windows 资源段（图标、清单、版本信息），由仓库内 `cmd/appicon` 根据 OTONEI 标帜几何生成母图，经标准 `wails3 generate icons`/`generate syso` 流水线嵌入；构建与打包门禁分别校验版本号一致和资源确实存在，图标资产不依赖 `reference/`。二是收尾 Wails 3.0.0→3.1.0：锁定点、wails3 CLI 与许可清单同步，逐文件比对后重跑 audit053 与 desktop05 矩阵。schema、交付四文件白名单、数据目录、来源优先级与账号/安装器暂停范围均未变。live 网易云取流阶段断言因服务对匿名请求返回 UNAUTHORIZED 而未能在本机复验，自然结束/自动连播尾段也未执行；这些限制按原样记录于 [Wails 3.1.0 升级记录](docs/audits/wails-3.1.0-upgrade.md) 与 [0.5.4 逐项核实](docs/audits/audit-fixes-0.5.4.md)，不当作已验收。

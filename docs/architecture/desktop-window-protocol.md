@@ -1,6 +1,6 @@
 # 0.5 桌面窗口协议
 
-> 2026-11-02 / 0.5.0 源码契约；原生 WebView2、production 和 portable ZIP 验收以 [P0 记录](p0-validation.md)为准。0.4.0 历史证据不自动覆盖本协议。
+> 2026-11-02 / 0.5.0 源码契约；原生 WebView2、production 和 portable ZIP 验收以 [P0 记录](../validation/p0-validation.md)为准。0.4.0 历史证据不自动覆盖本协议。
 
 主窗口仍是唯一 PlayerStore/AudioEngine。`mini`、`lyrics` 两个按需创建的 Wails 窗口只显示白名单投影和转发命令，不创建播放器、播放队列或独立播放时钟。窗口 URL 只用本地入口 `/?view=mini`、`/?view=lyrics`；未知 view 不启动播放器。
 

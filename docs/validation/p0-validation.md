@@ -18,27 +18,27 @@
 
 ## 2026-11-05 EXE 图标、Windows 资源与 Wails 3.1.0（已出 ZIP）
 
-范围、成因与遗留项见 [0.5.4 审计](audit-fixes-0.5.4.md) 与 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)；不改写下列历史产物的版本或哈希。
+范围、成因与遗留项见 [0.5.4 审计](../audits/audit-fixes-0.5.4.md) 与 [Wails 3.1.0 升级记录](../audits/wails-3.1.0-upgrade.md)；不改写下列历史产物的版本或哈希。
 
 - 图标批次后 `scripts/verify.ps1` 一度只在最后的许可审计失败：`audit-dependencies.ps1` 要求 Wails v3.0.0，而 HEAD 依赖提交已使 go.mod 为 v3.1.0。本批按维护加固章节预设的升级条件完成它（逐文件差异评审 → 锁定点与 CLI 同步 → 原生矩阵重跑）后，全量门禁通过，许可审计记录 11 份上游许可文件。
 - 资源核对：`bin/OTONEIGO.exe` 从“无 `.rsrc` 段”变为 8 个 RT_ICON + RT_GROUP_ICON + RT_VERSION(0409) + RT_MANIFEST，由 `EnumResourceNames` 枚举报出数量并与 `Get-IconSizePlan` 比对；`FileVersionInfo` 的 ProductVersion/FileVersion 与 0.5.4 完全相等，`ExtractAssociatedIcon` 在本机取到 32px（像素值只记录，门禁仅断言能取出图标，不再单独作为存在性证据）。资源段使 EXE 字节 +26,112。
 - 真实原生：`scripts/native-icon054.ps1` 在隔离数据目录与进程级不可达代理下启动 production EXE，唯一 `WailsWebviewWindow` 显示并初始化，Per-Monitor V2 上下文、资源枚举（icon=8/groupIcon=1/version=1/manifest=1）、版本串完全相等与退出码 0 均为断言；DPI 216、窗口 1200×800 只是当前主机观察值记录（`output/packaging/native-icon-054-report.json`，含逐项 checks）。
 - 升级重跑：`scripts/native-wails054.ps1` 一次跑完 verify → 出包 → icon054 → 验收 EXE 构建 → fixture 复位 → audit053 → desktop05 acceptance/windowstyle → restart，聚合报告 `output/playwright/native-wails054-report.json` 为 `pass=false` 并在 `knownFailures` 写明唯一未达成项；icon054、audit053、windowstyle、restart 均 pass=true。`native-desktop05-acceptance` 的单执行器、控件、epoch、浮窗、通知、任务栏与 GD 播放段通过，但第 99 行 live 请求阶段计数断言不可满足：热缓存下 4 次 cache-hit/0 次 API；冷缓存下网易云匿名取流三档均返回 `UNAUTHORIZED` 后回退 GD，使第 44 行来源断言先失败。因此本批未在本机复验 live 网易云取流，自然结束/自动连播尾段也未执行。audit053 在本批出现过一次第 43 行 `until` 10 秒超时的非断言抖动，单独原样重跑通过。
 - 交付：`bin/OTONEIGO-0.5.4-windows-x64.zip` 19,530,458 字节，SHA-256 `db34731819d359b35d5955371e55a275b23bcc8bead47ad6e7345dd67278afd6`；包内 `OTONEIGO.exe` 逐字节等于最后生产构建（SHA-256 `9b5257e4ec06ed6c45fa092939e0d4950a963270beda69b0682f4fcaa84eee57`），逐项包内/输入哈希由打包脚本写入 `output/packaging/portable-0.5.4-final-report.json`；随包通知已重生成并记录 v3.1.0。
-- 图标资产与 `reference/` 解耦已核实：`frontend/public/logo.svg` 哈希等于 provenance 记录的 OTONEI 原件，构建/打包只读产品内文件；母图与矢量副本哈希已登记到 `docs/source-provenance.json`。
+- 图标资产与 `reference/` 解耦已核实：`frontend/public/logo.svg` 哈希等于 provenance 记录的 OTONEI 原件，构建/打包只读产品内文件；母图与矢量副本哈希已登记到 `docs/delivery/source-provenance.json`。
 - 仍未运行：Go race（CGO 关闭）、便携覆盖更新与旧版本启动、安装器/签名/远程发布、多屏或休眠、真实出口切换；账号能力仍关闭。
-- 复核（16:02–16:12）：审查后修正 `-SkipBuild` 的 README 版号门禁缺口、`Add-Type` 的 C# 版本依赖，补上母图复现测试与报告 `gateScriptSHA256`，并把上文"同一时刻"改为真实时间线。只重跑了不重建 EXE 的两项（`native-icon054.ps1`、`package-windows.ps1 -SkipBuild`），EXE `9b5257e4…` 与 ZIP `db347318…` 逐字节未变；整链聚合与完整 `verify.ps1` 未重跑，详见 [0.5.4 审计](audit-fixes-0.5.4.md) 复核补记。
+- 复核（16:02–16:12）：审查后修正 `-SkipBuild` 的 README 版号门禁缺口、`Add-Type` 的 C# 版本依赖，补上母图复现测试与报告 `gateScriptSHA256`，并把上文"同一时刻"改为真实时间线。只重跑了不重建 EXE 的两项（`native-icon054.ps1`、`package-windows.ps1 -SkipBuild`），EXE `9b5257e4…` 与 ZIP `db347318…` 逐字节未变；整链聚合与完整 `verify.ps1` 未重跑，详见 [0.5.4 审计](../audits/audit-fixes-0.5.4.md) 复核补记。
 
 ## 2026-11-03 维护加固验证（源码批次，未重打 ZIP）
 
-共享目录锁、panic 记录/隔离和补丁依赖的评估与实现范围见[维护加固](maintenance-hardening.md)。不改写下列历史产物的版本或哈希。
+共享目录锁、panic 记录/隔离和补丁依赖的评估与实现范围见[维护加固](../architecture/maintenance-hardening.md)。不改写下列历史产物的版本或哈希。
 
 - 完整 `scripts/verify.ps1` 通过：Go 测试/vet、Biome format 和严格 lint、190 个前端测试、TypeScript/Vite、Windows production 构建、13 份 Go 上游许可记录与前端依赖审计。Wails Go/runtime 保持 3.0.0，新增审计断言锁定这两个版本。
 - 独立复查发现普通 HTTP abort 被误判 fatal、音频 handler panic 在 pin 清理前可能死锁两项；修复后复查无剩余实质发现。相关回归分别保留 `http.ErrAbortHandler` 语义、使用持锁 Entitlement panic 子进程确认退出码 2 和报告；音频异常/重试等关键回归重复五次通过。
 - 本地子进程测试证明 fatal/close-gate/Wails handler 写出脱敏报告并退出 2；资源/地区/音频隔离测试证明等待者和 worker 槽位可释放、后续调用可重试。不是在真实 WebView2 内主动触发 panic，也不证明所有第三方/native 崩溃都可捕获。
 - 新隔离数据目录中的真实 Wails/WebView2 smoke 通过：设置写读、本地收藏写读、打开 mini/lyrics 两浮窗、隐藏歌词、保留迷你窗口时正常退出全部窗口，进程退出 0，没有崩溃报告。关闭后直接检查 SQLite schema 7、integrity_check=ok、提交设置与收藏记录保留。报告为忽略目录下 `output/hardening-native-report.json`。测试只用进程级无效代理制造离线，不截图、不修改系统网络，不验证实际播放/任务栏通知或海外网络。
 - `scripts/native-harness.mjs` 的播放器定位改为稳定的 `.audio-player` 类与 aria 标签，不再依赖元素标签名；其余验收脚本的 `footer` 选择器因播放器保留 footer 语义而继续有效。
-- 文档本地链接 118 处通过，`go mod verify` 通过，参考路径同步后现存 36 份原文件哈希匹配。四份归档 public 原件缺失，但产品副本匹配历史哈希；详见[许可来源限制](licenses.md)。不能声称本次完整重验了 40 份原件。
+- 文档本地链接 118 处通过，`go mod verify` 通过，参考路径同步后现存 36 份原文件哈希匹配。四份归档 public 原件缺失，但产品副本匹配历史哈希；详见[许可来源限制](../delivery/licenses.md)。不能声称本次完整重验了 40 份原件。
 
 本批不重新运行完整 `native-desktop05` / `native-audit053` 矩阵，不更新旧 ZIP，不制作/运行安装器；Wails 升级和其他延期能力保持独立验收范围。
 
@@ -186,7 +186,7 @@ Go回归覆盖320→192→128、会员GD br999/740/320/192/128去重回退、GD�
 
 ## 0.4.0 本批交付与最新地区策略（2026-11-02）
 
-本节覆盖本批增量，不改写以上历史条件。登录/会话/DPAPI、云端歌单/收藏补齐、会员音源实测继续暂停；安装器和真实 VPN/Tailscale/分流/中国出口对照继续暂停。下一批桌面歌词、迷你播放器、通知等见 [实施路线](roadmap.md)，不能因本批通过而计作完成。
+本节覆盖本批增量，不改写以上历史条件。登录/会话/DPAPI、云端歌单/收藏补齐、会员音源实测继续暂停；安装器和真实 VPN/Tailscale/分流/中国出口对照继续暂停。下一批桌面歌词、迷你播放器、通知等见 [实施路线](../planning/roadmap.md)，不能因本批通过而计作完成。
 
 ### 本地数据与资源
 
@@ -226,7 +226,7 @@ Go回归覆盖320→192→128、会员GD br999/740/320/192/128去重回退、GD�
 
 ## 0.5.0 桌面增强与最终便携版（2026-11-02）
 
-仅推进非账号桌面功能；没有登录、云同步、安装器、真实网络出口切换或系统代理/DNS/Hosts 修改。主窗口独占 PlayerStore/AudioEngine，迷你播放器与桌面歌词只收白名单投影并转发命令。详细契约见 [窗口协议](desktop-window-protocol.md)。
+仅推进非账号桌面功能；没有登录、云同步、安装器、真实网络出口切换或系统代理/DNS/Hosts 修改。主窗口独占 PlayerStore/AudioEngine，迷你播放器与桌面歌词只收白名单投影并转发命令。详细契约见 [窗口协议](../architecture/desktop-window-protocol.md)。
 
 ### 自动化与独立复查
 
@@ -261,12 +261,12 @@ schema 5→6 有旧设置/队列/库保留、非法及未知设置字段事务�
 
 `portable-update-0.5-report.json` 只先放置旧 0.4 payload 再用 0.5 四文件覆盖，替换期间数据库哈希不变，oldVersionLaunched=false；真实旧应用跨版本运行未冒称通过。解压出的最终 production EXE 在同一隔离 profile、进程级不可达代理下创建/显示主窗口、初始化并 WM_CLOSE 正常退出码0，schema6/曲库/队列/位置和隐私扫描有效。没有制作或运行安装器，没有签名、上传、暂存、提交或推送。
 
-以上是指定主机、有限样本证据，不是全曲目权益、全部 P0 或长期稳定性通过。账号/云端/会员能力继续暂停，真实 VPN/Tailscale/中国出口对照按用户要求未做；其余后续稳定性和候选功能见 [实施路线](roadmap.md)。
+以上是指定主机、有限样本证据，不是全曲目权益、全部 P0 或长期稳定性通过。账号/云端/会员能力继续暂停，真实 VPN/Tailscale/中国出口对照按用户要求未做；其余后续稳定性和候选功能见 [实施路线](../planning/roadmap.md)。
 
 
 ## 0.5.1 审计修复与复验（2026-11-02）
 
-逐项核实、更正的推断、微基准、合成/真实/未测试边界见[0.5.1核实记录](audit-fixes-0.5.1.md)。确认修复封面重复解码/锁、音频访问manifest写放大/锁内校验/流句柄、曲库重试/分页、seek逐次保存、GetSettings读副作用/偏好丢失、锁内回调、数字域名前缀及托盘故障可观测性；GD预算与共享调用者生命周期补回归。没有更改缓存优先、按IP预选网易云、最后GD的规则。
+逐项核实、更正的推断、微基准、合成/真实/未测试边界见[0.5.1核实记录](../audits/audit-fixes-0.5.1.md)。确认修复封面重复解码/锁、音频访问manifest写放大/锁内校验/流句柄、曲库重试/分页、seek逐次保存、GetSettings读副作用/偏好丢失、锁内回调、数字域名前缀及托盘故障可观测性；GD预算与共享调用者生命周期补回归。没有更改缓存优先、按IP预选网易云、最后GD的规则。
 
 独立复查发现的Clear+损坏校验复活任务和短预算首调用者误伤长等待者两个P2均已先红后绿并复审。最终Go全量测试/vet、178前端测试、TypeScript/Vite、Windowsproduction和13份Go许可门禁通过。CGO关闭未通过race检测。
 
@@ -277,7 +277,7 @@ schema 5→6 有旧设置/队列/库保留、非法及未知设置字段事务�
 
 ## 0.5.2 启动与数据恢复复验（2026-11-02）
 
-逐项判断及限制见[0.5.2审计](audit-fixes-0.5.2.md)。启动不再读/解码全部资源payload；音频采用“先校验实际交付块”，没有未经验证先播放再后台补查。旧记录第一次完整扫描升级的成本明确保留。存储升级7隔离逻辑坏行并保留原SQL值，当前schema只在读取库记录时恢复，不引入每次全历史扫描；未知设置安全合并、冲突拒写，手动历史清理包括隔离历史。GD保留明确主失败原因，日志有界重试及固定状态/Close错误，失败面板不再常显加载。
+逐项判断及限制见[0.5.2审计](../audits/audit-fixes-0.5.2.md)。启动不再读/解码全部资源payload；音频采用“先校验实际交付块”，没有未经验证先播放再后台补查。旧记录第一次完整扫描升级的成本明确保留。存储升级7隔离逻辑坏行并保留原SQL值，当前schema只在读取库记录时恢复，不引入每次全历史扫描；未知设置安全合并、冲突拒写，手动历史清理包括隔离历史。GD保留明确主失败原因，日志有界重试及固定状态/Close错误，失败面板不再常显加载。
 
 微基准100.06MiB合成媒体Lookup→Prepare→HTTP首字节约126.19→5.057ms，为OS缓存条件。资源64图New+Close不随32px→2048px像素成本增加，但元数据条目数量仍影响启动。实际Windows锁/并发取消/clear代次/替换失败、坏行SQL类型/回滚/未知别名及历史删除边界回归通过。独立复查发现的问题修复后复审无剩余实质问题。
 
@@ -288,7 +288,7 @@ schema 5→6 有旧设置/队列/库保留、非法及未知设置字段事务�
 
 ## 0.5.3 工作池、提示和访问时间（2026-11-02）
 
-[逐项记录](audit-fixes-0.5.3.md)区分合成饥饿/结构失败回归、延迟Promise竞态和真实窗口证据。源选择/资格/限速不变；资源验证两槽独立于网络四槽；恢复提示会话确认不删档、30秒检查；缓存统计只设置页，旧挂载请求不能覆盖新值；缓存接纳失败一次原预算skip-cache重解析；LastAccess侧车不重写Chunks，结构故障补存。结构变更/启动仍O完整清单。
+[逐项记录](../audits/audit-fixes-0.5.3.md)区分合成饥饿/结构失败回归、延迟Promise竞态和真实窗口证据。源选择/资格/限速不变；资源验证两槽独立于网络四槽；恢复提示会话确认不删档、30秒检查；缓存统计只设置页，旧挂载请求不能覆盖新值；缓存接纳失败一次原预算skip-cache重解析；LastAccess侧车不重写Chunks，结构故障补存。结构变更/启动仍O完整清单。
 
 最终Go全量/vet、190前端/14文件、TypeScript/Vite、production和13份Go许可门禁通过；真实点击发现的pointer-events继承已修正并重新全部前端/生产构建及原生验收。独立复审无剩余实质问题，Go race仍未运行。
 

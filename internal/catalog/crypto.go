@@ -1,7 +1,7 @@
 package catalog
 
 // WEAPI protocol constants adapted from go-musicfox/netease-music util/cryto.go
-// (MIT). See docs/netease-adapter.md for the full upstream notice.
+// (MIT). See docs/architecture/netease-adapter.md for the full upstream notice.
 // Implementation uses only Go's standard cryptographic primitives.
 import (
 	"crypto/aes"

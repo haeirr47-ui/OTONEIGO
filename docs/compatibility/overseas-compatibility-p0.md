@@ -1,6 +1,6 @@
 # 海外网络兼容 P0 实验与决策
 
-> 2026-11-02 / 0.4.0 策略修正同步（保留此前普通优先及 2026-10-31 隔离实验历史）。地区检测、设置和受限 header 取流已接入当前客户端；GD 适配器已按有限 MP3 原生样本开放发布 capability，用户设置仍默认关闭，账号及 CDN/no-cache 未实现。代码落地不等于原生验收通过；当前证据及 go/no-go 以 [P0 验证记录](p0-validation.md)为准。主阶段和范围见[实施方案](../OTONEI_Windows_Netease_Implementation_Plan_2026-10-31.md)。
+> 2026-11-02 / 0.4.0 策略修正同步（保留此前普通优先及 2026-10-31 隔离实验历史）。地区检测、设置和受限 header 取流已接入当前客户端；GD 适配器已按有限 MP3 原生样本开放发布 capability，用户设置仍默认关闭，账号及 CDN/no-cache 未实现。代码落地不等于原生验收通过；当前证据及 go/no-go 以 [P0 验证记录](../validation/p0-validation.md)为准。主阶段和范围见[实施方案](../../OTONEI_Windows_Netease_Implementation_Plan_2026-10-31.md)。
 
 ## 1. 目标、证据与参考边界
 
@@ -80,7 +80,7 @@ Go API 能返回 URL，不等于 WebView2 能加载媒体。分别记录 API 响
 
 所有结果交给现有单一 AudioEngine 和前端唯一队列所有者。0.3.0 已增加同进程 loopback 媒体专用通道：随机端口、临时令牌、GET/HEAD/Range 与可信上游校验，只将音频字节交给同一执行器。它不是业务 API 或独立进程，也不是 CDN 主机改写。该通道支持渐进播放和已验证磁盘缓存；不得把浏览器 mock 当原生 WebView2 通过。
 
-媒体 URL 只存内存。普通/兼容解析无 URL 缓存；GD 按 songId/quality 合并请求并短缓存（最多 30 秒），网络/策略 generation 失效时清理并取消旧任务。磁盘字节缓存另按 provider/实际质量/格式/码率及账号 scope 隔离，默认启用、20 GiB；高级内容必须匹配可信的当前账号会员资格。账号未实现，scope 测试不等于真实登录/换号已验收。不得持久化媒体 URL、Cookie、token 或签名参数。GD 仅接受同 ID、受信任 HTTPS 网易云媒体，通过 audioinfo 检查有界 MP3/FLAC/WAV 结构证据、长度、码率与相对元数据的时长（实际发布样本仍仅 MP3，非真实会员高级媒体验收）；不把同 ID/时长当录音版本证明。具体限制见[适配器说明](netease-adapter.md)。
+媒体 URL 只存内存。普通/兼容解析无 URL 缓存；GD 按 songId/quality 合并请求并短缓存（最多 30 秒），网络/策略 generation 失效时清理并取消旧任务。磁盘字节缓存另按 provider/实际质量/格式/码率及账号 scope 隔离，默认启用、20 GiB；高级内容必须匹配可信的当前账号会员资格。账号未实现，scope 测试不等于真实登录/换号已验收。不得持久化媒体 URL、Cookie、token 或签名参数。GD 仅接受同 ID、受信任 HTTPS 网易云媒体，通过 audioinfo 检查有界 MP3/FLAC/WAV 结构证据、长度、码率与相对元数据的时长（实际发布样本仍仅 MP3，非真实会员高级媒体验收）；不把同 ID/时长当录音版本证明。具体限制见[适配器说明](../architecture/netease-adapter.md)。
 
 ## 5. 错误、日志与展示
 
@@ -104,18 +104,18 @@ UI 显示不可播放/试听/未知音质等状态，不将 item 404 或 unknown
 
 每格记录网络/设置、songId、账号测试类别、请求/实际质量、试听/完整性、API 与原生播放各自结果、失败类别、尝试数和预算；用“live/mock/optional/failed/untested”区分证据，不保存敏感原始内容。免费与 VIP 样本、匿名/普通/会员、普通/中国出口及不同质量应交叉覆盖；不能用一个成功样本替代全部格子。
 
-当前受限模块已落地，后续保留历史普通失败/兼容成功对照，验收实际绑定路径 → WebView2 媒体完整性/音质（真实 VPN/Tailscale/中国出口对照按用户要求暂缓，不计通过） → A—E 报告和能力决策 → 核心全过后正式 P1。架构与许可证约束见[架构](architecture.md)、[许可证](licenses.md)，已执行检查见[P0 验证记录](p0-validation.md)。
+当前受限模块已落地，后续保留历史普通失败/兼容成功对照，验收实际绑定路径 → WebView2 媒体完整性/音质（真实 VPN/Tailscale/中国出口对照按用户要求暂缓，不计通过） → A—E 报告和能力决策 → 核心全过后正式 P1。架构与许可证约束见[架构](../architecture/architecture.md)、[许可证](../delivery/licenses.md)，已执行检查见[P0 验证记录](../validation/p0-validation.md)。
 
 ## 7. 本轮有限放行与显式延期
 
-2026-11-01 历史批次 GD 在未拦截的原生 WebView2 路径自然结束于 267.245714 秒，自动下一首且保持一个 Audio；网易云兼容路径与 GD 同样本整文件 4,276,601 字节、SHA-256 `4a16a7c0d10eed3468361709295aaffb088b46836f3fe542d676dc32c02b88b0` 一致。由此开放可选 GD 发布 capability，用户默认仍关闭。不同曲目、实际权益及非 MP3/其他音质不由该单样本背书，完整网络/API/原生条件和 A—E 决策以 [P0 记录](p0-validation.md)为准。
+2026-11-01 历史批次 GD 在未拦截的原生 WebView2 路径自然结束于 267.245714 秒，自动下一首且保持一个 Audio；网易云兼容路径与 GD 同样本整文件 4,276,601 字节、SHA-256 `4a16a7c0d10eed3468361709295aaffb088b46836f3fe542d676dc32c02b88b0` 一致。由此开放可选 GD 发布 capability，用户默认仍关闭。不同曲目、实际权益及非 MP3/其他音质不由该单样本背书，完整网络/API/原生条件和 A—E 决策以 [P0 记录](../validation/p0-validation.md)为准。
 
 账号/云端能力、CDN 改写与 no-cache 明确延期；真实 VPN/Tailscale/中国出口对照按用户要求暂缓；物理网络切换和 DPI 等组合保留条件具备后的验证，不计作通过。最终报告完成前不宣称匿名基础验收已最终交付，也不宣称 P1/P2 全部完成。
 
-当前音质政策详见[架构](architecture.md)：未确认会员手动只选 320，192/128 仅自动降级，GD 同政策。账号与会员实测尚未交付；不能根据新策略接口或测试桩宣称会员高级音质已可用。
+当前音质政策详见[架构](../architecture/architecture.md)：未确认会员手动只选 320，192/128 仅自动降级，GD 同政策。账号与会员实测尚未交付；不能根据新策略接口或测试桩宣称会员高级音质已可用。
 
 ## 8. 0.4.0 直接兼容路径的有限原生验证
 
 `output/playwright/native-egress04-report.json` 在真实 TH/overseas、auto、未模拟地区且无网络拦截的 Wails WebView2 中观察：样本 33894312 普通/兼容/GD 尝试数 0/1/0、实际 320 kbps、启动 1435 ms、媒体时长 267.245714 秒；GD 同 ID 回退样本尝试数 0/3/1、启动 2209 ms、媒体时长 227.731917 秒。均为单 Audio，设置与本地库保留，原队列恢复暂停。该结果验证海外无普通预请求、完整网易云立即使用与兼容失败后的 GD 回退，但只观察启动/元数据时长，不是本轮完整歌曲自然结束。
 
-资源/查询、进程级离线与强杀耐久报告采用旧路由，不能用于证明新顺序；其通过范围另见[存储协议](storage.md)。新策略冷却、unknown/CN 和设置分支有针对性自动回归；真实中国出口、账号/会员、VPN/Tailscale/物理网络切换仍未验证或按要求暂停，不由 TH 两个样本外推。最终 Go/vet、149 前端测试、TS/Vite、Windows production 构建、13 份 Go 许可通知与 portable ZIP/hash 已通过；全阶段门结论仍由 [P0 记录](p0-validation.md) 单列。
+资源/查询、进程级离线与强杀耐久报告采用旧路由，不能用于证明新顺序；其通过范围另见[存储协议](../architecture/storage.md)。新策略冷却、unknown/CN 和设置分支有针对性自动回归；真实中国出口、账号/会员、VPN/Tailscale/物理网络切换仍未验证或按要求暂停，不由 TH 两个样本外推。最终 Go/vet、149 前端测试、TS/Vite、Windows production 构建、13 份 Go 许可通知与 portable ZIP/hash 已通过；全阶段门结论仍由 [P0 记录](../validation/p0-validation.md) 单列。

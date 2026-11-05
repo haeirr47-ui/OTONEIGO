@@ -29,8 +29,8 @@ Wails 3.0.0 原本已有事件、绑定等部分 recovery，不能描述成“�
 
 本阶段只评审稳定补丁版；不通过 `@latest` 或伪版本顺带升级小版本，不改前端工具链。上述三项均核实了发布标签、模块声明和校验和。参考 [SQLite 上游](https://gitlab.com/cznic/sqlite/-/tags/v1.61.1)、[websocket 发布记录](https://github.com/coder/websocket/releases/tag/v1.8.15)、[godbus 发布记录](https://github.com/godbus/dbus/releases/tag/v5.2.4)。
 
-`scripts/audit-dependencies.ps1` 明确检查 Go Wails 与前端 runtime 都固定为 3.0.0。Wails 升级需单独一批，同时评审托盘窗口识别、图标 ID、原生任务栏调用和所有相关 API，再重跑 `native-desktop05`、`native-audit053` 及 production 退出测试。本批不把固定 Wails 误称为长期不更新，也不依据补丁版本号假定兼容性：必须以回归、Windows 构建及许可审计决定是否采用。（2026-11-05 该锁定点已按上述条件移到 3.1.0，评审与重跑结果见 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)；本文其余内容仍代其原批次。）
+`scripts/audit-dependencies.ps1` 明确检查 Go Wails 与前端 runtime 都固定为 3.0.0。Wails 升级需单独一批，同时评审托盘窗口识别、图标 ID、原生任务栏调用和所有相关 API，再重跑 `native-desktop05`、`native-audit053` 及 production 退出测试。本批不把固定 Wails 误称为长期不更新，也不依据补丁版本号假定兼容性：必须以回归、Windows 构建及许可审计决定是否采用。（2026-11-05 该锁定点已按上述条件移到 3.1.0，评审与重跑结果见 [Wails 3.1.0 升级记录](../audits/wails-3.1.0-upgrade.md)；本文其余内容仍代其原批次。）
 
 ## 验证边界
 
-针对性测试覆盖跨进程目录锁争用/释放/重取、缓存错误映射、报告隐私/容量/并发/锁定文件/符号链接、fatal 子进程退出码，以及地区/资源/音频任务 panic 后的等待者、槽位、重试与 Close。宿主测试直接调用 Wails panic handler 和真实 close-gate timer；它们是本机 Go 子进程测试，不是原生 WebView2 界面验收。完整门禁与当前宿主启动/退出结果另记在 [P0 验证记录](p0-validation.md)。
+针对性测试覆盖跨进程目录锁争用/释放/重取、缓存错误映射、报告隐私/容量/并发/锁定文件/符号链接、fatal 子进程退出码，以及地区/资源/音频任务 panic 后的等待者、槽位、重试与 Close。宿主测试直接调用 Wails panic handler 和真实 close-gate timer；它们是本机 Go 子进程测试，不是原生 WebView2 界面验收。完整门禁与当前宿主启动/退出结果另记在 [P0 验证记录](../validation/p0-validation.md)。

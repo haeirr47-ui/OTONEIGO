@@ -55,7 +55,7 @@ Invoke-ProjectToolchain {
     Assert-ExitCode 'List executable modules'
     $inventory = @()
     $notices = [System.Text.StringBuilder]::new()
-    foreach ($file in @('LICENSE', 'frontend/THIRD_PARTY_NOTICES.md', 'docs/netease-adapter.md')) {
+    foreach ($file in @('LICENSE', 'frontend/THIRD_PARTY_NOTICES.md', 'docs/architecture/netease-adapter.md')) {
         if (Test-Path -LiteralPath $file) {
             [void]$notices.AppendLine("===== $file =====")
             [void]$notices.AppendLine((Get-Content -Raw -LiteralPath $file))

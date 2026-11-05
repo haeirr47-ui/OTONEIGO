@@ -68,7 +68,7 @@ metadata-only 报告与截图在 `output/playwright/native-live-region-report.js
 
 ## 海外兼容补充后的分组状态
 
-目标和完整验收矩阵以 [海外 P0 补充方案](overseas-compatibility-p0.md) 及根实施方案为准；以下仅是当前状态。
+目标和完整验收矩阵以 [海外 P0 补充方案](../compatibility/overseas-compatibility-p0.md) 及根实施方案为准；以下仅是当前状态。
 
 | 分组 | 已验证 | 仍待验证或实现 |
 | --- | --- | --- |

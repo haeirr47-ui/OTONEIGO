@@ -37,7 +37,7 @@ recency是相对最近结构保存基线的累计访问增量，可能随访问�
 
 最终Go全量测试/vet、190项前端测试（14文件）、TypeScript/Vite、Windows production构建与13份Go根许可检查通过；CSS点击修复后重新执行全部前端测试及最终生产/原生构建。独立前后端复查无剩余实质问题。Go race未运行（CGO关闭）；没有扩大真实账号、网络出口、多屏/休眠或安装器验收范围。
 
-最终免安装ZIP和精确生产启动退出见[打包说明](packaging.md)及output/packaging/portable-0.5.3-final-report.json。所有工作仍未暂存、提交或推送。
+最终免安装ZIP和精确生产启动退出见[打包说明](../delivery/packaging.md)及output/packaging/portable-0.5.3-final-report.json。所有工作仍未暂存、提交或推送。
 
 0.5.3最终ZIP为 19475988 字节，SHA-256 `80b501f8d8890df9357a9c2e48c0a19f4ec642b2c0f91c39f5dacaa6c18e05b4`。四白名单文件逐项匹配最终输入；精确解压production程序正常启动、初始化、退出码0，schema7/integrity、1004收藏/1007历史、两条隔离记录和未知设置保留。覆盖只复制旧payload再替换，oldVersionLaunched=false。
 
