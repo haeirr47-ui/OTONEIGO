@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { usePlayer } from "./PlayerContext";
+import { usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { normalizeDesktopSettings } from "./desktopWire";
 import { updateDesktopSettings } from "./desktopProjection";
 import type { DesktopBridge, DesktopSettings } from "./contracts";
 
 export function DesktopSettingsPanel({ bridge }: { bridge: DesktopBridge }) {
-  const { state, store } = usePlayer();
-  const options = normalizeDesktopSettings(state.settings?.desktop);
+  const store = usePlayerStore();
+  const desktop = usePlayerSelector((state) => state.settings?.desktop);
+  const options = normalizeDesktopSettings(desktop);
   const showView = bridge.ShowDesktopView;
   const [message, setMessage] = useState("");
   const update = (value: Partial<DesktopSettings>) => updateDesktopSettings(store, value);

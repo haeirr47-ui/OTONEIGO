@@ -5,7 +5,7 @@ import { AddToPlaylistButton } from "./PlaylistPanels";
 // Adapted from OTONEI/src/components/{DesktopNavbar,MobileBottomNav,Header,SearchResultItem,
 // DesktopPlayerView,DesktopPlayerControl,DesktopExpandedView,DesktopAlbumCover,PlayerSubComponents}.
 // MIT License, copyright (c) 2026 voici5986. Desktop state/bridge/audio remain OTONEIGO-owned.
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
 import {
   FaSearch,
   FaHeart,
@@ -20,7 +20,7 @@ import {
 } from "react-icons/fa";
 import { MdSkipPrevious, MdSkipNext, MdRepeat, MdRepeatOne, MdShuffle } from "react-icons/md";
 import type { TrackSnapshot } from "./contracts";
-import { usePlayer } from "./PlayerContext";
+import { shallowEqual, usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { FavoriteButton } from "./LibraryPanels";
 import { actualStreamQuality, time } from "./format";
 import { containOverlayFocus } from "./overlayFocus";
@@ -124,7 +124,7 @@ export function OtoneiHeader({
     </header>
   );
 }
-export function TrackCard({
+export const TrackCard = memo(function TrackCard({
   track,
   onPlay,
   onAdd,
@@ -132,22 +132,19 @@ export function TrackCard({
   date,
 }: {
   track: TrackSnapshot;
-  onPlay: () => void;
-  onAdd: () => void;
+  onPlay: (track: TrackSnapshot) => void;
+  onAdd: (track: TrackSnapshot) => void;
   disabled: boolean;
   date?: string;
 }) {
-  const { state } = usePlayer();
-  const active =
-    state.queue.entries.find((e) => e.queueEntryId === state.queue.currentEntryId)?.track.neteaseSongId ===
-    track.neteaseSongId;
+  const active = usePlayerSelector((state) => state.currentSongId) === track.neteaseSongId;
   return (
     <div className={`music-card ${active ? "is-active" : ""}`}>
       <div className="music-card-row">
         <button
           type="button"
           className="music-card-info"
-          onClick={onPlay}
+          onClick={() => onPlay(track)}
           disabled={disabled}
           aria-label={`播放 ${track.name} - ${track.artists.map((a) => a.name).join(" / ")}`}
         >
@@ -166,7 +163,7 @@ export function TrackCard({
             className="ui-icon-button"
             disabled={disabled}
             aria-label={`加入队列：${track.name}`}
-            onClick={onAdd}
+            onClick={() => onAdd(track)}
           >
             <FaPlus />
           </button>
@@ -174,9 +171,10 @@ export function TrackCard({
       </div>
     </div>
   );
-}
+});
 function Cover({ track, onClick, large = false }: { track?: TrackSnapshot; onClick?: () => void; large?: boolean }) {
-  const { state, store } = usePlayer();
+  const store = usePlayerStore();
+  const coverRevision = usePlayerSelector((state) => state.coverRevision);
   const [source, setSource] = useState("/default_cover.svg");
   const [imageAttempt, setImageAttempt] = useState(0);
   const coverAttempt = useRef({ generation: 0, retried: false });
@@ -217,7 +215,7 @@ function Cover({ track, onClick, large = false }: { track?: TrackSnapshot; onCli
       active = false;
       coverAttempt.current.generation++;
     };
-  }, [track?.coverRef, state.coverRevision, store, large]);
+  }, [track?.coverRef, coverRevision, store, large]);
   const image = (
     <img
       key={imageAttempt}
@@ -253,16 +251,26 @@ function Cover({ track, onClick, large = false }: { track?: TrackSnapshot; onCli
     <div className={`album-cover-wrapper ${large ? "album-cover-large" : ""}`}>{image}</div>
   );
 }
-export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
-  const { state, store } = usePlayer();
+export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnapshot } = {}) {
+  const store = usePlayerStore();
+  const state = usePlayerSelector(
+    (state) => ({
+      entries: state.queue.entries,
+      currentEntryId: state.queue.currentEntryId,
+      playMode: state.queue.playMode,
+      current: state.queue.entries.find((entry) => entry.queueEntryId === state.queue.currentEntryId)?.track,
+      hydration: state.hydration,
+      settings: state.settings,
+      stream: state.stream,
+      playback: state.playback,
+    }),
+    shallowEqual,
+  );
+  const current = providedCurrent ?? state.current;
   const [expanded, setExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
-  const q = state.queue;
+  const q = state;
   const ready = state.hydration === "ready";
-  const lyrics = useMemo(
-    () => alignLyrics(state.lyrics?.original || "", state.lyrics?.translated || ""),
-    [state.lyrics?.original, state.lyrics?.translated],
-  );
   const expandedRef = useRef<HTMLElement>(null);
   const queueRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
@@ -277,15 +285,6 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
     queueOpener.current = document.activeElement as HTMLElement;
     setQueueOpen(true);
   }
-  let active = -1;
-  lyrics.forEach((line, index) => {
-    if (line.time <= q.positionMs) active = index;
-  });
-  const lyricRef = useRef<HTMLDivElement>(null);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: active and expanded are display triggers; the DOM class is the actual scroll input.
-  useEffect(() => {
-    lyricRef.current?.querySelector(".active")?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [active, expanded]);
   useLayoutEffect(() => {
     const top = queueOpen ? "queue" : expanded ? "lyrics" : null;
     const previous = previousOverlay.current;
@@ -358,26 +357,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                 <p className="track-artist-album">{current?.artists.map((a) => a.name).join(" / ")}</p>
               </div>
             </div>
-            <div className="lyrics-section">
-              <div className="lyrics-scroll-container" ref={lyricRef}>
-                {state.lyricError ? (
-                  <div className="lyric-line no-lyrics">歌词暂时无法加载</div>
-                ) : lyrics.length ? (
-                  lyrics.map((line, index) => (
-                    // biome-ignore lint/suspicious/noArrayIndexKey: lyrics are immutable per track and never reordered; duplicate timestamps are possible, so the index is the only collision-free identity.
-                    <div key={index} className={`lyric-line ${index === active ? "active" : ""}`} data-time={line.time}>
-                      <div>{line.text || "♪"}</div>
-                      {line.translated && <div className="translated-lyric">{line.translated}</div>}
-                    </div>
-                  ))
-                ) : (
-                  <div className="lyric-line no-lyrics plain-lyrics">
-                    {state.lyrics?.original || "播放歌曲后在这里查看歌词"}
-                    {state.lyrics?.translated && <p>{state.lyrics.translated}</p>}
-                  </div>
-                )}
-              </div>
-            </div>
+            <PlayerLyrics />
           </div>
         </section>
       )}
@@ -443,18 +423,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
         aria-label="播放器"
       >
         <div className="player-inner">
-          <div className="progress-control-container">
-            <input
-              aria-label="播放进度"
-              type="range"
-              min="0"
-              max={Math.max(1, current?.durationMs || 0)}
-              step="1000"
-              value={Math.min(q.positionMs, current?.durationMs || 0)}
-              disabled={!ready || !current}
-              onChange={(e) => store.seek(Number(e.target.value))}
-            />
-          </div>
+          <PlayerProgress current={current} ready={ready} />
           <div className="player-content">
             <div className="player-info-controls">
               <div className="player-left-section">
@@ -515,9 +484,7 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
                   {iconButton("下一首", <MdSkipNext size={28} />, () => void store.next(), !ready || !current)}
                   {current && <FavoriteButton track={current} />}
                 </div>
-                <small className="player-time">
-                  {time(q.positionMs)} / {time(current?.durationMs || 0)}
-                </small>
+                <PlayerTime current={current} />
               </div>
               <div className="player-right-section">
                 <label className="volume">
@@ -548,5 +515,71 @@ export function OtoneiPlayer({ current }: { current?: TrackSnapshot }) {
         </div>
       </footer>
     </>
+  );
+}
+
+function PlayerProgress({ current, ready }: { current?: TrackSnapshot; ready: boolean }) {
+  const store = usePlayerStore();
+  const positionMs = usePlayerSelector((state) => state.queue.positionMs);
+  return (
+    <div className="progress-control-container">
+      <input
+        aria-label="播放进度"
+        type="range"
+        min="0"
+        max={Math.max(1, current?.durationMs || 0)}
+        step="1000"
+        value={Math.min(positionMs, current?.durationMs || 0)}
+        disabled={!ready || !current}
+        onChange={(e) => store.seek(Number(e.target.value))}
+      />
+    </div>
+  );
+}
+function PlayerTime({ current }: { current?: TrackSnapshot }) {
+  const positionMs = usePlayerSelector((state) => state.queue.positionMs);
+  return (
+    <small className="player-time">
+      {time(positionMs)} / {time(current?.durationMs || 0)}
+    </small>
+  );
+}
+function PlayerLyrics() {
+  const state = usePlayerSelector((state) => ({ lyrics: state.lyrics, lyricError: state.lyricError }), shallowEqual);
+  const lyrics = useMemo(
+    () => alignLyrics(state.lyrics?.original || "", state.lyrics?.translated || ""),
+    [state.lyrics?.original, state.lyrics?.translated],
+  );
+  const positionMs = usePlayerSelector((state) => state.queue.positionMs);
+  let active = -1;
+  lyrics.forEach((line, index) => {
+    if (line.time <= positionMs) active = index;
+  });
+  const lyricRef = useRef<HTMLDivElement>(null);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: active is the display trigger; the DOM class is the actual scroll input.
+  useEffect(() => {
+    lyricRef.current?.querySelector(".active")?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [active]);
+  return (
+    <div className="lyrics-section">
+      <div className="lyrics-scroll-container" ref={lyricRef}>
+        {state.lyricError ? (
+          <div className="lyric-line no-lyrics">歌词暂时无法加载</div>
+        ) : lyrics.length ? (
+          lyrics.map((line, index) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: lyrics are immutable per track and never reordered; duplicate timestamps are possible, so the index is the only collision-free identity.
+            <div key={index} className={`lyric-line ${index === active ? "active" : ""}`} data-time={line.time}>
+              <div>{line.text || "♪"}</div>
+              {line.translated && <div className="translated-lyric">{line.translated}</div>}
+            </div>
+          ))
+        ) : (
+          <div className="lyric-line no-lyrics plain-lyrics">
+            {state.lyrics?.original || "播放歌曲后在这里查看歌词"}
+            {state.lyrics?.translated && <p>{state.lyrics.translated}</p>}
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

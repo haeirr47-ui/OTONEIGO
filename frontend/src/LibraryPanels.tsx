@@ -1,8 +1,8 @@
 // Track rows and heart treatment adapted from OTONEI SearchResultItem.tsx and HeartButton.jsx (MIT).
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { TrackSnapshot, LocalSettings } from "./contracts";
 import { normalizeLocalQuery } from "./contracts";
-import { usePlayer } from "./PlayerContext";
+import { shallowEqual, usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { PlaylistPanel } from "./PlaylistPanels";
 import { TrackCard } from "./OtoneiPresentation";
 import { FaHeart, FaRegHeart } from "react-icons/fa";
@@ -11,13 +11,14 @@ import { startSettingsCachePolling } from "./diagnosticPolling";
 import type { DesktopBridge } from "./contracts";
 
 export function FavoriteButton({ track }: { track: TrackSnapshot }) {
-  const { state, store } = usePlayer();
-  const liked = store.isFavorite(track);
+  const store = usePlayerStore();
+  const liked = usePlayerSelector((state) => state.favoriteIDs.has(track.neteaseSongId));
+  const libraryReady = usePlayerSelector((state) => state.libraryReady);
   return (
     <button
       type="button"
       className={`favorite ui-icon-button ${liked ? "liked" : ""}`}
-      disabled={!state.libraryReady}
+      disabled={!libraryReady}
       aria-pressed={liked}
       aria-label={`${liked ? "取消收藏" : "收藏"}：${track.name}`}
       onClick={() => store.toggleFavorite(track)}
@@ -28,17 +29,50 @@ export function FavoriteButton({ track }: { track: TrackSnapshot }) {
 }
 
 export function LibraryPanel({ kind }: { kind: "favorites" | "history" }) {
-  const { state, store } = usePlayer();
+  const store = usePlayerStore();
+  const state = usePlayerSelector(
+    (state) => ({
+      favorites: kind === "favorites" ? state.favorites : null,
+      history: kind === "history" ? state.history : null,
+      favoritesQuery: kind === "favorites" ? state.favoritesQuery : "",
+      historyQuery: kind === "history" ? state.historyQuery : "",
+      favoritesLoading: kind === "favorites" ? state.favoritesLoading : false,
+      historyLoading: kind === "history" ? state.historyLoading : false,
+      historyClearing: kind === "history" ? state.historyClearing : false,
+      favoritesPage: kind === "favorites" ? state.favoritesPage : 1,
+      historyPage: kind === "history" ? state.historyPage : 1,
+      favoritesHasMore: kind === "favorites" ? state.favoritesHasMore : false,
+      historyHasMore: kind === "history" ? state.historyHasMore : false,
+      libraryReady: state.libraryReady,
+      libraryError: state.libraryError,
+      hydration: state.hydration,
+      settingsReady: !!state.settings,
+    }),
+    shallowEqual,
+  );
+  const playTrack = useCallback(
+    (track: TrackSnapshot) => {
+      const id = store.add(track);
+      if (id) void store.select(id);
+    },
+    [store],
+  );
+  const addTrack = useCallback(
+    (track: TrackSnapshot) => {
+      store.add(track);
+    },
+    [store],
+  );
   const [filter, setFilter] = useState(kind === "favorites" ? state.favoritesQuery : state.historyQuery);
   const [tab, setTab] = useState<"tracks" | "playlists">("tracks");
   const tracks =
     kind === "favorites"
-      ? state.favorites.map((track) => ({
+      ? (state.favorites ?? []).map((track) => ({
           id: track.neteaseSongId,
           track,
           date: "",
         }))
-      : state.history.map((entry) => ({
+      : (state.history ?? []).map((entry) => ({
           id: entry.historyEntryId,
           track: entry.track,
           date: new Date(entry.playedAt).toLocaleString("zh-CN"),
@@ -115,12 +149,9 @@ export function LibraryPanel({ kind }: { kind: "favorites" | "history" }) {
                 key={id}
                 track={track}
                 date={date}
-                disabled={state.hydration !== "ready" || !state.settings}
-                onPlay={() => {
-                  const entry = store.add(track);
-                  if (entry) void store.select(entry);
-                }}
-                onAdd={() => store.add(track)}
+                disabled={state.hydration !== "ready" || !state.settingsReady}
+                onPlay={playTrack}
+                onAdd={addTrack}
               />
             ))}
           </div>
@@ -160,7 +191,22 @@ export function LibraryPanel({ kind }: { kind: "favorites" | "history" }) {
 }
 
 export function SettingsPanel({ bridge }: { bridge?: DesktopBridge } = {}) {
-  const { state, store } = usePlayer();
+  const store = usePlayerStore();
+  const state = usePlayerSelector(
+    (state) => ({
+      settings: state.settings,
+      qualityPolicy: state.qualityPolicy,
+      region: state.region,
+      regionError: state.regionError,
+      settingsError: state.settingsError,
+      capabilities: state.capabilities,
+      cacheStats: state.cacheStats,
+      cacheMessage: state.cacheMessage,
+      resourceCacheStats: state.resourceCacheStats,
+      resourceCacheMessage: state.resourceCacheMessage,
+    }),
+    shallowEqual,
+  );
   useEffect(() => startSettingsCachePolling(store), [store]);
   const [refreshing, setRefreshing] = useState(false);
   const refreshRequest = useRef<AbortController | null>(null);

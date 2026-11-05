@@ -41,6 +41,10 @@ export interface PlayerState {
   historyLoading: boolean;
   historyClearing: boolean;
   queue: QueueSnapshot;
+  // Derived from `queue` on every queue replacement: the current entry's song ID,
+  // or "" when no entry is current. Card highlight selectors read this instead of
+  // scanning `entries`, which kept every mounted card O(queue length) per patch.
+  currentSongId: string;
   hydration: "loading" | "ready" | "failed";
   playback: "paused" | "loading" | "playing";
   error: string;
@@ -51,6 +55,7 @@ export interface PlayerState {
   settings: LocalSettings | null;
   qualityPolicy: PlaybackQualityPolicy | null;
   settingsError: string;
+  favoriteIDs: ReadonlySet<string>;
   favorites: TrackSnapshot[];
   history: HistoryEntry[];
   libraryReady: boolean;
@@ -73,6 +78,10 @@ const emptyQueue = (): QueueSnapshot => ({
   positionMs: 0,
   revision: 0,
 });
+// Resolved by entry ID rather than index so it matches what the previous per-card
+// selector computed; a duplicate song in the queue still highlights by song ID.
+const currentSongOf = (queue: QueueSnapshot) =>
+  queue.entries.find((entry) => entry.queueEntryId === queue.currentEntryId)?.track.neteaseSongId ?? "";
 export class PlayerStore {
   private state: PlayerState = {
     resourceCacheStats: null,
@@ -92,6 +101,7 @@ export class PlayerStore {
     historyLoading: false,
     historyClearing: false,
     queue: emptyQueue(),
+    currentSongId: "",
     hydration: "loading",
     playback: "paused",
     error: "",
@@ -102,6 +112,7 @@ export class PlayerStore {
     settings: null,
     qualityPolicy: null,
     settingsError: "",
+    favoriteIDs: new Set<string>(),
     favorites: [],
     history: [],
     libraryReady: false,
@@ -117,7 +128,6 @@ export class PlayerStore {
   private sourceReleases = new Set<Promise<unknown>>();
   private favoritePageInterrupted = false;
   private historyPageInterrupted = false;
-  private favoriteIDs = new Set<string>();
   private favoritesGeneration = 0;
   private favoritesRequest?: AbortController;
   private historyRequest?: AbortController;
@@ -214,7 +224,11 @@ export class PlayerStore {
     this.stop();
   }
   private patch(patch: Partial<PlayerState>) {
-    this.state = { ...this.state, ...patch };
+    const next = { ...this.state, ...patch };
+    // Only a queue replacement can change the current song, so the one scan per
+    // queue change replaces the per-card scan on every notification.
+    if (patch.queue) next.currentSongId = currentSongOf(next.queue);
+    this.state = next;
     this.listeners.forEach((fn) => {
       fn();
     });
@@ -288,10 +302,10 @@ export class PlayerStore {
         const ids = this.bridge.GetLocalFavoriteIDs
           ? await this.bridge.GetLocalFavoriteIDs()
           : (await this.bridge.GetLocalFavorites()).map((t) => t.neteaseSongId);
-        this.favoriteIDs = new Set(ids);
         this.favoriteNext = { order: favorites.nextAddedOrder, id: favorites.nextSongId };
         this.historyCursor = history.entries.at(-1);
         this.patch({
+          favoriteIDs: new Set(ids),
           favorites: favorites.tracks.map(trackSnapshot),
           favoritesHasMore: favorites.hasMore,
           history: history.entries.map(historySnapshot),
@@ -353,7 +367,10 @@ export class PlayerStore {
     if (this.seekTimer !== undefined) clearTimeout(this.seekTimer);
     this.seekTimer = undefined;
     const snapshot = this.queueSnapshot(queue);
-    this.patch({ queue: snapshot });
+    // Position/mode/current-entry saves keep already-normalized runtime metadata stable for selectors.
+    // Persistence still receives its own detached, normalized snapshot.
+    const entries = queue.entries === this.state.queue.entries ? this.state.queue.entries : snapshot.entries;
+    this.patch({ queue: { ...snapshot, entries } });
     this.saves = this.saves
       .catch(() => {})
       .then(() => this.bridge.SaveQueue(snapshot))
@@ -707,7 +724,7 @@ export class PlayerStore {
     }
   }
   isFavorite(track: TrackSnapshot) {
-    return this.favoriteIDs.has(track.neteaseSongId);
+    return this.state.favoriteIDs.has(track.neteaseSongId);
   }
   toggleFavorite(track: TrackSnapshot) {
     if (this.closing) return;
@@ -721,13 +738,15 @@ export class PlayerStore {
       .then(async () => {
         const liked = !this.isFavorite(snapshot);
         await this.bridge.SetLocalFavorite(snapshot, liked);
-        if (liked) this.favoriteIDs.add(snapshot.neteaseSongId);
-        else this.favoriteIDs.delete(snapshot.neteaseSongId);
+        const favoriteIDs = new Set(this.state.favoriteIDs);
+        if (liked) favoriteIDs.add(snapshot.neteaseSongId);
+        else favoriteIDs.delete(snapshot.neteaseSongId);
         if (this.bridge.SearchLocalFavorites) {
-          this.patch({ libraryError: "" });
+          this.patch({ favoriteIDs, libraryError: "" });
           void this.readFavorites(this.state.favoritesPage, true);
         } else
           this.patch({
+            favoriteIDs,
             favorites: liked
               ? [snapshot, ...this.state.favorites.filter((t) => t.neteaseSongId !== snapshot.neteaseSongId)].slice(
                   0,

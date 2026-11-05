@@ -1,19 +1,33 @@
 // Local playlist controls reuse the adapted OTONEI music-card and icon-button presentation.
-import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
 import { FaListUl } from "react-icons/fa";
 import type { TrackSnapshot } from "./contracts";
-import { usePlayer } from "./PlayerContext";
+import { usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { TrackCard } from "./OtoneiPresentation";
 import { containOverlayFocus } from "./overlayFocus";
 
 export function usePlaylists() {
-  const { store } = usePlayer();
+  const store = usePlayerStore();
   return useSyncExternalStore(store.playlists.subscribe, store.playlists.getSnapshot, store.playlists.getSnapshot);
 }
 export function PlaylistPanel() {
-  const { state: player, store } = usePlayer();
+  const store = usePlayerStore();
+  const playable = usePlayerSelector((state) => state.hydration === "ready" && !!state.settings);
   const state = usePlaylists();
+  const playTrack = useCallback(
+    (track: TrackSnapshot) => {
+      const id = store.add(track);
+      if (id) void store.select(id);
+    },
+    [store],
+  );
+  const addTrack = useCallback(
+    (track: TrackSnapshot) => {
+      store.add(track);
+    },
+    [store],
+  );
   const [selected, setSelected] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [rename, setRename] = useState("");
@@ -26,7 +40,6 @@ export function PlaylistPanel() {
   }, [selected, playlist?.name]);
   const busy = state.pending > 0;
   const ready = state.status === "ready";
-  const playable = player.hydration === "ready" && !!player.settings;
   const message = (
     <>
       {state.status === "loading" && <p className="muted">正在读取本地歌单…</p>}
@@ -115,15 +128,7 @@ export function PlaylistPanel() {
             <div className="music-list">
               {playlist.tracks.map((track, index) => (
                 <div key={track.neteaseSongId} className="playlist-track">
-                  <TrackCard
-                    track={track}
-                    disabled={!playable}
-                    onPlay={() => {
-                      const id = store.add(track);
-                      if (id) void store.select(id);
-                    }}
-                    onAdd={() => store.add(track)}
-                  />
+                  <TrackCard track={track} disabled={!playable} onPlay={playTrack} onAdd={addTrack} />
                   <div className="playlist-track-actions">
                     <button
                       type="button"
@@ -240,7 +245,7 @@ function AddToPlaylistDialog({
   close: () => void;
   opener: HTMLButtonElement | null;
 }) {
-  const { store } = usePlayer();
+  const store = usePlayerStore();
   const state = usePlaylists();
   const [name, setName] = useState("");
   const root = useRef<HTMLDivElement>(null);

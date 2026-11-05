@@ -1,8 +1,8 @@
 // Presentation shell adapted from OTONEI/src/App.jsx (MIT, copyright (c) 2026 voici5986).
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import type { DesktopBridge, SearchResult, TrackSnapshot } from "./contracts";
 import { normalizeLocalQuery } from "./contracts";
-import { usePlayer } from "./PlayerContext";
+import { shallowEqual, usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { LibraryPanel, SettingsPanel } from "./LibraryPanels";
 import { StorageRecoveryNotice } from "./StorageRecoveryNotice";
 import { OtoneiNavigation, OtoneiHeader, OtoneiPlayer, TrackCard } from "./OtoneiPresentation";
@@ -17,9 +17,20 @@ function uniqueTracks(tracks: TrackSnapshot[]) {
   });
 }
 export function App({ bridge }: { bridge: DesktopBridge }) {
-  const { state, store } = usePlayer();
-  const q = state.queue;
-  const current = q.entries.find((e) => e.queueEntryId === q.currentEntryId)?.track;
+  const store = usePlayerStore();
+  const state = usePlayerSelector(
+    (state) => ({
+      hydration: state.hydration,
+      settingsReady: !!state.settings,
+      searchHistory: state.searchHistory,
+      searchHistoryError: state.searchHistoryError,
+      error: state.error,
+      saveError: state.saveError,
+      settingsError: state.settingsError,
+      libraryError: state.libraryError,
+    }),
+    shallowEqual,
+  );
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"search" | "favorites" | "history" | "settings">("search");
   useEffect(() => {
@@ -73,10 +84,19 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
     event.preventDefault();
     void search(query, 1, true);
   }
-  function add(track: TrackSnapshot, play = false) {
-    const id = store.add(track);
-    if (play && id) void store.select(id);
-  }
+  const add = useCallback(
+    (track: TrackSnapshot) => {
+      store.add(track);
+    },
+    [store],
+  );
+  const play = useCallback(
+    (track: TrackSnapshot) => {
+      const id = store.add(track);
+      if (id) void store.select(id);
+    },
+    [store],
+  );
   const ready = state.hydration === "ready";
   return (
     <div className="app-container desktop-layout">
@@ -146,9 +166,9 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
                   <TrackCard
                     key={track.neteaseSongId}
                     track={track}
-                    onPlay={() => add(track, true)}
-                    onAdd={() => add(track)}
-                    disabled={!ready || !state.settings}
+                    onPlay={play}
+                    onAdd={add}
+                    disabled={!ready || !state.settingsReady}
                   />
                 ))}
               </div>
@@ -201,7 +221,7 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
             </p>
           ))}
       </div>
-      <OtoneiPlayer current={current} />
+      <OtoneiPlayer />
     </div>
   );
 }

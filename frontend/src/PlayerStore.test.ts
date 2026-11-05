@@ -35,6 +35,52 @@ const saved: QueueSnapshot = {
   revision: 8,
 };
 
+it("publishes complete favorite membership without mutating earlier snapshots", async () => {
+  const { store, bridge } = setup();
+  const offPage = { ...track, neteaseSongId: "999999999999999999", name: "另一页收藏" };
+  bridge.GetLocalFavoriteIDs = vi.fn(async () => [offPage.neteaseSongId]);
+  bridge.SearchLocalFavorites = vi.fn(async () => ({
+    tracks: [],
+    hasMore: false,
+    nextAddedOrder: 0,
+    nextSongId: "",
+  }));
+  const initial = store.getSnapshot();
+  await store.hydrate();
+  const hydrated = store.getSnapshot();
+  expect(initial.favoriteIDs.size).toBe(0);
+  expect(hydrated.favorites).toEqual([]);
+  expect(hydrated.favoriteIDs.has(offPage.neteaseSongId)).toBe(true);
+  store.toggleFavorite(track);
+  await store.flush();
+  const added = store.getSnapshot();
+  expect(added.favoriteIDs).not.toBe(hydrated.favoriteIDs);
+  expect(hydrated.favoriteIDs.has(track.neteaseSongId)).toBe(false);
+  expect(added.favoriteIDs.has(track.neteaseSongId)).toBe(true);
+  expect(added.favoriteIDs.has(offPage.neteaseSongId)).toBe(true);
+  store.toggleFavorite(track);
+  await store.flush();
+  expect(store.getSnapshot().favoriteIDs.has(track.neteaseSongId)).toBe(false);
+  expect(added.favoriteIDs.has(track.neteaseSongId)).toBe(true);
+  expect(store.getSnapshot().favoriteIDs.has(offPage.neteaseSongId)).toBe(true);
+  expect(initial.favoriteIDs.size).toBe(0);
+});
+
+it("failed favorite writes retain the authoritative membership snapshot", async () => {
+  const { store, bridge } = setup();
+  bridge.GetLocalFavorites = vi.fn(async () => [track]);
+  await store.hydrate();
+  const before = store.getSnapshot();
+  bridge.SetLocalFavorite = vi.fn(async () => {
+    throw new Error("rejected");
+  });
+  store.toggleFavorite(track);
+  await store.flush();
+  expect(store.getSnapshot().favoriteIDs).toBe(before.favoriteIDs);
+  expect(store.isFavorite(track)).toBe(true);
+  expect(store.getSnapshot().libraryError).toBe("收藏保存失败，请重试。");
+});
+
 it("hydrates favorite membership after page reads quarantine damaged records", async () => {
   const { store, bridge } = setup();
   let ids = [track.neteaseSongId];
@@ -142,6 +188,41 @@ function setup(load: Promise<QueueSnapshot | null> = Promise.resolve(null)) {
   return { bridge, engine, store };
 }
 describe("single queue owner and playback races", () => {
+  it("retains runtime track identities and derived current song across position saves", async () => {
+    const { store, bridge, engine } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    expect(store.getSnapshot().currentSongId).toBe(track.neteaseSongId);
+    const before = store.getSnapshot().queue;
+    store.seek(42000.6);
+    await store.flush();
+    expect(store.getSnapshot().queue.entries).toBe(before.entries);
+    expect(store.getSnapshot().queue.entries[0].track).toBe(before.entries[0].track);
+    expect(store.getSnapshot().currentSongId).toBe(track.neteaseSongId);
+    const written = vi.mocked(bridge.SaveQueue).mock.lastCall![0];
+    expect(written.entries).not.toBe(before.entries);
+    expect(written.entries[0].track).not.toBe(before.entries[0].track);
+    expect(written.positionMs).toBe(42001);
+    expect(before.positionMs).toBe(30000);
+    await store.play();
+    engine.emit("playing");
+    const playing = store.getSnapshot().queue;
+    vi.mocked(bridge.SaveQueue).mockClear();
+    engine.currentTime = 43000.4;
+    engine.emit("timeupdate");
+    await store.flush();
+    expect(bridge.SaveQueue).toHaveBeenCalled();
+    expect(store.getSnapshot().queue.entries).toBe(playing.entries);
+    const progressSave = vi.mocked(bridge.SaveQueue).mock.lastCall![0];
+    expect(progressSave.entries).not.toBe(playing.entries);
+    expect(progressSave.positionMs).toBe(43000);
+    // A structural edit replaces entries and recomputes the derived ID, which stays
+    // on the unchanged current entry rather than following the newly appended one.
+    expect(store.add({ ...track, neteaseSongId: "555555555555555555", name: "第二首" })).toBeTruthy();
+    expect(store.getSnapshot().queue.entries.length).toBe(2);
+    expect(store.getSnapshot().currentSongId).toBe(track.neteaseSongId);
+    store.dispose();
+  });
+
   it("serializes fractional progress, pause and seek as nonnegative integer milliseconds", async () => {
     const { store, engine, bridge } = setup(Promise.resolve(saved));
     await store.hydrate();
