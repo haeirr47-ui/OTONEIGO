@@ -29,7 +29,7 @@ Wails 3.0.0 原本已有事件、绑定等部分 recovery，不能描述成“�
 
 本阶段只评审稳定补丁版；不通过 `@latest` 或伪版本顺带升级小版本，不改前端工具链。上述三项均核实了发布标签、模块声明和校验和。参考 [SQLite 上游](https://gitlab.com/cznic/sqlite/-/tags/v1.61.1)、[websocket 发布记录](https://github.com/coder/websocket/releases/tag/v1.8.15)、[godbus 发布记录](https://github.com/godbus/dbus/releases/tag/v5.2.4)。
 
-`scripts/audit-dependencies.ps1` 明确检查 Go Wails 与前端 runtime 都固定为 3.0.0。Wails 升级需单独一批，同时评审托盘窗口识别、图标 ID、原生任务栏调用和所有相关 API，再重跑 `native-desktop05`、`native-audit053` 及 production 退出测试。本批不把固定 Wails 误称为长期不更新，也不依据补丁版本号假定兼容性：必须以回归、Windows 构建及许可审计决定是否采用。
+`scripts/audit-dependencies.ps1` 明确检查 Go Wails 与前端 runtime 都固定为 3.0.0。Wails 升级需单独一批，同时评审托盘窗口识别、图标 ID、原生任务栏调用和所有相关 API，再重跑 `native-desktop05`、`native-audit053` 及 production 退出测试。本批不把固定 Wails 误称为长期不更新，也不依据补丁版本号假定兼容性：必须以回归、Windows 构建及许可审计决定是否采用。（2026-11-05 该锁定点已按上述条件移到 3.1.0，评审与重跑结果见 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)；本文其余内容仍代其原批次。）
 
 ## 验证边界
 

@@ -2,7 +2,7 @@
 
 2026-11-03 维护补充：缓存共享目录锁、脱敏本地崩溃记录及补丁依赖策略见[维护加固](docs/maintenance-hardening.md)。报告默认位于 `%LOCALAPPDATA%\OTONEIGO\log\crash-*.txt`，最多五份；不自动上传。
 
-当前补丁版：[0.5.3免安装ZIP](bin/OTONEIGO-0.5.3-windows-x64.zip)。缓存队列、会话提示、取流重试和访问写入审计见[逐项记录](docs/audit-fixes-0.5.3.md)。
+2026-11-05 资源补充：0.5.4 把 OTONEI 标帜图标、清单与版本信息嵌入 EXE，图标/许可来源见[逐项记录](docs/audit-fixes-0.5.4.md)；同批完成 Wails 3.0.0→3.1.0 升级（锁定点、CLI 与许可清单同步，原生矩阵重跑），过程与未达成断言见 [Wails 3.1.0 升级记录](docs/wails-3.1.0-upgrade.md)。当前补丁版：[0.5.4免安装ZIP](bin/OTONEIGO-0.5.4-windows-x64.zip)。上一批缓存队列、会话提示、取流重试和访问写入审计见[0.5.3 记录](docs/audit-fixes-0.5.3.md)。
 
 独立的 Windows 网易云音乐客户端，在 OTONEI 现有 React 界面组件、布局和主题上适配与扩展，使用 React + Wails 3 + Go + SQLite。
 
@@ -12,7 +12,7 @@
 
 ## 开发与构建
 
-需要 Windows x64、Node.js 26、pnpm 12 与 Go 1.26 以上。当前验证使用 Node 26.12.1、pnpm 12.16.1、Go 1.27.3、Wails 3.0.0。前端依赖由 pnpm 管理（`frontend/pnpm-lock.yaml` 为唯一锁文件）。首次运行：
+需要 Windows x64、Node.js 26、pnpm 12 与 Go 1.26 以上。当前验证使用 Node 26.13.0、pnpm 12.16.1、Go 1.27.3、Wails 3.1.0。前端依赖由 pnpm 管理（`frontend/pnpm-lock.yaml` 为唯一锁文件）。首次运行：
 
 ```powershell
 ./scripts/bootstrap.ps1
@@ -22,7 +22,7 @@
 
 `bootstrap.ps1` 在缺少 Go 时下载校验过的官方便携工具链，Wails CLI 与缓存放在 `.tools/`，不修改系统 PATH。`verify.ps1` 依次执行 Go 格式检查（`gofmt -l`）、Go 测试/vet、前端格式与 lint 检查（Biome）、前端测试、类型检查、绑定生成、Windows 生产构建和依赖门禁。单独构建使用 `./scripts/build.ps1`，单独生成依赖及许可记录使用 `./scripts/audit-dependencies.ps1`。
 
-格式化与静态检查：Go 用 `gofmt -w <目录或文件>` 写入、`verify.ps1` 用 `gofmt -l` 校验；前端用 Biome（`frontend/biome.json`），`pnpm --dir frontend run format` 写入，`format:check` 与 `lint` 只检查，`frontend/bindings`、`dist` 与 CSS 不在范围内。依赖升级保持“先查后升、升完必验”：后端 `go list -m -u all` → `go get`/`go mod tidy`，前端 `pnpm --dir frontend outdated` → 安装精确版本并提交 `pnpm-lock.yaml`，两者都需重跑 `verify.ps1`；升级 Wails 时 `go.mod` 与 `bootstrap.ps1` 的 CLI 版本必须同步，并重跑原生验收脚本。
+格式化与静态检查：Go 用 `gofmt -w <目录或文件>` 写入、`verify.ps1` 用 `gofmt -l` 校验；前端用 Biome（`frontend/biome.json`），`pnpm --dir frontend run format` 写入，`format:check` 与 `lint` 只检查，`frontend/bindings`、`dist` 与 CSS 不在范围内。依赖升级保持“先查后升、升完必验”：后端 `go list -m -u all` → `go get`/`go mod tidy`，前端 `pnpm --dir frontend outdated` → 锁定声明范围（当前 `@wailsio/runtime` 为 `^3.1.0`）、提交解析到精确版本的 `pnpm-lock.yaml`，两者都需重跑 `verify.ps1`；升级 Wails 时 `go.mod`、`frontend/package.json` 的声明与 `bootstrap.ps1` 的 CLI 版本必须同步，由 `audit-dependencies.ps1` 同时校验 Go 模块、锁文件解析版本、声明范围与 CLI，并重跑原生验收脚本。
 
 前端依赖装在 pnpm 的全局内容仓库里：`frontend/.npmrc` 设置 `enable-global-virtual-store=true`，虚拟仓库位于 pnpm store（默认 `%LOCALAPPDATA%\pnpm\store`），`frontend/node_modules` 只保留指向仓库的链接，因此多个检出共享同一份包文件。不要在仓库里再用 `npm install`，它会生成 `package-lock.json` 并破坏链接布局；该文件已加入 `.gitignore`。
 
@@ -96,3 +96,7 @@
 封面首次验证独立两槽，网络下载仍四槽；恢复提示可在本次会话“知道了”关闭，不删除原始隔离记录。恢复检查改为完成后30秒；缓存统计只在设置页立即及30秒刷新，离开停止，旧请求不覆盖新结果。缓存候选接纳失败有一次同预算的无缓存重解析；已有完整可信地址不会因可选缓存故障被丢弃。访问时间写入小型recency.json，避免高频重写Chunks，结构清单失败会补写。schema仍为7。
 
 190前端测试、Go/vet、production与许可通过，真实点击/计时/侧车落盘和正常退出通过。结构变更与启动仍可重写全manifest，访问增量也非固定大小；详情见[0.5.3记录](docs/audit-fixes-0.5.3.md)。
+
+### 0.5.4 EXE 图标、Windows 资源与 Wails 3.1.0
+
+`OTONEIGO.exe` 不再使用 Windows 默认图标：构建时由 `cmd/appicon` 渲染 OTONEI 标帜母图，经 `wails3 generate icons`/`generate syso` 嵌入多尺寸图标、版本信息与标准清单（Per-Monitor V2、Common Controls 6、asInvoker）。Wails 原本就以 API 请求同一 DPI 上下文，因此渲染与窗口尺寸不变；托盘图标仍是运行时自行绘制。同批把 Wails Go/runtime/CLI 固定点从 3.0.0 移到 3.1.0：`pkg/w32`、Windows 托盘实现、`internal/webview2` 与单实例文件逐字节未变，托盘探测与 ITaskbarList3 直调前提仍成立；镜像内上游许可文件由 13 变 11（websocket 传输不再默认编入）。免安装四文件、数据目录与 schema 7 均未变。本批未在本机复验 live 网易云取流（服务对匿名请求返回 UNAUTHORIZED），详见 [Wails 3.1.0 升级记录](docs/wails-3.1.0-upgrade.md)。

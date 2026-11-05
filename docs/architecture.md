@@ -1,6 +1,8 @@
 # 当前架构与 P0 边界
 
-2026-11-03 维护补充：缓存目录锁统一由 `internal/dirlock` 管理；本工程 panic 入口接入独立、有界且默认脱敏的 `internal/crashreport`。网络/解码任务按经过审计的失败路径隔离，内部状态异常记录后终止；完整范围与限制见[维护加固](maintenance-hardening.md)。Wails Go/runtime 继续固定 3.0.0，补丁依赖升级不代表重新通过所有历史原生验收。
+2026-11-03 维护补充：缓存目录锁统一由 `internal/dirlock` 管理；本工程 panic 入口接入独立、有界且默认脱敏的 `internal/crashreport`。网络/解码任务按经过审计的失败路径隔离，内部状态异常记录后终止；完整范围与限制见[维护加固](maintenance-hardening.md)。Wails Go/runtime 继续固定 3.0.0（仅适用于 11-03 当时，下一段已移到 3.1.0），补丁依赖升级不代表重新通过所有历史原生验收。
+
+2026-11-05 升级批次：上述锁定点已随独立验收移到 Wails 3.1.0（Go 模块、`@wailsio/runtime` 与 wails3 CLI 同步）。影响本文件的集成事实：`pkg/w32`、`systemtray_windows.go`、`internal/webview2` 与 Windows 单实例文件与 3.0.0 逐字节相同，因此托盘就绪探测（ID 1 + message-only 窗口）与 ITaskbarList3 vtable 直接调用仍成立；事件总线改为同一监听器按发出顺序串行投递，启动前主线程工作由新队列缓存后重放。详细比对与验收见 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)。
 
 > 2026-11-02 / 0.5.3 源码同步。实现状态与验收状态分别记录；真实网络、原生 WebView2 和阶段结论以 [P0 验证记录](p0-validation.md)为准，本文不新增实测通过声明。
 
@@ -33,6 +35,8 @@ flowchart LR
 ```
 
 `main.go` 加载内嵌前端资源，生产构建使用 `production` tag。窗口采用系统标题栏，初始 1200×800、最小 900×640，实际退出经最多 3 秒持久化握手；closeToTray 默认 false，启用且托盘可用时关窗隐藏现有 WebView。同一数据目录的单实例限制使第二次启动聚焦已有窗口。数据目录可由进程级 `OTONEIGO_DATA_DIR` 隔离，默认 `%LOCALAPPDATA%\OTONEIGO`；不是用户数据迁移功能。
+
+0.5.4 起 EXE 带 Windows 资源段：`packaging/windows/appicon.png`（由 `cmd/appicon` 依 `frontend/public/logo.svg` 标帜几何生成）经 `wails3 generate icons` 成多尺寸 ICO，再由 `wails3 generate syso` 与 `wails.exe.manifest`、`info.json` 合成临时 `.syso` 供 `go build` 嵌入；构建脚本校验 `frontend/package.json`、`info.json` 四处、`wails.exe.manifest` 与 `installer/README.txt` 首行的版号一致，并按 PE 资源目录断言产物确实含图标、清单与版本资源。清单声明 Per-Monitor V2，Wails 运行时原本就以 API 设置同一上下文，检测到清单已设后跳过 API 调用，DPI 行为不变；托盘图标仍是 `desktop_windows.go` 运行时绘制的 PNG，不取自资源段。
 
 ## 网络与解析
 

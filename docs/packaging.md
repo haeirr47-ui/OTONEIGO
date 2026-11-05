@@ -1,6 +1,6 @@
 # Windows 免安装版打包
 
-> 当前交付版本 0.5.3；最终 Windows production 构建、许可审计、ZIP 四文件及输入哈希核对和有限便携覆盖更新验收已通过。准确条件见 [P0 记录](p0-validation.md)。
+> 当前交付版本 0.5.4。本批新增 EXE 内的 Windows 资源（图标、清单、版本信息），并收尾 Wails 3.0.0→3.1.0 升级（Go/runtime/CLI 锁定点与许可清单同步）：`scripts/verify.ps1` 全量、许可审计、资源门禁、production 启动/退出、audit053 矩阵（本批有一次非断言类等待超时抖动，原样重跑通过，见升级记录）、desktop05 浮窗/托盘/任务栏/通知阶段与重启恢复均通过；未通过的是 desktop05 矩阵里依赖 live 网易云取流的请求阶段计数断言，以及因此未执行到的自然结束/自动连播尾段，原因见 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)，不写成“全部通过”。历史 0.5.3 ZIP 及其哈希仍只代表 0.5.3。准确条件见 [P0 记录](p0-validation.md)。
 
 当前只交付 Windows x64 免安装 ZIP，安装包制作及安装测试暂停。解压全部四个文件，直接启动 OTONEIGO.exe；需要 Microsoft Edge WebView2 Runtime，当前验证主机已具备该运行时。
 
@@ -14,12 +14,43 @@
 
 PortableOnly 默认开启。默认流程不下载或运行 NSIS、不生成 setup、不进行安装操作。生产 EXE 的 metadata 必须为 Windows amd64 且准确使用 production tag；不接受 p0debug。程序与来源许可由显式四文件白名单打包，数据库、缓存、参考项目、调试 EXE 和日志均不入包。
 
+## EXE 资源（0.5.4）
+
+`scripts/build.ps1` 在 `go build` 前执行标准 Wails 资源流水线，产物只进入 EXE，不新增 ZIP 文件：
+
+| 文件 | 角色 | Git |
+| --- | --- | --- |
+| `cmd/appicon/main.go` | 由 OTONEI 标帜几何渲染 1024×1024 母图，小尺寸使用加粗描边 | 跟踪 |
+| `packaging/windows/appicon.png` | 图标母图 | 跟踪 |
+| `packaging/windows/info.json` | 版本信息表（en-US 0409） | 跟踪 |
+| `packaging/windows/wails.exe.manifest` | Per-Monitor V2 DPI、Common Controls 6、asInvoker | 跟踪 |
+| `packaging/windows/icon.ico` | `wails3 generate icons` 中间产物 | 忽略 |
+| `wails_windows_amd64.syso` | `wails3 generate syso` 中间产物，构建后立即删除 | 忽略 |
+
+图标来源不依赖 `reference/`：标帜矢量件已在产品内保存为 `frontend/public/logo.svg`，与 `docs/source-provenance.json` 记录的 OTONEI 原件哈希逐字节一致，删除参考副本仍可重建图标与资源。
+
+发布版本号由 `frontend/package.json` 拥有。`scripts/build.ps1` 在构建前拒绝与它不一致的 `packaging/windows/info.json`（`fixed.file_version`、`fixed.product_version`、`info."0409".FileVersion`、`info."0409".ProductVersion`）与 `wails.exe.manifest` 的 `assemblyIdentity version`；`installer/README.txt` 首行的版号检查放在 `scripts/toolchain.ps1` 的 `Assert-PayloadVersionDocuments`，由 build 与 package 两条路径共同调用，因此 `-SkipBuild` 也不能把旧版说明和新版程序一起打进包。`scripts/package-windows.ps1` 要求 EXE 的 ProductVersion 与 FileVersion 完全等于该版号（前缀匹配会放过 0.5.40，所以不用），并按 PE 资源目录枚举断言图标、清单与版本资源存在，使 `-SkipBuild` 也不能带走旧镜像或缺资源的镜像。因此升版需同步：`frontend/package.json`、`packaging/windows/info.json` 四处、`packaging/windows/wails.exe.manifest` 与 `installer/README.txt` 首行；不一致时构建直接失败，不依赖人工记忆。
+
+图标母图本身也是构建输入，因此 `cmd/appicon/main_test.go` 渲染 1024×1024 后与 `packaging/windows/appicon.png` 逐字节比对：手工替换母图会在这里失败，而不是让一个只数 `RT_ICON` 条目的门禁悄悄放行。该断言同时使 `docs/source-provenance.json` 记录的母图哈希保持有效，编码器行为变化时也同样报错。
+
+打包完成后 `scripts/package-windows.ps1` 自己写出 `output/packaging/portable-<版本>-final-report.json`：ZIP 大小与 SHA-256、四个包内条目逐项哈希、对应输入文件哈希、EXE 资源枚举计数、未重跑项清单，以及 `gateScriptSHA256`（`toolchain`/`build`/`audit-dependencies`/`package-windows` 在出报告那一刻的哈希），不再需要手工解压比对；后续任何脚本改动都会改变其中的哈希，使"报告与代码是否同一版本"可判定而不是靠推断。
+
+## 交付物
+
 | 文件 | 说明 |
 | --- | --- |
-| bin/OTONEIGO-0.5.3-windows-x64.zip | 根目录恰好包含 OTONEIGO.exe、LICENSE、THIRD_PARTY_NOTICES.txt、README.txt |
-| bin/OTONEIGO-0.5.3-windows-x64-portable.sha256 | 当前 ZIP 的 SHA-256 |
+| bin/OTONEIGO-0.5.4-windows-x64.zip | 19,530,458 字节，SHA-256 `db34731819d359b35d5955371e55a275b23bcc8bead47ad6e7345dd67278afd6`；根目录恰好包含 OTONEIGO.exe、LICENSE、THIRD_PARTY_NOTICES.txt、README.txt |
+| bin/OTONEIGO-0.5.4-windows-x64-portable.sha256 | 当前 ZIP 的 SHA-256 |
+| bin/OTONEIGO-0.5.3-windows-x64.zip | 上一交付批次，不含 EXE 资源段 |
+| bin/OTONEIGO-0.5.3-windows-x64-portable.sha256 | 历史 ZIP 的 SHA-256 |
 
 最终核对已确认包内程序与最后生产构建的 bin/OTONEIGO.exe 逐字节一致，许可与说明一并核对。字体及图标许可在内嵌资产和随包通知中保留。免安装 ZIP 不附带未使用的 NSIS 运行时通知。历史 0.3.0 验收记录在 output/packaging/portable-0.3-final-report.json，该目录被 Git 忽略；旧 portable-final-report.json 仅代表先前产物。以下为历史 0.4.0 核对，不能替代 0.5.0：报告为 output/packaging/portable-0.4-final-report.json。ZIP 大小 19,385,471 字节，SHA-256 为 `dda777ad145e85d53672a626e15c0fbf3d4b73336f5862f12f3d0b114e0fdf02`，恰好四个白名单文件且逐项哈希匹配最终 bin 输入。
+
+资源段由 `scripts/native-icon054.ps1` 验收（断言，不是记录）：PE 资源目录枚举得 `icon=8, groupIcon=1, version=1, manifest=1`，尺寸数量必须等于 `Get-IconSizePlan` 的 8；`FileVersionInfo` 的 ProductVersion/FileVersion 与 0.5.4 完全相等；shell 能取出图标（本机 32px，像素值不作断言）；新建 production WebView 窗口的 DPI 上下文必须是 Per-Monitor V2；WM_CLOSE 退出码 0。DPI 216、窗口 1200×800 在当前主机上作为观察值记录，不是验收条件。报告 `output/packaging/native-icon-054-report.json` 绑定的镜像即包内 `OTONEIGO.exe`（SHA-256 `9b5257e4ec06ed6c45fa092939e0d4950a963270beda69b0682f4fcaa84eee57`，逐字节等于最后生产构建）。四文件包内/输入逐项哈希见 `output/packaging/portable-0.5.4-final-report.json`。CDP 主界面与浮窗矩阵因同批升级 Wails 而重跑，结果与未达成项见 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)。
+
+0.5.4 未重跑便携覆盖更新与旧版本启动，未执行安装器、签名或远程发布；这些限制不因本批完成而自动取消。
+
+复核补记（2026-11-05 16:03）：`bin/OTONEIGO.exe` 仍是 14:58:45 那次 production 构建的产物（SHA-256 `9b5257e4…a84eee57`，未重建）；打包与资源两份报告由最终脚本重跑生成，ZIP 逐字节不变（19,530,458 字节、`db347318…78afd6`），因此上表的哈希仍然有效。同一次复核把 `installer/README.txt` 的版号检查移入 `scripts/toolchain.ps1` 并让打包路径也调用它，补上母图复现测试与报告里的 `gateScriptSHA256`。未重跑的是 `scripts/native-wails054.ps1` 的整链聚合（它会经 `verify.ps1` 重建 EXE 并改变上述哈希），其 15:00 报告仍是那次运行的原样记录。
 
 ## 数据与退出
 

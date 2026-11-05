@@ -1,4 +1,17 @@
-# 当前验证记录 — 0.5.3 交付 / 历史证据分期
+# 当前验证记录 — 0.5.4 交付 / 历史证据分期
+
+## 2026-11-05 EXE 图标、Windows 资源与 Wails 3.1.0（已出 ZIP）
+
+范围、成因与遗留项见 [0.5.4 审计](audit-fixes-0.5.4.md) 与 [Wails 3.1.0 升级记录](wails-3.1.0-upgrade.md)；不改写下列历史产物的版本或哈希。
+
+- 图标批次后 `scripts/verify.ps1` 一度只在最后的许可审计失败：`audit-dependencies.ps1` 要求 Wails v3.0.0，而 HEAD 依赖提交已使 go.mod 为 v3.1.0。本批按维护加固章节预设的升级条件完成它（逐文件差异评审 → 锁定点与 CLI 同步 → 原生矩阵重跑）后，全量门禁通过，许可审计记录 11 份上游许可文件。
+- 资源核对：`bin/OTONEIGO.exe` 从“无 `.rsrc` 段”变为 8 个 RT_ICON + RT_GROUP_ICON + RT_VERSION(0409) + RT_MANIFEST，由 `EnumResourceNames` 枚举报出数量并与 `Get-IconSizePlan` 比对；`FileVersionInfo` 的 ProductVersion/FileVersion 与 0.5.4 完全相等，`ExtractAssociatedIcon` 在本机取到 32px（像素值只记录，门禁仅断言能取出图标，不再单独作为存在性证据）。资源段使 EXE 字节 +26,112。
+- 真实原生：`scripts/native-icon054.ps1` 在隔离数据目录与进程级不可达代理下启动 production EXE，唯一 `WailsWebviewWindow` 显示并初始化，Per-Monitor V2 上下文、资源枚举（icon=8/groupIcon=1/version=1/manifest=1）、版本串完全相等与退出码 0 均为断言；DPI 216、窗口 1200×800 只是当前主机观察值记录（`output/packaging/native-icon-054-report.json`，含逐项 checks）。
+- 升级重跑：`scripts/native-wails054.ps1` 一次跑完 verify → 出包 → icon054 → 验收 EXE 构建 → fixture 复位 → audit053 → desktop05 acceptance/windowstyle → restart，聚合报告 `output/playwright/native-wails054-report.json` 为 `pass=false` 并在 `knownFailures` 写明唯一未达成项；icon054、audit053、windowstyle、restart 均 pass=true。`native-desktop05-acceptance` 的单执行器、控件、epoch、浮窗、通知、任务栏与 GD 播放段通过，但第 99 行 live 请求阶段计数断言不可满足：热缓存下 4 次 cache-hit/0 次 API；冷缓存下网易云匿名取流三档均返回 `UNAUTHORIZED` 后回退 GD，使第 44 行来源断言先失败。因此本批未在本机复验 live 网易云取流，自然结束/自动连播尾段也未执行。audit053 在本批出现过一次第 43 行 `until` 10 秒超时的非断言抖动，单独原样重跑通过。
+- 交付：`bin/OTONEIGO-0.5.4-windows-x64.zip` 19,530,458 字节，SHA-256 `db34731819d359b35d5955371e55a275b23bcc8bead47ad6e7345dd67278afd6`；包内 `OTONEIGO.exe` 逐字节等于最后生产构建（SHA-256 `9b5257e4ec06ed6c45fa092939e0d4950a963270beda69b0682f4fcaa84eee57`），逐项包内/输入哈希由打包脚本写入 `output/packaging/portable-0.5.4-final-report.json`；随包通知已重生成并记录 v3.1.0。
+- 图标资产与 `reference/` 解耦已核实：`frontend/public/logo.svg` 哈希等于 provenance 记录的 OTONEI 原件，构建/打包只读产品内文件；母图与矢量副本哈希已登记到 `docs/source-provenance.json`。
+- 仍未运行：Go race（CGO 关闭）、便携覆盖更新与旧版本启动、安装器/签名/远程发布、多屏或休眠、真实出口切换；账号能力仍关闭。
+- 复核（16:03）：审查后修正 `-SkipBuild` 的 README 版号门禁缺口、`Add-Type` 的 C# 版本依赖，补上母图复现测试与报告 `gateScriptSHA256`，并把上文"同一时刻"改为真实时间线。只重跑了不重建 EXE 的两项（`native-icon054.ps1`、`package-windows.ps1 -SkipBuild`），EXE `9b5257e4…` 与 ZIP `db347318…` 逐字节未变；整链聚合与完整 `verify.ps1` 未重跑，详见 [0.5.4 审计](audit-fixes-0.5.4.md) 复核补记。
 
 ## 2026-11-03 维护加固验证（源码批次，未重打 ZIP）
 
