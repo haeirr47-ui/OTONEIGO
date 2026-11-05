@@ -162,5 +162,15 @@
     "path": "reference/OTONEI/public/lyric.svg",
     "sha256": "be060d67b7a53b62efe31e2ced7dbfbf088256a3cb4428a545c98b5696ff572d",
     "missing": true
+  },
+  {
+    "path": "frontend/public/logo.svg",
+    "sha256": "5081cfd6b83d020d280c91769d5241fddd33cdcc6e5d29fe218f0a394a543939",
+    "note": "Product copy of the OTONEI mark above; byte-identical, so the icon can be rebuilt without reference/."
+  },
+  {
+    "path": "packaging/windows/appicon.png",
+    "sha256": "eaea63fd529ae0e3071a8a4dda50e14824668d3e8dfd75c7d66adc0b5943df46",
+    "note": "Icon master rendered by cmd/appicon from the logo.svg mark geometry; derivative artwork under the same MIT license."
   }
 ]

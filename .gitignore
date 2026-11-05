@@ -37,6 +37,13 @@ Thumbs.db
 *.tsbuildinfo
 /frontend/.vite/
 
+# Generated Windows executable resources; the tracked inputs live in packaging/windows/
+/packaging/windows/icon.ico
+/wails_windows_amd64.syso
+
+# Python bytecode from the acceptance fixture helper
+__pycache__/
+
 # Stray local packages and binaries; distributable artifacts live in bin/ (ignored)
 *.exe
 *.msi

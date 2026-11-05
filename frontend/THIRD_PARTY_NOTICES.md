@@ -32,6 +32,7 @@ Source: https://github.com/voici5986/OTONEI (MIT, copyright (c) 2026 voici5986; 
 - `frontend/src/App.tsx` adapts the original `src/App.jsx` shell; `LibraryPanels.tsx` adapts `SearchResultItem.tsx` and `HeartButton.jsx` presentation.
 - `frontend/src/otonei/` retains original `src/index.css` and `src/styles/theme.css`, `primitives.css`, `App.css`, `Navigation.desktop.css`, `Navigation.mobile.css`, `Header.desktop.css`, `AudioPlayer.base.css`, `AudioPlayer.desktop.css`. Custom media aliases are expanded to the original 768px breakpoint. `frontend/src/styles.css` supplies local desktop adapters.
 - `frontend/public/logo.svg`, `default_cover.svg` and `lyric.svg` are copied from original `public/`.
+- `packaging/windows/appicon.png` is the Windows executable icon master rendered by `cmd/appicon` from the same `logo.svg` mark geometry (heavier stroke for small sizes). It is derivative artwork under the OTONEI MIT license above and is embedded in `OTONEIGO.exe`, not shipped as a separate file.
 
 ## MiSans font
 

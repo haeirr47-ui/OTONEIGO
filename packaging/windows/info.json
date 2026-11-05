@@ -1,0 +1,17 @@
+{
+	"fixed": {
+		"file_version": "0.5.4",
+		"product_version": "0.5.4"
+	},
+	"info": {
+		"0409": {
+			"ProductName": "OTONEIGO",
+			"ProductVersion": "0.5.4",
+			"FileVersion": "0.5.4",
+			"FileDescription": "OTONEIGO Windows Netease Music Client",
+			"CompanyName": "voici5986",
+			"LegalCopyright": "Copyright (c) 2026 voici5986. MIT License.",
+			"OriginalFilename": "OTONEIGO.exe"
+		}
+	}
+}

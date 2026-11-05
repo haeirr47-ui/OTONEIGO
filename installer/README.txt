@@ -1,4 +1,4 @@
-OTONEIGO 0.5.3 - Windows x64
+OTONEIGO 0.5.4 - Windows x64
 
 启动 / Start: OTONEIGO.exe
 需要 Microsoft Edge WebView2 Runtime（不包含在本包中）。
@@ -49,3 +49,6 @@ Quality: unsigned/unverified accounts select320 kbps;192/128 are automatic fallb
 0.5.2 将封面内容校验移至首次使用；音频缓存使用1 MiB分块摘要，逐块校验后发送，旧缓存首次完整验证后补建索引。逻辑损坏的收藏、历史或设置在事务中隔离保留，设置回落默认并显示提示，其他正常资料可继续使用；物理数据库错误和未来schema仍拒绝打开。清空历史会同时清除隔离历史。没有新增用户导入导出或备份恢复功能。
 
 0.5.3 将封面首验与网络下载分池；恢复提示可在本次会话“知道了”隐藏，状态检查30秒、缓存统计仅设置页刷新；缓存接纳失败允许同一预算内一次无缓存重解析。访问时间写入小型recency.json，不重复写分块清单；结构清单失败保留脏状态并重试。schema仍为7，原始隔离记录不因关闭提示而删除。
+
+0.5.4 程序文件内嵌图标、清单与版本信息：资源管理器、任务栏和标题栏不再使用 Windows 默认图标，文件属性显示 0.5.4。图标沿用 OTONEI 标帜（小尺寸下加粗描边），免安装四文件与数据目录不变。
+0.5.4 embeds the application icon, manifest and version information in OTONEIGO.exe, so Explorer, the taskbar and the title bar no longer use the generic Windows icon. The mark follows OTONEI's logo with a heavier stroke for small sizes; the portable payload and data directory are unchanged.
