@@ -170,6 +170,20 @@ export interface PlaylistUpdate {
     "tracks": TrackSnapshot[] | null;
 }
 
+export interface PublicPlaylistPage {
+    "playlistId": string;
+    "name": string;
+    "description": string;
+    "coverRef": string;
+    "tracks": TrackSnapshot[] | null;
+    "total": number;
+    "availableCount": number;
+    "offset": number;
+    "nextOffset": number;
+    "hasMore": boolean;
+    "partial": boolean;
+}
+
 export interface QueueEntry {
     "queueEntryId": string;
     "track": TrackSnapshot;
@@ -254,6 +268,22 @@ export interface StorageRecoveryStatus {
     "quarantinedFavorites": number;
     "quarantinedHistory": number;
     "settingsRecovered": boolean;
+}
+
+/**
+ * Discovery is anonymous, bounded metadata; it never contains playback URLs.
+ */
+export interface Toplist {
+    "playlistId": string;
+    "name": string;
+    "description": string;
+    "coverRef": string;
+    "trackCount": number;
+}
+
+export interface ToplistResult {
+    "items": Toplist[] | null;
+    "partial": boolean;
 }
 
 export interface TrackSnapshot {

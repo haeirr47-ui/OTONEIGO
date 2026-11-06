@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import {mkdir,writeFile} from 'node:fs/promises';
 import path from 'node:path';
 import {nativeHarness,until,wait} from './native-harness.mjs';
+import {verifyShortcuts} from './native-shortcuts-checks.mjs';
 
 const profile=path.resolve(process.argv[2]??'');
 if(!process.argv[2])throw new Error('Usage: native-player-selectors-acceptance.mjs <isolated-profile> <first-song-id>');
@@ -65,6 +66,7 @@ try{
   await page.keyboard.press('Tab');assert.equal(await page.evaluate(()=>{const d=document.querySelector('[role="dialog"][aria-label="歌词视图"]');return d?.contains(document.activeElement)||document.querySelector('footer')?.contains(document.activeElement);}),true,'lyrics focus remains inside lyrics/footer scope');
   await page.keyboard.press('Escape');await lyrics.waitFor({state:'detached'});
   assert.equal(await lyricsOpener.evaluate(el=>el===document.activeElement),true);report.lyricsOverlayFocusEscapeRestore=true;
+  await verifyShortcuts(h,report);
   await nav('设置').click();
   const settings=page.getByRole('region',{name:'设置'});await settings.waitFor();
   await settings.getByLabel('海外播放兼容').selectOption('off');

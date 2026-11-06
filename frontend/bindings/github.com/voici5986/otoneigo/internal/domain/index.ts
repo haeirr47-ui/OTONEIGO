@@ -21,6 +21,7 @@ export type {
     LyricData,
     PlaybackQualityPolicy,
     PlaylistUpdate,
+    PublicPlaylistPage,
     QueueEntry,
     QueueSnapshot,
     RegionStatus,
@@ -31,6 +32,8 @@ export type {
     SearchHistoryEntry,
     SearchResult,
     StorageRecoveryStatus,
+    Toplist,
+    ToplistResult,
     TrackSnapshot,
     WindowPlacement
 } from "./models.js";

@@ -85,6 +85,10 @@ export function GetPlaybackQualityPolicy(): $CancellablePromise<domain$0.Playbac
     return $Call.ByID(4175180758);
 }
 
+export function GetPublicPlaylist(id: string, offset: number): $CancellablePromise<domain$0.PublicPlaylistPage> {
+    return $Call.ByID(1572802989, id, offset);
+}
+
 export function GetRegionStatus(): $CancellablePromise<domain$0.RegionStatus> {
     return $Call.ByID(1833900528);
 }
@@ -99,6 +103,10 @@ export function GetSettings(): $CancellablePromise<domain$0.LocalSettings> {
 
 export function GetStorageRecoveryStatus(): $CancellablePromise<domain$0.StorageRecoveryStatus> {
     return $Call.ByID(3914390822);
+}
+
+export function GetToplists(): $CancellablePromise<domain$0.ToplistResult> {
+    return $Call.ByID(151851238);
 }
 
 export function HideDesktopView(kind: string): $CancellablePromise<void> {

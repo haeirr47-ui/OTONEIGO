@@ -34,7 +34,27 @@ import {
   fromHistoryList,
 } from "./wire";
 import { trackSnapshot } from "./contracts";
+import { fromPublicPlaylist, fromToplists } from "./discoveryWire";
 export const desktopBridge: DesktopBridge = {
+  async GetToplists(signal) {
+    const call = service.GetToplists();
+    return fromToplists(await (signal ? call.cancelOn(signal) : call));
+  },
+  async GetPublicPlaylist(id, offset, signal) {
+    if (
+      typeof id !== "string" ||
+      !/^[1-9][0-9]{0,29}$/.test(id) ||
+      !Number.isSafeInteger(offset) ||
+      offset < 0 ||
+      offset > 990 ||
+      offset % 30 !== 0
+    )
+      throw new Error("INVALID_PLAYLIST_REQUEST");
+    const call = service.GetPublicPlaylist(id, offset);
+    const page = fromPublicPlaylist(await (signal ? call.cancelOn(signal) : call));
+    if (page.playlistId !== id || page.offset !== offset) throw new Error("MISMATCHED_PLAYLIST_RESPONSE");
+    return page;
+  },
   async GetStorageRecoveryStatus() {
     return fromStorageRecoveryStatus(await service.GetStorageRecoveryStatus());
   },

@@ -2,6 +2,26 @@ import { defaultDesktopSettings } from "./desktopWire";
 import { it, expect, vi } from "vitest";
 vi.mock("@wailsio/runtime", () => ({}));
 vi.mock("../bindings/github.com/voici5986/otoneigo/internal/appservice/appservice", () => ({
+  GetToplists: vi.fn(() => {
+    const promise = Promise.resolve({ items: [], partial: false });
+    return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
+  }),
+  GetPublicPlaylist: vi.fn((id, offset) => {
+    const promise = Promise.resolve({
+      playlistId: id,
+      name: "榜单",
+      description: "",
+      coverRef: "",
+      tracks: [],
+      total: 0,
+      availableCount: 0,
+      offset,
+      nextOffset: 0,
+      hasMore: false,
+      partial: false,
+    });
+    return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
+  }),
   GetPlaybackQualityPolicy: vi.fn(async () => ({
     premiumAllowed: false,
     selectableQualities: ["exhigh"],
@@ -229,4 +249,42 @@ it("uses paged SQLite/search-history/resource APIs and forwards independent canc
     cachedLyrics: 0,
   });
   expect(await desktopBridge.ClearResourceCache!()).toEqual({ removedCovers: 1, removedLyrics: 2 });
+});
+
+it("forwards independent discovery cancellation and rejects invalid requests before native dispatch", async () => {
+  const signal = new AbortController().signal;
+  expect(await desktopBridge.GetToplists!(signal)).toEqual({ items: [], partial: false });
+  expect(vi.mocked(service.GetToplists).mock.results[0].value.cancelOn).toHaveBeenCalledWith(signal);
+  const id = "12345678901234567890";
+  expect((await desktopBridge.GetPublicPlaylist!(id, 0, signal)).playlistId).toBe(id);
+  expect(service.GetPublicPlaylist).toHaveBeenLastCalledWith(id, 0);
+  expect(vi.mocked(service.GetPublicPlaylist).mock.results[0].value.cancelOn).toHaveBeenCalledWith(signal);
+  const before = vi.mocked(service.GetPublicPlaylist).mock.calls.length;
+  for (const [badID, offset] of [
+    ["001", 0],
+    ["https://example.com", 0],
+    ["123", 1],
+    ["123", 1020],
+    [123, 0],
+  ] as const) {
+    await expect(desktopBridge.GetPublicPlaylist!(badID as string, offset)).rejects.toThrow("INVALID_PLAYLIST_REQUEST");
+  }
+  expect(service.GetPublicPlaylist).toHaveBeenCalledTimes(before);
+});
+
+it("rejects a validly shaped discovery response for a different playlist or page", async () => {
+  vi.mocked(service.GetPublicPlaylist).mockResolvedValueOnce({
+    playlistId: "999",
+    name: "other",
+    description: "",
+    coverRef: "",
+    tracks: [],
+    total: 0,
+    availableCount: 0,
+    offset: 0,
+    nextOffset: 0,
+    hasMore: false,
+    partial: false,
+  });
+  await expect(desktopBridge.GetPublicPlaylist!("123", 0)).rejects.toThrow("MISMATCHED_PLAYLIST_RESPONSE");
 });

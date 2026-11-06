@@ -215,7 +215,33 @@ export interface PlaylistUpdate {
   name: string;
   tracks: TrackSnapshot[];
 }
+export interface Toplist {
+  playlistId: string;
+  name: string;
+  description: string;
+  coverRef: string;
+  trackCount: number;
+}
+export interface ToplistResult {
+  items: Toplist[];
+  partial: boolean;
+}
+export interface PublicPlaylistPage {
+  playlistId: string;
+  name: string;
+  description: string;
+  coverRef: string;
+  tracks: TrackSnapshot[];
+  total: number;
+  availableCount: number;
+  offset: number;
+  nextOffset: number;
+  hasMore: boolean;
+  partial: boolean;
+}
 export interface DesktopBridge {
+  GetToplists?(signal?: AbortSignal): Promise<ToplistResult>;
+  GetPublicPlaylist?(id: string, offset: number, signal?: AbortSignal): Promise<PublicPlaylistPage>;
   GetStorageRecoveryStatus?(): Promise<StorageRecoveryStatus>;
   GetDesktopEpoch?(): Promise<number>;
   GetDesktopSnapshot?(): Promise<DesktopSnapshot>;

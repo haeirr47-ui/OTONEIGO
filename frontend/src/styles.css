@@ -7,6 +7,8 @@
 @import "./otonei/Header.desktop.css";
 @import "./otonei/AudioPlayer.base.css";
 @import "./otonei/AudioPlayer.desktop.css";
+@import "./shortcutHelp.css";
+@import "./discovery.css";
 /* Desktop adapters for the original OTONEI shell. No Bootstrap or audio context required. */
 * {
   box-sizing: border-box;

@@ -142,6 +142,8 @@ export class PlayerStore {
   private historyClearing = false;
   private historyCursor?: HistoryEntry;
   private generation = 0;
+  // Session-only overrides; queue entries themselves use the existing persisted snapshot.
+  private pendingNextIds: string[] = [];
   private cacheStatsRevision = 0;
   private resourceCacheStatsRevision = 0;
   private starting = false;
@@ -221,6 +223,7 @@ export class PlayerStore {
   beginClose() {
     if (this.closing) return;
     this.closing = true;
+    this.pendingNextIds = [];
     this.stop();
   }
   private patch(patch: Partial<PlayerState>) {
@@ -239,6 +242,7 @@ export class PlayerStore {
       .LoadQueue()
       .then((saved) => {
         const queue = saved ?? emptyQueue();
+        this.pendingNextIds = [];
         this.patch({
           queue: {
             ...queue,
@@ -367,9 +371,9 @@ export class PlayerStore {
     if (this.seekTimer !== undefined) clearTimeout(this.seekTimer);
     this.seekTimer = undefined;
     const snapshot = this.queueSnapshot(queue);
-    // Position/mode/current-entry saves keep already-normalized runtime metadata stable for selectors.
+    // All callers normalize incoming tracks; retain runtime metadata identities for selectors.
     // Persistence still receives its own detached, normalized snapshot.
-    const entries = queue.entries === this.state.queue.entries ? this.state.queue.entries : snapshot.entries;
+    const entries = queue.entries;
     this.patch({ queue: { ...snapshot, entries } });
     this.saves = this.saves
       .catch(() => {})
@@ -422,6 +426,7 @@ export class PlayerStore {
     // A rejected replacement must not pause audio or invalidate pending stream resolution.
     if (!this.canAddQueue(next)) return false;
     if (replace) {
+      this.pendingNextIds = [];
       this.generation++;
       this.controller?.abort();
       this.lyricsController?.abort();
@@ -434,11 +439,40 @@ export class PlayerStore {
     if (replace) void this.play();
     return true;
   }
+  playNext(tracks: TrackSnapshot[]): boolean {
+    if (this.closing || this.state.hydration !== "ready" || !tracks.length) return false;
+    const q = this.state.queue;
+    if (tracks.length + q.entries.length > 1000) {
+      this.patch({ error: "播放队列最多容纳 1000 首歌曲，请先移除部分歌曲。" });
+      return false;
+    }
+    if (
+      tracks.some((track) => typeof track.neteaseSongId !== "string" || !/^[1-9][0-9]{0,29}$/.test(track.neteaseSongId))
+    ) {
+      this.patch({ error: "歌曲资料无效，无法加入播放队列。" });
+      return false;
+    }
+    const added = tracks.map((track) => ({ queueEntryId: crypto.randomUUID(), track: trackSnapshot(track) }));
+    const currentIndex = q.entries.findIndex((entry) => entry.queueEntryId === q.currentEntryId);
+    const insertion = currentIndex + 1;
+    const next = {
+      ...q,
+      entries: [...q.entries.slice(0, insertion), ...added, ...q.entries.slice(insertion)],
+      currentEntryId: currentIndex < 0 ? added[0].queueEntryId : q.currentEntryId,
+      currentIndex: Math.max(currentIndex, 0),
+    };
+    if (!this.canAddQueue(next)) return false;
+    const priority = currentIndex < 0 ? added.slice(1) : added;
+    this.pendingNextIds = [...priority.map((entry) => entry.queueEntryId), ...this.pendingNextIds];
+    this.commit(next);
+    return true;
+  }
   remove(id: string) {
     if (this.closing) return;
     if (this.state.hydration !== "ready") return;
     const q = this.state.queue;
     const entries = q.entries.filter((e) => e.queueEntryId !== id);
+    this.pendingNextIds = this.pendingNextIds.filter((pending) => pending !== id);
     const current = q.currentEntryId === id;
     if (current) this.stop();
     const index = current
@@ -458,6 +492,10 @@ export class PlayerStore {
     if (this.state.hydration === "ready") this.commit({ ...this.state.queue, playMode });
   }
   async select(id: string) {
+    this.pendingNextIds = [];
+    await this.selectEntry(id);
+  }
+  private async selectEntry(id: string) {
     if (this.closing) return;
     if (this.state.hydration !== "ready") return;
     const index = this.state.queue.entries.findIndex((e) => e.queueEntryId === id);
@@ -618,17 +656,26 @@ export class PlayerStore {
     if (this.closing) return;
     const q = this.state.queue;
     if (!q.entries.length || this.state.hydration !== "ready") return;
+    while (this.pendingNextIds.length) {
+      const id = this.pendingNextIds.shift();
+      if (!id || id === q.currentEntryId) continue;
+      if (q.entries.some((entry) => entry.queueEntryId === id)) {
+        await this.selectEntry(id);
+        return;
+      }
+    }
     let index = (q.currentIndex + 1) % q.entries.length;
     if (ended && q.playMode === "repeat-one") index = q.currentIndex;
     if (q.playMode === "shuffle" && q.entries.length > 1)
       index = (q.currentIndex + 1 + Math.floor(Math.random() * (q.entries.length - 1))) % q.entries.length;
-    await this.select(q.entries[index].queueEntryId);
+    await this.selectEntry(q.entries[index].queueEntryId);
   }
   setVolume(volume: number) {
     this.setSettings({ volume });
   }
   previous() {
     if (this.closing) return;
+    this.pendingNextIds = [];
     const q = this.state.queue;
     if (q.entries.length)
       return this.select(q.entries[(q.currentIndex - 1 + q.entries.length) % q.entries.length].queueEntryId);
@@ -1187,6 +1234,7 @@ export class PlayerStore {
     }
   }
   dispose() {
+    this.pendingNextIds = [];
     this.favoritesRequest?.abort();
     this.historyRequest?.abort();
     this.stop();

@@ -1,3 +1,4 @@
+import { useTrackActions } from "./TrackActions";
 import { alignLyrics } from "./lyrics";
 export { parseLyrics, alignLyrics } from "./lyrics";
 import { validRemoteCover } from "./contracts";
@@ -5,7 +6,17 @@ import { AddToPlaylistButton } from "./PlaylistPanels";
 // Adapted from OTONEI/src/components/{DesktopNavbar,MobileBottomNav,Header,SearchResultItem,
 // DesktopPlayerView,DesktopPlayerControl,DesktopExpandedView,DesktopAlbumCover,PlayerSubComponents}.
 // MIT License, copyright (c) 2026 voici5986. Desktop state/bridge/audio remain OTONEIGO-owned.
-import { memo, useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from "react";
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import {
   FaSearch,
   FaHeart,
@@ -17,6 +28,7 @@ import {
   FaPlus,
   FaList,
   FaVolumeUp,
+  FaKeyboard,
 } from "react-icons/fa";
 import { MdSkipPrevious, MdSkipNext, MdRepeat, MdRepeatOne, MdShuffle } from "react-icons/md";
 import type { TrackSnapshot } from "./contracts";
@@ -24,9 +36,11 @@ import { shallowEqual, usePlayerSelector, usePlayerStore } from "./PlayerContext
 import { FavoriteButton } from "./LibraryPanels";
 import { actualStreamQuality, time } from "./format";
 import { containOverlayFocus } from "./overlayFocus";
-export type View = "search" | "favorites" | "history" | "settings";
+import { handlePlayerShortcut, playerShortcuts, shortcutContext, shortcutUnavailable } from "./playerShortcuts";
+export type View = "search" | "rankings" | "favorites" | "history" | "settings";
 const items = [
   { id: "search", title: "发现音乐", icon: FaSearch },
+  { id: "rankings", title: "排行榜", icon: FaList },
   { id: "favorites", title: "本地收藏", icon: FaHeart },
   { id: "history", title: "播放历史", icon: FaHistory },
   { id: "settings", title: "设置", icon: FaCog },
@@ -138,8 +152,16 @@ export const TrackCard = memo(function TrackCard({
   date?: string;
 }) {
   const active = usePlayerSelector((state) => state.currentSongId) === track.neteaseSongId;
+  const actions = useTrackActions({ track, onPlay, onAdd, disabled });
   return (
-    <div className={`music-card ${active ? "is-active" : ""}`}>
+    // biome-ignore lint/a11y/useSemanticElements: this card groups one track's title and action buttons and needs an accessible name; fieldset is a form grouping element and would misdescribe it, while section/article would add landmarks per row.
+    <div
+      className={`music-card ${active ? "is-active" : ""}`}
+      role="group"
+      aria-label={track.name}
+      onContextMenu={actions.onContextMenu}
+      onKeyDown={actions.onKeyDown}
+    >
       <div className="music-card-row">
         <button
           type="button"
@@ -158,6 +180,7 @@ export const TrackCard = memo(function TrackCard({
         <div className="music-card-actions">
           <FavoriteButton track={track} />
           <AddToPlaylistButton track={track} />
+          {actions.button}
           <button
             type="button"
             className="ui-icon-button"
@@ -169,6 +192,7 @@ export const TrackCard = memo(function TrackCard({
           </button>
         </div>
       </div>
+      {actions.overlay}
     </div>
   );
 });
@@ -263,40 +287,59 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
       settings: state.settings,
       stream: state.stream,
       playback: state.playback,
+      libraryReady: state.libraryReady,
+      qualityPolicy: state.qualityPolicy,
     }),
     shallowEqual,
   );
   const current = providedCurrent ?? state.current;
   const [expanded, setExpanded] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const q = state;
   const ready = state.hydration === "ready";
   const expandedRef = useRef<HTMLElement>(null);
   const queueRef = useRef<HTMLElement>(null);
+  const helpRef = useRef<HTMLElement>(null);
   const footerRef = useRef<HTMLElement>(null);
   const expandedOpener = useRef<HTMLElement | null>(null);
   const queueOpener = useRef<HTMLElement | null>(null);
-  const previousOverlay = useRef<"queue" | "lyrics" | null>(null);
-  function openLyrics() {
+  const helpOpener = useRef<HTMLElement | null>(null);
+  const previousOverlay = useRef<"queue" | "lyrics" | "help" | null>(null);
+  const openLyrics = useCallback(() => {
+    if (store.isClosing()) return;
     if (!expanded) expandedOpener.current = document.activeElement as HTMLElement;
     setExpanded(true);
-  }
-  function openQueue() {
+  }, [expanded, store]);
+  const openQueue = useCallback(() => {
+    if (store.isClosing()) return;
     queueOpener.current = document.activeElement as HTMLElement;
     setQueueOpen(true);
-  }
+  }, [store]);
+  const openHelp = useCallback(() => {
+    if (store.isClosing() || document.querySelector('[role="dialog"], dialog[open]')) return;
+    helpOpener.current = document.activeElement as HTMLElement;
+    setHelpOpen(true);
+  }, [store]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) =>
+      handlePlayerShortcut(event, store, { openQueue, openLyrics, openHelp }, document);
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [store, openQueue, openLyrics, openHelp]);
   useLayoutEffect(() => {
-    const top = queueOpen ? "queue" : expanded ? "lyrics" : null;
+    const top = helpOpen ? "help" : queueOpen ? "queue" : expanded ? "lyrics" : null;
     const previous = previousOverlay.current;
     previousOverlay.current = top;
-    const restore = previous === "queue" ? queueOpener.current : expandedOpener.current;
+    const restore =
+      previous === "help" ? helpOpener.current : previous === "queue" ? queueOpener.current : expandedOpener.current;
     const footer = footerRef.current;
-    const dialog = queueOpen ? queueRef.current : expandedRef.current;
+    const dialog = helpOpen ? helpRef.current : queueOpen ? queueRef.current : expandedRef.current;
     if (!top || !dialog || !footer) {
       if (previous && restore?.isConnected) restore.focus();
       return;
     }
-    const roots = queueOpen ? [dialog] : [dialog, footer];
+    const roots = helpOpen || queueOpen ? [dialog] : [dialog, footer];
     const parent = footer.parentElement;
     if (!parent) return;
     const initial =
@@ -304,14 +347,16 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
         ? restore
         : dialog.querySelector<HTMLElement>("button");
     return containOverlayFocus(roots, parent, initial || dialog, () => {
-      if (queueOpen) setQueueOpen(false);
+      if (helpOpen) setHelpOpen(false);
+      else if (queueOpen) setQueueOpen(false);
       else setExpanded(false);
     });
-  }, [expanded, queueOpen]);
+  }, [expanded, queueOpen, helpOpen]);
   useLayoutEffect(
     () => () => {
       if (!previousOverlay.current) return;
-      const opener = expandedOpener.current || queueOpener.current;
+      const opener =
+        previousOverlay.current === "help" ? helpOpener.current : expandedOpener.current || queueOpener.current;
       if (opener?.isConnected) opener.focus();
     },
     [],
@@ -330,8 +375,58 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
   );
   const blocked = !ready || !current || !state.settings;
   const modeLabel = q.playMode === "shuffle" ? "随机播放" : q.playMode === "repeat-one" ? "单曲循环" : "列表循环";
+  const helpContext = shortcutContext(store.getSnapshot(), store.isClosing());
   return (
     <>
+      {helpOpen && (
+        <>
+          <button
+            type="button"
+            className="queue-backdrop"
+            tabIndex={-1}
+            data-overlay-backdrop=""
+            aria-label="关闭快捷键帮助"
+            onClick={() => setHelpOpen(false)}
+          />
+          <section
+            ref={helpRef}
+            className="shortcut-help"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="shortcut-help-title"
+          >
+            <div className="section-heading">
+              <h2 id="shortcut-help-title">快捷键</h2>
+              <button
+                type="button"
+                className="ui-icon-button"
+                aria-label="关闭快捷键"
+                onClick={() => setHelpOpen(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+            <p className="muted">仅在主窗口聚焦时生效；输入文字、操作控件或打开弹层时暂停。关闭帮助后即可使用。</p>
+            <dl className="shortcut-help-list">
+              {playerShortcuts.map((shortcut) => {
+                const reason = shortcutUnavailable(shortcut, helpContext);
+                return (
+                  <div key={shortcut.id} className={reason ? "shortcut-unavailable" : undefined}>
+                    <dt>
+                      <kbd>{shortcut.keys}</kbd>
+                    </dt>
+                    <dd>
+                      {shortcut.label}
+                      {reason && <small>{reason}</small>}
+                    </dd>
+                  </div>
+                );
+              })}
+            </dl>
+            <p className="muted">Esc 关闭弹层 · Tab 切换弹层内的控件</p>
+          </section>
+        </>
+      )}
       {expanded && (
         <section
           ref={expandedRef}
@@ -389,27 +484,12 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
             {ready && !q.entries.length && <p className="alert-light">从搜索结果加入歌曲</p>}
             <ol>
               {q.entries.map((e) => (
-                <li key={e.queueEntryId} className={e.queueEntryId === q.currentEntryId ? "selected" : ""}>
-                  <button
-                    type="button"
-                    className="queue-track"
-                    disabled={!ready || !state.settings}
-                    onClick={() => void store.select(e.queueEntryId)}
-                  >
-                    <strong>{e.track.name}</strong>
-                    <small>{e.track.artists.map((a) => a.name).join(" / ")}</small>
-                  </button>
-                  <FavoriteButton track={e.track} />
-                  <button
-                    type="button"
-                    className="ui-icon-button"
-                    aria-label={`移除：${e.track.name}`}
-                    disabled={!ready}
-                    onClick={() => store.remove(e.queueEntryId)}
-                  >
-                    <FaTimes />
-                  </button>
-                </li>
+                <QueueTrackRow
+                  key={e.queueEntryId}
+                  entry={e}
+                  selected={e.queueEntryId === q.currentEntryId}
+                  disabled={!ready || !state.settings}
+                />
               ))}
             </ol>
           </section>
@@ -509,6 +589,16 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
                   <img src="/lyric.svg" alt="" width="20" height="20" />
                 </button>
                 {iconButton("播放队列", <FaList size={18} />, () => openQueue())}
+                <button
+                  type="button"
+                  className="control-button ui-icon-button"
+                  aria-label="快捷键"
+                  title="快捷键（?）"
+                  onClick={openHelp}
+                  disabled={expanded || queueOpen || helpOpen || store.isClosing()}
+                >
+                  <FaKeyboard size={18} />
+                </button>
               </div>
             </div>
           </div>
@@ -581,5 +671,43 @@ function PlayerLyrics() {
         )}
       </div>
     </div>
+  );
+}
+
+function QueueTrackRow({
+  entry,
+  selected,
+  disabled,
+}: {
+  entry: { queueEntryId: string; track: TrackSnapshot };
+  selected: boolean;
+  disabled: boolean;
+}) {
+  const store = usePlayerStore();
+  const actions = useTrackActions({ track: entry.track, queueEntryId: entry.queueEntryId, disabled });
+  return (
+    <li className={selected ? "selected" : ""} onContextMenu={actions.onContextMenu} onKeyDown={actions.onKeyDown}>
+      <button
+        type="button"
+        className="queue-track"
+        disabled={disabled}
+        onClick={() => void store.select(entry.queueEntryId)}
+      >
+        <strong>{entry.track.name}</strong>
+        <small>{entry.track.artists.map((artist) => artist.name).join(" / ")}</small>
+      </button>
+      <FavoriteButton track={entry.track} />
+      {actions.button}
+      <button
+        type="button"
+        className="ui-icon-button"
+        aria-label={`移除：${entry.track.name}`}
+        disabled={disabled}
+        onClick={() => store.remove(entry.queueEntryId)}
+      >
+        <FaTimes />
+      </button>
+      {actions.overlay}
+    </li>
   );
 }

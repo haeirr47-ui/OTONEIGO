@@ -1,0 +1,46 @@
+.shortcut-help {
+  position: fixed;
+  z-index: var(--z-index-player-expanded);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(480px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: var(--spacing-xl);
+  background: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+}
+.shortcut-help > p {
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+.shortcut-help-list {
+  margin: var(--spacing-lg) 0;
+}
+.shortcut-help-list > div {
+  display: grid;
+  grid-template-columns: 100px minmax(0, 1fr);
+  gap: var(--spacing-md);
+  align-items: baseline;
+  padding: var(--spacing-xs) 0;
+}
+.shortcut-help-list dd {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+.shortcut-help-list kbd {
+  font-family: inherit;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+.shortcut-help-list small {
+  display: block;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+.shortcut-unavailable {
+  color: var(--color-text-secondary);
+}

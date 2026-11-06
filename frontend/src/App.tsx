@@ -4,6 +4,7 @@ import type { DesktopBridge, SearchResult, TrackSnapshot } from "./contracts";
 import { normalizeLocalQuery } from "./contracts";
 import { shallowEqual, usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { LibraryPanel, SettingsPanel } from "./LibraryPanels";
+import { DiscoveryPanel } from "./DiscoveryPanel";
 import { StorageRecoveryNotice } from "./StorageRecoveryNotice";
 import { OtoneiNavigation, OtoneiHeader, OtoneiPlayer, TrackCard } from "./OtoneiPresentation";
 export { time } from "./format";
@@ -32,7 +33,7 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
     shallowEqual,
   );
   const [query, setQuery] = useState("");
-  const [view, setView] = useState<"search" | "favorites" | "history" | "settings">("search");
+  const [view, setView] = useState<"search" | "rankings" | "favorites" | "history" | "settings">("search");
   useEffect(() => {
     const timer = setInterval(() => void store.pollRegion(), 5000);
     return () => clearInterval(timer);
@@ -199,6 +200,7 @@ export function App({ bridge }: { bridge: DesktopBridge }) {
                 </nav>
               )}
             </section>
+            {view === "rankings" && <DiscoveryPanel bridge={bridge} />}
             {(view === "favorites" || view === "history") && <LibraryPanel key={view} kind={view} />}
             {view === "settings" && <SettingsPanel bridge={bridge} />}
           </div>

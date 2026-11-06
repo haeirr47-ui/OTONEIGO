@@ -1971,3 +1971,241 @@ it("newer manual cache refreshes survive stale in-flight settings results", asyn
     stop();
   }
 });
+
+describe("session play-next priority", () => {
+  const song = (id: string): TrackSnapshot => ({ ...track, neteaseSongId: id, name: `song ${id}` });
+  const currentID = (store: PlayerStore) => store.getSnapshot().currentSongId;
+
+  it.each(["repeat-all", "repeat-one", "shuffle"] as const)(
+    "consumes newest batches in order before %s for manual and natural advances",
+    async (mode) => {
+      for (const ended of [false, true]) {
+        const { store, bridge } = setup(Promise.resolve(saved));
+        await store.hydrate();
+        store.setMode(mode);
+        const original = store.getSnapshot().queue.entries[0];
+        expect(store.playNext([song("2"), song("3")])).toBe(true);
+        expect(store.playNext([song("4"), song("4")])).toBe(true);
+        const entries = store.getSnapshot().queue.entries;
+        expect(entries.map((e) => e.track.neteaseSongId)).toEqual([track.neteaseSongId, "4", "4", "2", "3"]);
+        expect(new Set(entries.map((e) => e.queueEntryId)).size).toBe(5);
+        expect(entries[0]).toBe(original);
+        expect(store.getSnapshot().queue.positionMs).toBe(saved.positionMs);
+        for (const entry of entries.slice(1)) {
+          await store.next(ended);
+          expect(store.getSnapshot().queue.currentEntryId).toBe(entry.queueEntryId);
+        }
+        await store.flush();
+        const written = vi.mocked(bridge.SaveQueue).mock.lastCall![0];
+        expect(written.entries).not.toBe(store.getSnapshot().queue.entries);
+        expect(written.entries[0].track).not.toBe(original.track);
+        store.dispose();
+      }
+    },
+  );
+
+  it("selects the first entry paused in an empty queue and leaves the rest pending", async () => {
+    const { store, bridge, engine } = setup();
+    await store.hydrate();
+    store.setMode("repeat-one");
+    expect(store.playNext([song("2"), song("3")])).toBe(true);
+    expect(currentID(store)).toBe("2");
+    expect(store.getSnapshot().playback).toBe("paused");
+    expect(bridge.ResolveStream).not.toHaveBeenCalled();
+    expect(engine.pause).not.toHaveBeenCalled();
+    await store.next(true);
+    expect(currentID(store)).toBe("3");
+    await store.next(true);
+    expect(currentID(store)).toBe("3");
+    store.dispose();
+  });
+
+  it("detaches inserted input and persisted metadata while retaining earlier runtime tracks", async () => {
+    const { store, bridge } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    const earlier = store.getSnapshot().queue.entries[0];
+    const input = song("2");
+    input.artists = [{ name: "original artist" }];
+    store.playNext([input]);
+    await store.flush();
+    const persisted = vi.mocked(bridge.SaveQueue).mock.lastCall![0];
+    input.name = "changed input";
+    input.artists[0].name = "changed input artist";
+    const inserted = store.getSnapshot().queue.entries[1].track;
+    expect(inserted.name).toBe("song 2");
+    expect(inserted.artists[0].name).toBe("original artist");
+    expect(persisted.entries[1].track).not.toBe(inserted);
+    persisted.entries[0].track.name = "changed persistence";
+    persisted.entries[1].track.artists[0].name = "changed persistence artist";
+    expect(store.getSnapshot().queue.entries[0]).toBe(earlier);
+    expect(earlier.track.name).toBe(track.name);
+    expect(inserted.artists[0].name).toBe("original artist");
+    store.dispose();
+  });
+
+  it.each(["select", "previous", "replace"] as const)("clears priority on explicit %s", async (action) => {
+    const { store } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    store.setMode("repeat-one");
+    store.playNext([song("2"), song("3")]);
+    if (action === "select") await store.select("old-entry");
+    else if (action === "previous") await store.previous();
+    else store.addAll([song("4"), song("5")], true);
+    const selected = currentID(store);
+    await store.next(true);
+    expect(currentID(store)).toBe(selected);
+    store.dispose();
+  });
+
+  it("retains priority through pause, seek, mode changes and ordinary additions, pruning removals", async () => {
+    const { store } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    store.playNext([song("2"), song("3"), song("4")]);
+    store.pause();
+    store.seek(45000);
+    store.setMode("repeat-one");
+    store.add(song("5"));
+    store.addAll([song("6")]);
+    store.remove(store.getSnapshot().queue.entries[1].queueEntryId);
+    await store.next(true);
+    expect(currentID(store)).toBe("3");
+    await store.next(true);
+    expect(currentID(store)).toBe("4");
+    await store.next(true);
+    expect(currentID(store)).toBe("4");
+    store.dispose();
+  });
+
+  it.each(["repeat-all", "repeat-one", "shuffle"] as const)(
+    "advances past a promoted current priority entry after removal in %s",
+    async (mode) => {
+      for (const ended of [false, true]) {
+        const { store, engine } = setup(Promise.resolve(saved));
+        await store.hydrate();
+        store.setMode(mode);
+        // Duplicate songs remain distinct entries: skip only the promoted entry ID.
+        store.playNext([song("2"), song("2")]);
+        const [first, second] = store.getSnapshot().queue.entries.slice(1);
+        store.remove("old-entry");
+        expect(store.getSnapshot().queue.currentEntryId).toBe(first.queueEntryId);
+        await store.play();
+        engine.emit("playing");
+        await store.next(ended);
+        expect(store.getSnapshot().queue.currentEntryId).toBe(second.queueEntryId);
+        store.dispose();
+      }
+    },
+  );
+
+  it("consumes a failed selection once and stops until the user advances again", async () => {
+    const { store, bridge, engine } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    store.setMode("repeat-one");
+    store.playNext([song("2"), song("3")]);
+    vi.mocked(bridge.ResolveStream).mockRejectedValueOnce(new Error("unavailable"));
+    await store.next(true);
+    expect(currentID(store)).toBe("2");
+    expect(store.getSnapshot().playback).toBe("paused");
+    expect(bridge.ResolveStream).toHaveBeenCalledTimes(1);
+    engine.emit("ended");
+    expect(bridge.ResolveStream).toHaveBeenCalledTimes(1);
+    await store.next(true);
+    expect(currentID(store)).toBe("3");
+    await store.next(true);
+    expect(currentID(store)).toBe("3");
+    store.dispose();
+  });
+
+  it("inserts without cancelling pending stream resolution or changing its selected position", async () => {
+    const { store, bridge, engine } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    const pending = deferred<ResolvedStream>();
+    vi.mocked(bridge.ResolveStream).mockReturnValueOnce(pending.promise);
+    const playing = store.play();
+    const signal = vi.mocked(bridge.ResolveStream).mock.calls[0][2]!;
+    const pauses = engine.pause.mock.calls.length;
+    expect(store.playNext([song("2")])).toBe(true);
+    expect(signal.aborted).toBe(false);
+    expect(engine.pause).toHaveBeenCalledTimes(pauses);
+    expect(store.getSnapshot().queue.currentEntryId).toBe("old-entry");
+    pending.resolve(stream);
+    await playing;
+    expect(engine.setSource).toHaveBeenCalledWith(stream.url, saved.positionMs, expect.any(Object));
+    store.dispose();
+  });
+
+  it.each(["count", "bytes"] as const)("rejects %s overflow atomically and retains earlier priority", async (limit) => {
+    const { store, bridge, engine } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    store.setMode("repeat-one");
+    store.playNext([song("2")]);
+    await store.play();
+    engine.emit("playing");
+    await store.flush();
+    const before = store.getSnapshot();
+    const pauses = engine.pause.mock.calls.length;
+    const signal = vi.mocked(bridge.ResolveStream).mock.calls[0][2]!;
+    const tooLarge = Array.from({ length: limit === "count" ? 999 : 998 }, (_, index) => ({
+      ...song(String(index + 10)),
+      name: "n".repeat(1024),
+      artists: [{ name: "a".repeat(960) }],
+    }));
+    vi.mocked(bridge.SaveQueue).mockClear();
+    expect(store.playNext(tooLarge)).toBe(false);
+    expect(store.addAll(limit === "count" ? [...tooLarge, song("2000"), song("2001")] : tooLarge, true)).toBe(false);
+    expect(store.getSnapshot().queue).toBe(before.queue);
+    expect(store.getSnapshot().stream).toBe(before.stream);
+    expect(store.getSnapshot().playback).toBe("playing");
+    expect(engine.pause).toHaveBeenCalledTimes(pauses);
+    expect(signal.aborted).toBe(false);
+    expect(bridge.SaveQueue).not.toHaveBeenCalled();
+    await store.next(true);
+    expect(currentID(store)).toBe("2");
+    store.dispose();
+  });
+
+  it("persists only queue metadata, reports save failure without rollback, and restarts without priority", async () => {
+    const { store, bridge } = setup(Promise.resolve(saved));
+    await store.hydrate();
+    store.setMode("repeat-one");
+    vi.mocked(bridge.SaveQueue).mockRejectedValue(new Error("disk full"));
+    const unsafe = { ...song("2"), url: "signed-secret", cookie: "private-secret" };
+    expect(store.playNext([unsafe, song("3")])).toBe(true);
+    await store.flush();
+    expect(store.getSnapshot().queue.entries).toHaveLength(3);
+    expect(store.getSnapshot().saveError).toBeTruthy();
+    const persisted = vi.mocked(bridge.SaveQueue).mock.lastCall![0];
+    expect(Object.keys(persisted).sort()).toEqual(Object.keys(saved).sort());
+    expect(JSON.stringify(persisted)).not.toContain("secret");
+    const restarted = setup(Promise.resolve(persisted));
+    await restarted.store.hydrate();
+    await restarted.store.next(true);
+    expect(currentID(restarted.store)).toBe(track.neteaseSongId);
+    store.dispose();
+    restarted.store.dispose();
+  });
+
+  it("rejects empty or invalid input, hydration edits and closing edits without saving", async () => {
+    const loaded = deferred<QueueSnapshot | null>();
+    const { store, bridge } = setup(loaded.promise);
+    const hydration = store.hydrate();
+    expect(store.playNext([song("2")])).toBe(false);
+    loaded.resolve(saved);
+    await hydration;
+    expect(store.playNext([])).toBe(false);
+    for (const id of ["", "0", "1e20", "01", "-1", "1".repeat(31)]) expect(store.playNext([song(id)])).toBe(false);
+    expect(bridge.SaveQueue).not.toHaveBeenCalled();
+    store.playNext([song("2")]);
+    store.beginClose();
+    const queue = store.getSnapshot().queue;
+    expect(store.playNext([song("3")])).toBe(false);
+    await store.next(true);
+    expect(store.getSnapshot().queue).toBe(queue);
+    store.dispose();
+    const failed = setup(Promise.reject(new Error("load failed")));
+    await failed.store.hydrate();
+    expect(failed.store.playNext([song("2")])).toBe(false);
+    expect(failed.bridge.SaveQueue).not.toHaveBeenCalled();
+    failed.store.dispose();
+  });
+});

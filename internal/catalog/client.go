@@ -13,8 +13,10 @@ import (
 )
 
 type Client struct {
-	http *http.Client
-	base string
+	http          *http.Client
+	base          string
+	discoveryGate chan struct{}
+	discoveryNext time.Time
 }
 
 func NewClient() *Client {
@@ -26,7 +28,7 @@ func NewClientWithHTTP(h *http.Client, base string) *Client {
 	copyClient := *h
 	copyClient.Jar = nil
 	copyClient.CheckRedirect = func(_ *http.Request, _ []*http.Request) error { return errors.New("PROVIDER_REDIRECT_REJECTED") }
-	return &Client{http: &copyClient, base: strings.TrimRight(base, "/")}
+	return &Client{http: &copyClient, base: strings.TrimRight(base, "/"), discoveryGate: make(chan struct{}, 1)}
 }
 func (c *Client) post(ctx context.Context, path string, data any, out any) error {
 	return c.postStrategy(ctx, path, data, out, false)
