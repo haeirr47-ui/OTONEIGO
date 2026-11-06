@@ -53,6 +53,18 @@ try{
   await page.locator('footer').getByRole('button',{name:`收藏：${track.name}`,exact:true}).click();
   await until(async()=>(await call('GetLocalFavorites')).some(x=>x.neteaseSongId===songId));report.sameSongFavoriteSync=true;
 
+  // Track actions menu: real WebView2 focus trap and share affordance. The share
+  // button is only counted, never clicked, so no external browser is opened.
+  const more=page.locator('.music-card').first().getByRole('button',{name:/^更多操作：/});
+  await more.click();
+  const actionMenu=page.getByRole('dialog',{name:/^歌曲操作：/});
+  await actionMenu.waitFor();
+  assert.ok(await actionMenu.getByRole('button',{name:'复制分享',exact:true}).count(),'menu offers share');
+  await page.keyboard.press('Escape');
+  await actionMenu.waitFor({state:'detached'});
+  assert.equal(await more.evaluate(el=>el===document.activeElement),true,'menu restores opener focus');
+  report.trackMenuFocusAndShare=true;
+
   const queueOpener=page.locator('footer').getByRole('button',{name:'播放队列',exact:true});await queueOpener.click();
   const qdialog=page.getByRole('dialog',{name:'播放队列'});await qdialog.waitFor();
   assert.equal(await qdialog.evaluate(d=>d.contains(document.activeElement)),true,'queue receives focus');

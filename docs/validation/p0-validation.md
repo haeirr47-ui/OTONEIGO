@@ -59,13 +59,13 @@
 
 - `./scripts/verify.ps1` exit=0：gofmt、Go 全量测试/vet、前端 format/lint、222 项 Vitest（16 文件）、49 方法/34 模型绑定生成、tsc、Vite 构建、Windows production 构建与 11 份上游许可门禁全部通过；构建为 78 modules，JS 396.85 kB / gzip 120.64 kB，CSS 57.25 kB。
 - 重新生成的 `bin/OTONEIGO.exe` 为 30,263,808 字节、SHA-256 `592d37bfbc0fee445a6139629de647c83276a135b9501dc294ba4939e051b6c0`（09:51:44），带 `icon=8 / groupIcon=1 / version=1 / manifest=1` 资源，版本仍为 0.5.4。
-- 原生重跑 `./scripts/native-player-selectors.ps1`：报告 `output/playwright/native-player-selectors-20261106-095319-report.json` 与 `-host-report.json` 均 `pass=true`。真实 WebView2 + SQLite + 缓存 MP3、进程级不可达代理；覆盖缓存播放、81 秒 seek、暂停/继续、下一首仍为单一 `HTMLAudioElement`、收藏列表高亮与 footer 同步、队列/歌词焦点与 Escape 恢复、快捷键全套，以及本批新增的**排行榜离线失败态**（可进入、显示 `role="alert"` 与"重试"，不卡在加载）。
+- 原生重跑 `./scripts/native-player-selectors.ps1`：报告 `output/playwright/native-player-selectors-20261106-095501-report.json` 与 `-host-report.json` 均 `pass=true`。真实 WebView2 + SQLite + 缓存 MP3、进程级不可达代理；覆盖缓存播放、81 秒 seek、暂停/继续、下一首仍为单一 `HTMLAudioElement`、收藏列表高亮与 footer 同步、队列/歌词焦点与 Escape 恢复、快捷键全套，以及本批新增的**排行榜离线失败态**（可进入、显示 `role="alert"` 与"重试"，不卡在加载）与**曲目操作菜单**（"更多操作"打开、含"复制分享"入口、Escape 关闭、焦点回到打开者；只断言入口存在，不点击以避开外部浏览器副作用）。
 - 该宿主用不可达代理运行，所以排行榜**真实列表行没有原生验收**；live 数据路径由上面的 Go 探测覆盖，两者不能互相替代。首次把 live 列表加入该 harness 时因代理超时失败，报告保留在 output，不作为通过证据。
 
 未执行 / 不得据此宣称：
 
 - `-462` 的实际触发与前端提示；中国大陆出口、其他地区与更多对象的复验。
-- 右键菜单与分享的原生 WebView2 验收（浏览器 fixture 与单测覆盖了参数与链接规则）。
+- 分享的实际剪贴板写入与外部浏览器打开未在验收中执行；菜单的右键/Shift+F10 路径只在单测与浏览器 fixture 覆盖，原生只验证了"更多操作"按钮打开、Escape 关闭与焦点回收。
 - 未重新打包：`bin/OTONEIGO-0.5.4-windows-x64.zip` 仍是 0.5.4 交付批次（`db347318…`，内含 `9b5257e4…`），当前 EXE 比 ZIP 新。
 - 因此可以宣称"本轮匿名目录端点与分页在 TH 单样本下可用，且 UI 的离线性失败态已原生验证"，但不能宣称"排行榜在所有地区可用""原生播放列表已验收"。
 
