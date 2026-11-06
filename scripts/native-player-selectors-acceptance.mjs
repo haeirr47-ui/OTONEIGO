@@ -67,6 +67,15 @@ try{
   await page.keyboard.press('Escape');await lyrics.waitFor({state:'detached'});
   assert.equal(await lyricsOpener.evaluate(el=>el===document.activeElement),true);report.lyricsOverlayFocusEscapeRestore=true;
   await verifyShortcuts(h,report);
+  // This host runs with an unreachable proxy, so the anonymous catalog must reach
+  // its explicit failure state with a retry action instead of hanging in loading.
+  // Live rows are covered by the separate anonymous probe, not by this harness.
+  await nav('排行榜').click();
+  const rankings=page.getByRole('region',{name:'排行榜'});
+  await rankings.waitFor();
+  await rankings.getByRole('alert').waitFor({timeout:30000});
+  assert.ok(await rankings.getByRole('button',{name:'重试',exact:true}).count(),'catalog failure offers retry');
+  report.catalogOfflineFailureState=true;
   await nav('设置').click();
   const settings=page.getByRole('region',{name:'设置'});await settings.waitFor();
   await settings.getByLabel('海外播放兼容').selectOption('off');
