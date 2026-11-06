@@ -1,5 +1,9 @@
 # P0 许可与来源记录
 
+2026-11-06 主窗口快捷键与轻量帮助为本工程独立实现，复用现有 React、图标和 OTONEI 展示样式；未复制 go-musicfox GPL 快捷键/TUI 代码，未新增运行时或测试依赖。既有 MIT 署名、字体及图标许可继续保留。
+
+2026-11-06 匿名目录、队列操作与分享同样为本工程独立实现：仅使用 Go 标准库与既有 Wails API（`Browser.OpenURL`、`Clipboard.SetText`），未新增运行时依赖；`biome`/`pnpm` 的版本提升属前端工具链，不进入随包通知。端点路径与参数形态参考 vendor 内 MIT 的 `netease-music` 及 GPL go-musicfox 的**行为**，未复制其业务、TUI 或播放器代码，其模块也不进入依赖。
+
 2026-11-05 播放器选择性订阅：选择器缓存、不可变收藏成员快照和展示订阅拆分由本工程实现，沿用 React 的 `useSyncExternalStore`；未新增运行时或测试依赖，未复制参考项目代码。原 OTONEI 展示 markup、样式及既有 MIT 署名继续保留，不改变字体和图标许可。构建与许可门禁结果见 [P0 验证记录](../validation/p0-validation.md)。
 
 2026-11-03：补丁更新 SQLite 1.61.1、coder/websocket 1.8.15、godbus 5.2.4；Wails/runtime 3.0.0 与 x/sys 0.49.0 保持（该 Wails 版本只代表 11-03 当时状态，2026-11-05 已按升级批次移到 3.1.0）。共享目录锁和崩溃记录为本工程独立代码，未引入新依赖或复制参考项目代码；本批构建需重新生成通知清单，旧 ZIP 仍代表其历史版本。策略和来源见[维护加固](../architecture/maintenance-hardening.md)。

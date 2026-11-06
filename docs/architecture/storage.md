@@ -1,5 +1,7 @@
 # 本地存储协议
 
+2026-11-06 主窗口快捷键仅调用已有音量、收藏和队列/播放操作，沿用各自的串行保存、失败提示和关闭握手；键位及帮助开关不持久化，不新增表、schema 或用户数据导入/导出接口。快捷键设置音量与界面滑条共用现有设置合并逻辑，收藏仍按完整字符串歌曲 ID 成员集合处理。
+
 > 2026-11-02 / 0.5.3 源码同步；验收结果见 [P0 验证记录](../validation/p0-validation.md)。
 
 默认数据库 `%LOCALAPPDATA%\OTONEIGO\library.db`，WebView2 用户目录为同目录的 `webview/`，固定字段诊断在 `log/`。进程级 `OTONEIGO_DATA_DIR` 可隔离测试。新工程不访问旧 OTONEI 用户数据，不提供导入、导出、备份或恢复接口。
@@ -18,6 +20,8 @@ SQLite 使用 modernc.org/sqlite v1.61.1、单连接/写锁、WAL、synchronous=
 TrackSnapshot 只含字符串网易云 ID、名称、歌手/专辑、时长和无查询参数的 HTTPS 网易云封面引用。媒体 URL、解析结果、Cookie/token 不属于库或队列协议。库 metadata 上限 128 KiB；本地收藏/历史/设置读取允许未知成员，但拒绝尾随JSON、非法UTF8、超限或无效已知字段/身份；异常原值保存在隔离表，不静默丢弃。设置更新合并保留未知值，无法安全改写的收藏或冲突设置明确拒写。
 
 2026-11-05 选择性订阅调整：完整收藏成员集合以 `PlayerState.favoriteIDs: ReadonlySet<string>` 暴露给前端选择器，初始化读取完整 ID，收藏写入成功后复制替换集合并通知。已有快照保持不变，失败写入不提前改变成员资格；当前页 `favorites` metadata 与完整成员集合分别负责分页展示和爱心判断。此集合不写入队列 JSON，不新增数据库表、schema 或浏览器持久化；SQLite 仍是收藏关系的持久化来源。
+
+2026-11-06 匿名目录与队列操作：`Toplist`/`PublicPlaylistPage` 只是浏览期视图模型，不写库、不进队列快照；`playNext` 的优先顺序只存在于内存（`pendingNextIds`），重启即失效。schema 仍为 7，未新增表或字段。
 
 队列项使用独立 `queueEntryId`，允许同一歌曲重复；含当前 entry/index、循环模式、整数毫秒位置和 JS 安全整数 revision。校验最多 1000 项、2 MiB JSON、字段长度、ID、位置和当前项一致性。前端串行保存完整快照，队列编辑立即提交，进度最多每 5 秒保存一次，暂停保存当前位置。
 

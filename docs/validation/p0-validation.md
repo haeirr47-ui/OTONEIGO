@@ -1,5 +1,48 @@
 # 当前验证记录 — 0.5.4 交付 / 历史证据分期
 
+## 主窗口快捷键与轻量帮助（2026-11-06）
+
+本批实现 [匿名差距计划](../planning/gofox-anonymous-feature-gap.md) 的切片 1。监听只随主窗口 `OtoneiPlayer` 挂载；没有系统热键注册、辅助窗口监听、新账号/目录端点或下一首优先规则。`playerShortcuts.ts` 的同一清单负责匹配、可用条件和帮助展示，读取最新 PlayerStore，复用原命令及唯一音频执行器。
+
+| 按键 | 动作 |
+| --- | --- |
+| 空格 | 播放 / 暂停；加载中取消 |
+| Ctrl + ← / → | 上一首 / 下一首 |
+| ← / → | 后退 / 前进 5 秒 |
+| Ctrl + ↑ / ↓ | 音量增加 / 减少 5%，限制在 0..1 |
+| F | 收藏 / 取消收藏当前歌曲 |
+| Q / L | 打开队列 / 歌词 |
+| ? | 打开快捷键帮助；也可使用播放器右侧的键盘图标 |
+
+输入、选择、可编辑区域和 ARIA 编辑控件优先；未带 Ctrl 的快捷键不覆盖按钮/链接等交互控件自身行为。组合输入、keyCode=229、重复事件、已处理事件、隐藏/失焦页面或正在关闭时不分发；所有对话框接管键盘范围，帮助通过原焦点所有者处理 Tab/Escape 及打开者恢复。无当前歌曲或对应资料未就绪时，禁用命令不吞键；音量与收藏沿用现有持久化协议，帮助本身不保存状态。
+
+下列原生与自动化结果只代表本批实际执行的范围，不能替代线上取流、系统热键、物理多屏或全部 P0 验收。
+
+- `./scripts/verify.ps1` exit=0：Go 格式/全量测试/vet、前端格式/lint、199 项 Vitest（15 文件，含 6 项快捷键测试）、TypeScript、47 方法/31 模型绑定、Windows production 构建及 11 份上游许可门禁通过。无新增依赖、schema 或存储字段。该数字是那次运行快照；切片 2-4 并入后为 222 项 / 16 文件，见下一节。
+- `node scripts/player-selector-acceptance.mjs` 的 32 项动态挂载断言通过：原有按需订阅、进度保存隔离、收藏及换曲参数行为保持。该报告是 Chrome fixture，不是原生音频证据。
+- `./scripts/native-player-selectors.ps1` 复用隔离宿主并调用 `native-shortcuts-checks.mjs`，最终报告 `output/playwright/native-player-selectors-20261106-080721-report.json` 与 `-host-report.json` 均通过。真实 WebView2、SQLite 和缓存 MP3，无 RPC/媒体响应替换；确认实际窗口聚焦后由 CDP 发送键盘事件，覆盖问号/按钮打开帮助、Tab/Escape 与打开者恢复、队列/歌词、收藏同步、空格与原生按钮空格、5 秒定位、音量及 Ctrl 上下曲。输入框/可编辑区保护及合成 repeat/IME 事件检查通过，换曲后音频对象仍为一个。
+- 原生 900×640 最小窗口帮助边界/横向溢出检查通过；截图 `output/playwright/native-shortcuts-help.png` 已目视核对。正常关闭 exit=0、数据库 integrity=ok、字段隐私检查 clean，测试源 profile 哈希未变。最终当前曲 1850977722、保存位置 173 ms；此值是本次测试末尾切歌并暂停的结果。
+
+早期原生脚本在问号打开/焦点恢复断言处失败，报告保留；修正显式窗口聚焦、键事件与打开者断言后最终重跑通过。输入法检查使用合成边界事件，未手工切换真实 IME 或逐一验证物理键盘布局；缓存样本不证明新的线上取流可用性。Windows EXE 已重建，版本仍为 0.5.4，未重新生成 ZIP、制作安装器、提交或推送。
+
+## 匿名目录、队列操作与分享（2026-11-06，未提交）
+
+范围：[差距计划](../planning/gofox-anonymous-feature-gap.md) 的切片 2-4（会话级"下一首播放"、卡片/队列行菜单与固定域名分享、排行榜与公共歌单详情）。切片 1 见上一节，切片 5（专辑/歌手/多实体搜索）本批明确不做。
+
+实现边界：`GetToplists`/`GetPublicPlaylist` 共用单一 discovery gate（250 ms 间距、12 秒共享 deadline、4 MiB 响应上限、100 条榜单 / 1000 条曲目 / 每页 30 条上限），不带兼容头、不查 GD、不使用 cookie jar；`Toplist`/`PublicPlaylistPage` 不入库；`playNext` 的 `pendingNextIds` 只存在于内存；分享只打开固定 `music.163.com` 链接。
+
+已执行（本机）：
+
+- `gofmt -l cmd internal` 干净、`go vet ./internal/catalog/...` 通过、`go test ./internal/catalog/... ./internal/domain/... ./internal/appservice/...` 通过。新增/覆盖的用例包括匿名传输（注入 cookie jar 也不发 Cookie、不带 `X-Real-IP`）、大 ID 的 `json.Number`、榜单 100 条与曲目 1000 条上限、不可信封面丢弃、分页与 `Partial`、非法 offset、响应体上限、读取中取消，以及本次补的限流码映射（HTTP 429 与业务码 `-462` 同为 `RATE_LIMITED`）。
+- 前端 `tsc --noEmit`、Vitest 222 项 / 16 文件、`biome lint`、`biome format:check`、`pnpm build` 通过（73 modules，JS 396.85 kB / gzip 120.64 kB，CSS 57.25 kB）。
+- 修掉三处先前的门禁/构建问题：`frontend/biome.json` 的 `$schema` 仍指 2.6.4（依赖已 2.6.5）；`OtoneiPresentation` 卡片 `role="group"` 触发 `lint/a11y/useSemanticElements`，已按"卡片需要可访问名称而非表单分组"写入抑制理由；`trackSharing` 对 `@wailsio/runtime` 的动态导入是无效分包（运行时已在主 chunk），改为静态导入后构建告警消失。修前 `verify.ps1` 会停在 lint。
+
+未执行 / 不得据此宣称：
+
+- 真实网易云的匿名目录请求：`offset=0/30/60/990` 未跑；`n:30` 是否返回全量 `trackIds` 未验证，若被截断则第二页起为空列表且只显示"部分"。`-462` 只有单元测试，未实测触发与前端提示。
+- 发现页、右键菜单、分享的原生 WebView2 验收。本批未重建 EXE、未打包；`bin/OTONEIGO.exe` 仍是不含本批前端改动的构建。
+- 因此"排行榜可用""下一首播放已原生验收"均不成立，计划第 5 节的待验证与待决策仍然开放。
+
 ## 播放器选择性订阅（2026-11-05）
 
 本批仅调整 React 订阅与运行时快照引用：`usePlayerStore` 用于命令，`usePlayerSelector` 用于稳定的选择结果，兼容完整订阅保留；收藏完整 ID 集合进入不可变状态。App、歌曲卡片、收藏按钮、封面和设置/歌单读取所需字段，进度/时间/歌词在局部更新。进度保存复用运行时条目引用，但 `SaveQueue` 仍获得独立归一化副本。唯一队列、唯一音频执行器、网络源选择及 SQLite schema 7 不变。

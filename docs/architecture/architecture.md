@@ -50,6 +50,24 @@ flowchart LR
 
 ## 状态、媒体与存储
 
+### 主窗口快捷键与轻量帮助（2026-11-06）
+
+`playerShortcuts.ts` 统一维护按键、命令及可用条件，`OtoneiPlayer` 在主窗口挂载文档键盘监听并在卸载时注销。命令读取最新 `PlayerStore`，复用现有播放、切歌、定位、音量及本地收藏方法；队列、歌词和帮助仍由原播放器的弹层所有者打开，不注册系统热键、不创建辅助播放器或后台键盘服务。迷你播放器和桌面歌词不挂载此监听。
+
+输入框、选择框、可编辑区域、输入法组合输入、重复事件、失焦/隐藏页面和已处理事件不触发播放器快捷键；原生按钮及交互控件保留自己的空格/方向键行为。对话框打开时全局命令让位给现有弹层焦点管理，Escape/Tab 不被新的分发器截获。关闭冻结和各命令的就绪条件在执行时再次检查，禁用命令不吞按键。
+
+帮助使用与分发器同源的键位清单，提供短说明及当前不可用原因；不自动弹出教程。帮助加入现有弹层焦点范围，关闭后恢复打开者，保留背景 inert 状态。具体键位与自动化/原生证据见 [P0 验证记录](../validation/p0-validation.md)。
+
+### 匿名目录、队列操作与分享（2026-11-06）
+
+`internal/catalog/discovery.go` 增加两类匿名目录请求：`GetToplists` 读 `GET /api/toplist`，`GetPublicPlaylist` 读 `/weapi/v3/playlist/detail`，本页有缺资料时再按批 `/weapi/v3/song/detail`。两者共享单一 `discoveryGate` 与 250 ms 间距、12 秒共享 deadline、4 MiB 响应上限、100 条榜单 / 1000 条曲目 / 每页 30 条上限；歌曲 ID 保持 `json.Number` 字符串，封面只保留通过 `ValidCover` 的信任地址，不可信即丢弃。目录请求不带 `X-Real-IP` 兼容头、不查 GD、不使用 cookie jar，与取流的总预算、缓存顺序和降级策略相互独立。`domain.Toplist`/`PublicPlaylistPage` 是**浏览期视图模型，不入库**；分页在客户端对 `trackIds` 切片，`Partial` 表示本轮有截断或资料缺失。
+
+`PlayerStore.playNext` 是会话级队列操作：整批插入当前条目之后、批内次序不变，`pendingNextIds` 记录一次性优先顺序，`next()` 先消费它再走 repeat-one/shuffle；`select`/`previous`/`replace`/`hydrate`/`close`/`dispose` 清空，`remove` 剪除，插入前做容量与 ID 校验。不写入快照，重启后不保留；仍是唯一队列所有者和唯一音频执行器。
+
+`TrackActions.tsx` 提供卡片/队列行的右键与"更多操作"入口，复用既有播放、收藏、队列命令；菜单打开时占用焦点范围，目标条目消失即关闭。`trackSharing.ts` 只把已校验的字符串 ID 拼成固定 `music.163.com/{song|album|artist}` 链接，经 Wails `Browser.OpenURL`/`Clipboard.SetText` 执行，不接受任意 URL 或命令。
+
+`DiscoveryPanel` 挂在"排行榜"导航项下，请求带取消信号与代际校验，切榜单/翻页/失败重试都丢弃迟到结果；页面显式标注"歌曲是否可播放取决于当前服务与播放权益"，不把公共榜单当作个性化推荐。
+
 ### 播放器选择性订阅（2026-11-05）
 
 `PlayerContext` 继续传递稳定的唯一 `PlayerStore`，只执行命令的调用者使用 `usePlayerStore()`；展示状态使用 `usePlayerSelector(selector, isEqual?)`。选择结果默认按 `Object.is` 比较，组合结果可使用浅比较；同一快照的选择结果必须缓存，选择器或比较函数变化时重新计算。`usePlayer()` 保留完整状态订阅兼容接口，不作为高频展示路径的默认入口。store 仍统一通知监听器，优化目标是减少无关 React 渲染，不保证减少通知次数或整体 CPU/内存占用。
