@@ -25,7 +25,7 @@
 
 早期原生脚本在问号打开/焦点恢复断言处失败，报告保留；修正显式窗口聚焦、键事件与打开者断言后最终重跑通过。输入法检查使用合成边界事件，未手工切换真实 IME 或逐一验证物理键盘布局；缓存样本不证明新的线上取流可用性。Windows EXE 已重建，版本仍为 0.5.4，未重新生成 ZIP、制作安装器、提交或推送。
 
-## 匿名目录、队列操作与分享（2026-11-06，未提交）
+## 匿名目录、队列操作与分享（2026-11-06）
 
 范围：[差距计划](../planning/gofox-anonymous-feature-gap.md) 的切片 2-4（会话级"下一首播放"、卡片/队列行菜单与固定域名分享、排行榜与公共歌单详情）。切片 1 见上一节，切片 5（专辑/歌手/多实体搜索）本批明确不做。
 
@@ -34,14 +34,40 @@
 已执行（本机）：
 
 - `gofmt -l cmd internal` 干净、`go vet ./internal/catalog/...` 通过、`go test ./internal/catalog/... ./internal/domain/... ./internal/appservice/...` 通过。新增/覆盖的用例包括匿名传输（注入 cookie jar 也不发 Cookie、不带 `X-Real-IP`）、大 ID 的 `json.Number`、榜单 100 条与曲目 1000 条上限、不可信封面丢弃、分页与 `Partial`、非法 offset、响应体上限、读取中取消，以及本次补的限流码映射（HTTP 429 与业务码 `-462` 同为 `RATE_LIMITED`）。
-- 前端 `tsc --noEmit`、Vitest 222 项 / 16 文件、`biome lint`、`biome format:check`、`pnpm build` 通过（73 modules，JS 396.85 kB / gzip 120.64 kB，CSS 57.25 kB）。
+- 前端 `tsc --noEmit`、Vitest 222 项 / 16 文件、`biome lint`、`biome format:check`、`pnpm build` 通过（构建数字见下方 `verify.ps1` 段）。
 - 修掉三处先前的门禁/构建问题：`frontend/biome.json` 的 `$schema` 仍指 2.6.4（依赖已 2.6.5）；`OtoneiPresentation` 卡片 `role="group"` 触发 `lint/a11y/useSemanticElements`，已按"卡片需要可访问名称而非表单分组"写入抑制理由；`trackSharing` 对 `@wailsio/runtime` 的动态导入是无效分包（运行时已在主 chunk），改为静态导入后构建告警消失。修前 `verify.ps1` 会停在 lint。
+
+### 匿名目录 live 探测（2026-11-06，出口 loc=TH / colo=BKK）
+
+临时 Go 探测（`go test -tags liveprobe`，执行后已删除，不随仓库或 ZIP 分发），`NewClient()` 自带空 cookie jar、不设兼容头、不查 GD；只记端点、状态、计数与顶层键名，不保存 URL、Cookie 或响应体。
+
+| 探测 | 结果 |
+| --- | --- |
+| `GET /api/toplist` | 200，65 条，`partial=false`，约 1.0 s |
+| `playlist/detail`（100 首榜单，`n=30`） | `total=100`、`available=100`、`partial=false` → **`trackIds` 未被 `n` 截断** |
+| 同榜单 `offset=0/30/60` | 各 30 行、`nextOffset` 30/60/90、`hasMore=true`，约 0.3–0.6 s |
+| 同榜单 `offset=990`（越界） | 200，0 行、`hasMore=false`、`partial=false`，不报错 |
+| `/v1/album/{id}` | 200，键 `album,songs,code,resourceState` |
+| `/v1/artist/{id}` | 200，键 `artist,hotSongs,more,code`（`hotSongs` 50） |
+| `/artist/top` | 200，`artists` 10 条 |
+| `/album/new` | 200，`albums` 10 条 + `total` |
+| `/playlist/highquality/list` | 200，`playlists` 10 条 + `more`/`total` |
+
+结论与边界：`n:30` 分页假设成立，第 4 批的客户端切片逻辑可用；专辑/歌手/精选歌单端点在本次 TH 出口、本次会话下可匿名访问。这只代表一个样本与一个出口，不证明中国大陆、其他对象或未来可用；`-462` 仍只有单元测试，未实测触发。
+
+### 门禁与原生重跑（2026-11-06）
+
+- `./scripts/verify.ps1` exit=0：gofmt、Go 全量测试/vet、前端 format/lint、222 项 Vitest（16 文件）、49 方法/34 模型绑定生成、tsc、Vite 构建、Windows production 构建与 11 份上游许可门禁全部通过；构建为 78 modules，JS 396.85 kB / gzip 120.64 kB，CSS 57.25 kB。
+- 重新生成的 `bin/OTONEIGO.exe` 为 30,263,808 字节、SHA-256 `592d37bfbc0fee445a6139629de647c83276a135b9501dc294ba4939e051b6c0`（09:51:44），带 `icon=8 / groupIcon=1 / version=1 / manifest=1` 资源，版本仍为 0.5.4。
+- 原生重跑 `./scripts/native-player-selectors.ps1`：报告 `output/playwright/native-player-selectors-20261106-095319-report.json` 与 `-host-report.json` 均 `pass=true`。真实 WebView2 + SQLite + 缓存 MP3、进程级不可达代理；覆盖缓存播放、81 秒 seek、暂停/继续、下一首仍为单一 `HTMLAudioElement`、收藏列表高亮与 footer 同步、队列/歌词焦点与 Escape 恢复、快捷键全套，以及本批新增的**排行榜离线失败态**（可进入、显示 `role="alert"` 与"重试"，不卡在加载）。
+- 该宿主用不可达代理运行，所以排行榜**真实列表行没有原生验收**；live 数据路径由上面的 Go 探测覆盖，两者不能互相替代。首次把 live 列表加入该 harness 时因代理超时失败，报告保留在 output，不作为通过证据。
 
 未执行 / 不得据此宣称：
 
-- 真实网易云的匿名目录请求：`offset=0/30/60/990` 未跑；`n:30` 是否返回全量 `trackIds` 未验证，若被截断则第二页起为空列表且只显示"部分"。`-462` 只有单元测试，未实测触发与前端提示。
-- 发现页、右键菜单、分享的原生 WebView2 验收。本批未重建 EXE、未打包；`bin/OTONEIGO.exe` 仍是不含本批前端改动的构建。
-- 因此"排行榜可用""下一首播放已原生验收"均不成立，计划第 5 节的待验证与待决策仍然开放。
+- `-462` 的实际触发与前端提示；中国大陆出口、其他地区与更多对象的复验。
+- 右键菜单与分享的原生 WebView2 验收（浏览器 fixture 与单测覆盖了参数与链接规则）。
+- 未重新打包：`bin/OTONEIGO-0.5.4-windows-x64.zip` 仍是 0.5.4 交付批次（`db347318…`，内含 `9b5257e4…`），当前 EXE 比 ZIP 新。
+- 因此可以宣称"本轮匿名目录端点与分页在 TH 单样本下可用，且 UI 的离线性失败态已原生验证"，但不能宣称"排行榜在所有地区可用""原生播放列表已验收"。
 
 ## 播放器选择性订阅（2026-11-05）
 

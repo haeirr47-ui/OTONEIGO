@@ -108,7 +108,7 @@
 | 1 聚焦快捷键与轻量帮助 | 已实现 | `frontend/src/playerShortcuts.ts`；证据见 [P0 记录](../validation/p0-validation.md) 的 2026-11-06 节。该节记的 199 项测试属当时快照，当前为 222 项 / 16 文件 |
 | 2 下一首播放 | 已实现 | `PlayerStore.playNext` + 会话级 `pendingNextIds`；前端测试覆盖多批插入、重复曲目、容量与清空时机；**无原生验收**，未验证"点两次"在真实播放中的顺序 |
 | 3 右键菜单与分享 | 已实现（拖拽排序未做） | `frontend/src/TrackActions.tsx`、`trackSharing.ts`；只打开固定 `music.163.com` 链接，ID 先经正则校验。菜单可在卡片与队列行打开，**无原生验收** |
-| 4 排行榜 → 歌单详情 | 已实现代码，**live 未验证** | `internal/catalog/discovery.go`、`frontend/src/DiscoveryPanel.tsx`；fixture/单元测试覆盖匿名传输、上限、不可信封面与分页切片；真实服务的分页与匿名可用性尚未探测 |
+| 4 排行榜 → 歌单详情 | 已实现，完成 TH 单样本匿名探测 | `internal/catalog/discovery.go`、`frontend/src/DiscoveryPanel.tsx`；fixture/单元测试覆盖匿名传输、上限、不可信封面与分页切片；2026-11-06 在 `loc=TH` 出口实测 `n:30` 返回全量 `trackIds`、offset 0/30/60 正常、越界不报错，专辑/歌手/新碟/精选歌单端点均 200。单样本不等于全地区可用 |
 | 5 专辑/歌手/多实体搜索 | 未开始 | 用户于 2026-11-06 明确本批不做 |
 
 ### 切片 1：聚焦窗口快捷键与轻量帮助（2026-11-06 首批实装）
@@ -151,7 +151,7 @@
 
 验收：详情依赖可用、分页/资料有界、取消和迟到结果不污染页面、故障可重试；资料可查不保证有播放权益，取流完全复用原链。匿名失败记录阻塞事实，不引入登录或其他曲库绕过。
 
-状态（2026-11-06）：`GetToplists`（`GET /api/toplist`）与 `GetPublicPlaylist`（`/weapi/v3/playlist/detail`，本页缺资料时再批量 `/weapi/v3/song/detail`）已实现：250 ms 间距、单一 discovery gate、12 秒共享 deadline、4 MiB 响应上限、100 条榜单 / 1000 条曲目 / 每页 30 条上限、不可信封面丢弃、`Partial`/`HasMore` 语义；前端有取消代际、迟到丢弃与重试。**仍缺**本节要求的 clean-anonymous 预检记录；`n:30` 是否截断 `trackIds` 未验证，若截断则 offset≥30 的页会为空列表。
+状态（2026-11-06）：`GetToplists`（`GET /api/toplist`）与 `GetPublicPlaylist`（`/weapi/v3/playlist/detail`，本页缺资料时再批量 `/weapi/v3/song/detail`）已实现：250 ms 间距、单一 discovery gate、12 秒共享 deadline、4 MiB 响应上限、100 条榜单 / 1000 条曲目 / 每页 30 条上限、不可信封面丢弃、`Partial`/`HasMore` 语义；前端有取消代际、迟到丢弃与重试。clean-anonymous 预检已执行（`loc=TH`，空 cookie jar、无兼容头）：`n:30` 返回全量 `trackIds`，100 首榜单在 offset 0/30/60 各返回 30 行且 `partial=false`，offset 990 越界不报错；证据与原始计数见 [P0 记录](../validation/p0-validation.md) 的"匿名目录 live 探测"。未覆盖其他地区、更多对象与 `-462` 实际触发。
 
 ### 切片 5：专辑/歌手浏览与核心实体搜索（2026-11-06 明确本批不做）
 
@@ -161,10 +161,12 @@
 
 ### 待验证与待决策（2026-11-06 评审补充）
 
-阻塞项（未解决前不得宣称"排行榜可用"）：
+已完成（2026-11-06，`loc=TH`）：clean-anonymous 预检覆盖 `offset=0/30/60/990`，确认 `n:30` 返回全量 `trackIds`（100 首榜单 `total=available=100`），专辑/歌手/热门歌手/新碟/精选歌单端点均 200；计数与边界见 [P0 记录](../validation/p0-validation.md)"匿名目录 live 探测"。该结果只代表单地区单会话，不能外推。
 
-- clean-anonymous live 预检：空 cookie jar、无会话，记录日期/地区/端点/最小样本，并覆盖 `offset=0/30/60/990`；重点确认 `n:30` 是否返回全量 `trackIds`。失败按登录/限流/网络/schema/无数据分别记账。
-- 限流：`-462` 已映射为 `RATE_LIMITED`（与 HTTP 429 同义），但只有单元测试，未实测真实触发与前端提示。
+仍开放：
+
+- `-462` 的实际触发与前端提示（当前只有单元测试）；中国大陆与其他地区、更多榜单/歌单对象的复验。
+- 限流预算：目录侧只有同类请求的 250 ms 间距，缺跨端点总速率上限与"目录先降级、不影响播放取流"的明确顺序。
 
 待决策（实现下一批前定，不要留在代码里隐含）：
 

@@ -52,6 +52,8 @@ PortableOnly 默认开启。默认流程不下载或运行 NSIS、不生成 setu
 
 2026-11-05 播放器订阅批次重建了 `bin/OTONEIGO.exe`（17:15:58，SHA-256 `d79b2cc295f7a48addfe6190550d5a777bfc2e57afe48d62dde5f92c67464f7f`），但**未重新打包**：`bin/OTONEIGO-0.5.4-windows-x64.zip` 仍是 0.5.4 交付批次（`db347318…78afd6`，内含 `9b5257e4…a84eee57`），`output/packaging/portable-0.5.4-final-report.json` 的 `inputSHA256` 也随之过期。所以"包内程序与最后生产构建逐字节一致"只对 0.5.4 打包那一刻成立，当前工作区的 EXE 比 ZIP 新。若要发布含该批次改动的包，必须重新执行 `scripts/package-windows.ps1`（不带 `-SkipBuild`）并重记本表哈希与报告。
 
+2026-11-06 匿名目录批次再次经 `verify.ps1` 重建 `bin/OTONEIGO.exe`（09:51:44，30,263,808 字节，SHA-256 `592d37bfbc0fee445a6139629de647c83276a135b9501dc294ba4939e051b6c0`，资源 `icon=8 / groupIcon=1 / version=1 / manifest=1`），仍未重新打包。当前状态因此是：ZIP 与会话内报告的哈希仍指向 0.5.4 交付批次，而 `bin/OTONEIGO.exe` 已包含排行榜、队列操作与快捷键三个前端批次；发布前必须重跑一次 `verify.ps1` + 不带 `-SkipBuild` 的打包并重记哈希。
+
 复核补记（2026-11-05 16:02–16:12）：`bin/OTONEIGO.exe` 仍是 14:58:45 那次 production 构建的产物（SHA-256 `9b5257e4…a84eee57`，未重建）；打包与资源两份报告由最终脚本重跑生成，ZIP 逐字节不变（19,530,458 字节、`db347318…78afd6`），因此上表的哈希仍然有效。注意 ZIP 哈希与载荷的最后写入时间绑定（`Compress-Archive` 记录 DOS 时间戳）：复核中重跑 `audit-dependencies.ps1` 即使 `bin/THIRD_PARTY_NOTICES.txt` 内容逐字节相同，只要改写时间变了，重新打包就会得到不同哈希而内容不变；按原时间回填该文件后复现了上表哈希，这也说明"哈希变了"不等于"内容变了"，比对前应先看报告里的条目哈希。同一次复核把 `installer/README.txt` 的版号检查移入 `scripts/toolchain.ps1` 并让打包路径也调用它，补上母图复现测试与报告里的 `gateScriptSHA256`。未重跑的是 `scripts/native-wails054.ps1` 的整链聚合（它会经 `verify.ps1` 重建 EXE 并改变上述哈希），其 15:00 报告仍是那次运行的原样记录。
 
 ## 数据与退出
