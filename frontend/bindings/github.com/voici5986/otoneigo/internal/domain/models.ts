@@ -100,6 +100,42 @@ export interface DesktopSnapshot {
     "options": DesktopSettings;
 }
 
+/**
+ * EntityDetail covers album and artist pages. Tracks are bounded by the catalog;
+ * Total is the number of tracks actually browsable in this response.
+ */
+export interface EntityDetail {
+    "kind": string;
+    "id": string;
+    "name": string;
+    "subtitle"?: string;
+    "description"?: string;
+    "coverRef"?: string;
+    "tracks": TrackSnapshot[] | null;
+    "total": number;
+    "partial": boolean;
+}
+
+export interface EntitySearchResult {
+    "kind": string;
+    "items": EntitySummary[] | null;
+    "total": number;
+    "hasMore": boolean;
+    "partial": boolean;
+}
+
+/**
+ * EntitySummary is one row in a multi-type search result. TrackCount is zero when
+ * the provider does not report it; it never implies playback rights.
+ */
+export interface EntitySummary {
+    "id": string;
+    "name": string;
+    "subtitle"?: string;
+    "coverRef"?: string;
+    "trackCount"?: number;
+}
+
 export interface FavoritePage {
     "tracks": TrackSnapshot[] | null;
     "hasMore": boolean;

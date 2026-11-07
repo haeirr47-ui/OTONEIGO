@@ -65,6 +65,10 @@ export function GetDesktopSnapshot(): $CancellablePromise<domain$0.DesktopSnapsh
     return $Call.ByID(179833454);
 }
 
+export function GetEntityDetail(kind: string, id: string): $CancellablePromise<domain$0.EntityDetail> {
+    return $Call.ByID(4129852704, kind, id);
+}
+
 export function GetLocalFavoriteIDs(): $CancellablePromise<string[] | null> {
     return $Call.ByID(84650173);
 }
@@ -182,6 +186,10 @@ export function SaveDesktopPlacement(kind: string, placement: domain$0.WindowPla
 
 export function SaveQueue(q: domain$0.QueueSnapshot): $CancellablePromise<void> {
     return $Call.ByID(994242290, q);
+}
+
+export function SearchEntities(query: string, kind: string, page: number): $CancellablePromise<domain$0.EntitySearchResult> {
+    return $Call.ByID(522747289, query, kind, page);
 }
 
 export function SearchLocalFavorites(query: string, limit: number, beforeAddedOrder: number, beforeSongID: string): $CancellablePromise<domain$0.FavoritePage> {
