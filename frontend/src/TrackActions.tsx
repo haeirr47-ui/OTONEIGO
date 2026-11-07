@@ -1,10 +1,20 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type MouseEvent,
+} from "react";
 import { createPortal } from "react-dom";
 import { FaEllipsisH } from "react-icons/fa";
 import type { TrackSnapshot } from "./contracts";
 import { usePlayerSelector, usePlayerStore } from "./PlayerContext";
 import { containOverlayFocus } from "./overlayFocus";
 import { copyTrackShare, neteasePageURL, openNeteasePage } from "./trackSharing";
+import { useEntityView } from "./entityView";
 
 type Options = {
   track: TrackSnapshot;
@@ -27,6 +37,7 @@ export function clampTrackMenu(
   };
 }
 export function useTrackActions({ track, disabled = false, queueEntryId, onPlay, onAdd }: Options) {
+  const openEntity = useEntityView();
   const [position, setPosition] = useState<{ left: number; top: number } | null>(null);
   const [message, setMessage] = useState("");
   const store = usePlayerStore();
@@ -231,24 +242,45 @@ export function useTrackActions({ track, disabled = false, queueEntryId, onPlay,
               >
                 在网易云打开歌曲
               </button>
+              {openEntity && neteasePageURL("album", track.album?.id) && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    run(() => openEntity({ kind: "album", id: track.album?.id ?? "", name: track.album?.name ?? "" }))
+                  }
+                >
+                  查看专辑：{track.album?.name}
+                </button>
+              )}
               {neteasePageURL("album", track.album?.id) && (
                 <button
                   type="button"
                   onClick={() => run(() => openNeteasePage("album", track.album?.id), "已打开网易云专辑页面。")}
                 >
-                  打开专辑：{track.album?.name}
+                  在网易云打开专辑：{track.album?.name}
                 </button>
               )}
               {track.artists
                 .filter((artist) => neteasePageURL("artist", artist.id))
                 .map((artist) => (
-                  <button
-                    key={artist.id}
-                    type="button"
-                    onClick={() => run(() => openNeteasePage("artist", artist.id), "已打开网易云歌手页面。")}
-                  >
-                    打开歌手：{artist.name}
-                  </button>
+                  <Fragment key={artist.id}>
+                    {openEntity && (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          run(() => openEntity({ kind: "artist", id: artist.id ?? "", name: artist.name }))
+                        }
+                      >
+                        查看歌手：{artist.name}
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => run(() => openNeteasePage("artist", artist.id), "已打开网易云歌手页面。")}
+                    >
+                      在网易云打开歌手：{artist.name}
+                    </button>
+                  </Fragment>
                 ))}
               {queueEntryId && (
                 <button type="button" disabled={blocked} onClick={() => queueCommand(() => store.remove(queueEntryId))}>

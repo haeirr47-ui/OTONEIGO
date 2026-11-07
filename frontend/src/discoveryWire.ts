@@ -1,4 +1,14 @@
-import { validRemoteCover, type PublicPlaylistPage, type Toplist, type ToplistResult } from "./contracts";
+import {
+  validRemoteCover,
+  type EntityDetail,
+  type EntityDetailKind,
+  type EntitySearchKind,
+  type EntitySearchResult,
+  type EntitySummary,
+  type PublicPlaylistPage,
+  type Toplist,
+  type ToplistResult,
+} from "./contracts";
 import { fromTrack } from "./wire";
 
 const invalid = () => new Error("INVALID_DISCOVERY_RESPONSE");
@@ -84,4 +94,52 @@ export function fromPublicPlaylist(value: unknown): PublicPlaylistPage {
   )
     throw invalid();
   return result;
+}
+export function fromEntitySearch(value: unknown, expected: EntitySearchKind): EntitySearchResult {
+  const v = record(value);
+  if (v.kind !== expected) throw invalid();
+  const items: EntitySummary[] = list(v.items, 30).map((raw) => {
+    const item = record(raw);
+    return {
+      id: id(item.id),
+      name: text(item.name, 512, true),
+      subtitle: item.subtitle === undefined ? "" : text(item.subtitle, 512),
+      coverRef: item.coverRef === undefined ? "" : cover(item.coverRef),
+      trackCount: item.trackCount === undefined ? 0 : integer(item.trackCount, 2147483647),
+    };
+  });
+  if (new Set(items.map((item) => item.id)).size !== items.length) throw invalid();
+  return {
+    kind: expected,
+    items,
+    total: integer(v.total, 2147483647),
+    hasMore: flag(v.hasMore),
+    partial: flag(v.partial),
+  };
+}
+export function fromEntityDetail(value: unknown, expectedKind: EntityDetailKind, expectedId: string): EntityDetail {
+  const v = record(value);
+  if (v.kind !== expectedKind || id(v.id) !== expectedId) throw invalid();
+  const tracks = list(v.tracks, 200).map((raw) => {
+    const track = fromTrack(raw);
+    id(track.neteaseSongId);
+    text(track.name, 1024, true);
+    integer(track.durationMs, 86400000);
+    if (track.coverRef) cover(track.coverRef);
+    return track;
+  });
+  if (new Set(tracks.map((track) => track.neteaseSongId)).size !== tracks.length) throw invalid();
+  const total = integer(v.total, 200);
+  if (total < tracks.length) throw invalid();
+  return {
+    kind: expectedKind,
+    id: expectedId,
+    name: text(v.name, 512, true),
+    subtitle: v.subtitle === undefined ? "" : text(v.subtitle, 512),
+    description: v.description === undefined ? "" : text(v.description, 4096),
+    coverRef: v.coverRef === undefined ? "" : cover(v.coverRef),
+    tracks,
+    total,
+    partial: flag(v.partial),
+  };
 }

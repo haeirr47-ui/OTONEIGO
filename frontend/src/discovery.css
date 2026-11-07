@@ -11,3 +11,14 @@
 .ranking-item small { overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; line-height: 1.5; }
 .ranking-description { white-space: pre-line; max-height: 9em; overflow: auto; overflow-wrap: anywhere; }
 .discovery-panel .playlist-toolbar { flex-wrap: wrap; }
+.search-kind-tabs { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 14px; }
+.search-kind-tabs button { padding: 6px 14px; border: 1px solid var(--color-border); border-radius: 999px; background: transparent; color: var(--color-text-primary); }
+.search-kind-tabs button[aria-pressed="true"] { background: var(--color-accent); border-color: var(--color-accent); color: var(--color-on-solid, #fff); }
+.entity-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 12px; }
+.entity-item { display: grid; gap: 6px; text-align: left; padding: 16px; min-width: 0; }
+.entity-item strong { overflow-wrap: anywhere; }
+.entity-panel .entity-detail-header { display: flex; align-items: flex-start; gap: 16px; margin: 12px 0; }
+.entity-panel .entity-detail-header .album-cover-wrapper { flex: none; }
+.entity-panel .entity-detail-header .album-cover-image { width: 96px; height: 96px; object-fit: cover; border-radius: 8px; }
+.entity-panel .entity-detail-header h1 { margin: 0 0 6px; }
+.entity-detail-description { white-space: pre-line; max-height: 9em; overflow: auto; overflow-wrap: anywhere; }

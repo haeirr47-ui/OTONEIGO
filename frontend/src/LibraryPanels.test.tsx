@@ -168,6 +168,61 @@ it("keeps original OTONEI shell and player controls without an always-visible qu
   expect(html).not.toContain("queue-drawer");
   expect(html).not.toContain("<audio");
   expect(html).not.toContain("登录");
+  expect(html).not.toContain("player-time");
+  expect(html).toContain("progress-time-bubble");
+  expect(html).toContain('aria-valuetext="0:00 / 0:00"');
+});
+
+it("prefers the visible query over the last submitted one when switching search kinds", async () => {
+  const { searchTermFor } = await import("./App");
+  expect(searchTermFor("新关键词", "旧关键词")).toBe("新关键词");
+  expect(searchTermFor("   ", "旧关键词")).toBe("旧关键词");
+  expect(searchTermFor("   ", "")).toBe("");
+});
+
+it("offers all four search kinds and an in-app entity detail panel", async () => {
+  const { App } = await import("./App");
+  const { EntityPanel } = await import("./EntityPanel");
+  const { store, bridge } = setup();
+  await store.hydrate();
+  const html = renderToStaticMarkup(
+    <PlayerProvider store={store}>
+      <App bridge={bridge} />
+    </PlayerProvider>,
+  );
+  for (const label of ["歌曲", "专辑", "歌手", "歌单"]) expect(html).toContain(`>${label}</button>`);
+  const panel = renderToStaticMarkup(
+    <PlayerProvider store={store}>
+      <EntityPanel bridge={bridge} request={{ kind: "album", id: "123", name: "专辑详情" }} onBack={() => {}} />
+    </PlayerProvider>,
+  );
+  expect(panel).toContain("返回");
+  expect(panel).toContain("专辑详情");
+});
+
+it("keeps progress time on the bar as a thumb-following bubble, not under the controls", async () => {
+  const { App } = await import("./App");
+  const { store, bridge } = setup();
+  bridge.LoadQueue = async () => ({
+    entries: [{ queueEntryId: "entry", track }],
+    currentEntryId: "entry",
+    currentIndex: 0,
+    playMode: "repeat-all",
+    positionMs: 30000,
+    revision: 1,
+  });
+  await store.hydrate();
+  const html = renderToStaticMarkup(
+    <PlayerProvider store={store}>
+      <App bridge={bridge} />
+    </PlayerProvider>,
+  );
+  expect(html).toContain('aria-label="播放进度"');
+  expect(html).toContain('aria-valuetext="0:30 / 1:01"');
+  expect(html).toContain("--progress-time-left:");
+  expect(html).toContain('class="progress-time-bubble"');
+  expect(html).toContain("0:30 / 1:01</div>");
+  expect(html).not.toContain("player-time");
 });
 
 it("parses repeated LRC timestamps, fractions and ordering without treating plain lyrics as timed", async () => {

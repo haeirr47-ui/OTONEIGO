@@ -215,6 +215,33 @@ export interface PlaylistUpdate {
   name: string;
   tracks: TrackSnapshot[];
 }
+export type EntitySearchKind = "album" | "artist" | "playlist";
+export type EntityDetailKind = "album" | "artist";
+export interface EntitySummary {
+  id: string;
+  name: string;
+  subtitle?: string;
+  coverRef?: string;
+  trackCount?: number;
+}
+export interface EntitySearchResult {
+  kind: EntitySearchKind;
+  items: EntitySummary[];
+  total: number;
+  hasMore: boolean;
+  partial: boolean;
+}
+export interface EntityDetail {
+  kind: EntityDetailKind;
+  id: string;
+  name: string;
+  subtitle?: string;
+  description?: string;
+  coverRef?: string;
+  tracks: TrackSnapshot[];
+  total: number;
+  partial: boolean;
+}
 export interface Toplist {
   playlistId: string;
   name: string;
@@ -242,6 +269,13 @@ export interface PublicPlaylistPage {
 export interface DesktopBridge {
   GetToplists?(signal?: AbortSignal): Promise<ToplistResult>;
   GetPublicPlaylist?(id: string, offset: number, signal?: AbortSignal): Promise<PublicPlaylistPage>;
+  SearchEntities?(
+    query: string,
+    kind: EntitySearchKind,
+    page: number,
+    signal?: AbortSignal,
+  ): Promise<EntitySearchResult>;
+  GetEntityDetail?(kind: EntityDetailKind, id: string, signal?: AbortSignal): Promise<EntityDetail>;
   GetStorageRecoveryStatus?(): Promise<StorageRecoveryStatus>;
   GetDesktopEpoch?(): Promise<number>;
   GetDesktopSnapshot?(): Promise<DesktopSnapshot>;

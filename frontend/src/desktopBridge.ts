@@ -34,11 +34,31 @@ import {
   fromHistoryList,
 } from "./wire";
 import { trackSnapshot } from "./contracts";
-import { fromPublicPlaylist, fromToplists } from "./discoveryWire";
+import { fromEntityDetail, fromEntitySearch, fromPublicPlaylist, fromToplists } from "./discoveryWire";
 export const desktopBridge: DesktopBridge = {
   async GetToplists(signal) {
     const call = service.GetToplists();
     return fromToplists(await (signal ? call.cancelOn(signal) : call));
+  },
+  async SearchEntities(query, kind, page, signal) {
+    if (
+      typeof query !== "string" ||
+      !query.trim() ||
+      new TextEncoder().encode(query).length > 512 ||
+      !["album", "artist", "playlist"].includes(kind) ||
+      !Number.isSafeInteger(page) ||
+      page < 1 ||
+      page > 1000
+    )
+      throw new Error("INVALID_ENTITY_REQUEST");
+    const call = service.SearchEntities(query, kind, page - 1);
+    return fromEntitySearch(await (signal ? call.cancelOn(signal) : call), kind);
+  },
+  async GetEntityDetail(kind, id, signal) {
+    if (!["album", "artist"].includes(kind) || typeof id !== "string" || !/^[1-9][0-9]{0,29}$/.test(id))
+      throw new Error("INVALID_ENTITY_REQUEST");
+    const call = service.GetEntityDetail(kind, id);
+    return fromEntityDetail(await (signal ? call.cancelOn(signal) : call), kind, id);
   },
   async GetPublicPlaylist(id, offset, signal) {
     if (

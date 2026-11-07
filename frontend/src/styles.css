@@ -274,11 +274,6 @@ select {
 .player-center-section > .d-flex {
   gap: var(--spacing-xs);
 }
-.player-time {
-  font-size: var(--font-size-2xs);
-  font-variant-numeric: tabular-nums;
-  margin-top: var(--spacing-xs);
-}
 .player-right-section {
   min-width: 0;
   gap: var(--spacing-xs);
@@ -301,6 +296,48 @@ input[type="range"] {
   position: absolute;
   top: -6px;
   cursor: pointer;
+}
+/* OTONEI's progress time is a thumb-following bubble shown only while the bar is
+   hovered, focused or dragged; it must never intercept pointer events. */
+.progress-time-bubble {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: clamp(4rem, var(--progress-time-left, 50%), calc(100% - 4rem));
+  transform: translateX(-50%);
+  padding: var(--spacing-xs) 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--card-background);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  color: var(--color-text-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 120ms ease;
+  z-index: var(--z-index-player-base);
+}
+.progress-time-bubble::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
+  border-top: 6px solid var(--card-background);
+}
+.progress-control-container:hover .progress-time-bubble,
+.progress-control-container:focus-within .progress-time-bubble,
+.progress-control-container:active .progress-time-bubble {
+  opacity: 1;
+  visibility: visible;
+}
+.progress-control-container input:disabled ~ .progress-time-bubble {
+  display: none;
 }
 .desktop-expanded-view {
   bottom: var(--player-height-collapsed);
@@ -471,7 +508,6 @@ input[type="range"] {
   }
   .player-center-section .favorite,
   .player-center-section .control-icon-btn:first-child,
-  .player-time,
   .volume {
     display: none;
   }

@@ -22,6 +22,24 @@ vi.mock("../bindings/github.com/voici5986/otoneigo/internal/appservice/appservic
     });
     return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
   }),
+  SearchEntities: vi.fn((_query, kind, _page) => {
+    const promise = Promise.resolve({ kind, items: [], total: 0, hasMore: false, partial: false });
+    return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
+  }),
+  GetEntityDetail: vi.fn((kind, id) => {
+    const promise = Promise.resolve({
+      kind,
+      id,
+      name: "名称",
+      subtitle: "",
+      description: "",
+      coverRef: "",
+      tracks: [],
+      total: 0,
+      partial: false,
+    });
+    return Object.assign(promise, { cancelOn: vi.fn(() => promise) });
+  }),
   GetPlaybackQualityPolicy: vi.fn(async () => ({
     premiumAllowed: false,
     selectableQualities: ["exhigh"],
@@ -270,6 +288,30 @@ it("forwards independent discovery cancellation and rejects invalid requests bef
     await expect(desktopBridge.GetPublicPlaylist!(badID as string, offset)).rejects.toThrow("INVALID_PLAYLIST_REQUEST");
   }
   expect(service.GetPublicPlaylist).toHaveBeenCalledTimes(before);
+});
+
+it("maps entity search pages, validates detail identities and forwards cancellation", async () => {
+  const signal = new AbortController().signal;
+  expect((await desktopBridge.SearchEntities!("查询", "album", 2, signal)).kind).toBe("album");
+  expect(service.SearchEntities).toHaveBeenLastCalledWith("查询", "album", 1);
+  expect(vi.mocked(service.SearchEntities).mock.results[0].value.cancelOn).toHaveBeenCalledWith(signal);
+  expect((await desktopBridge.GetEntityDetail!("artist", "123", signal)).id).toBe("123");
+  expect(service.GetEntityDetail).toHaveBeenLastCalledWith("artist", "123");
+  expect(vi.mocked(service.GetEntityDetail).mock.results[0].value.cancelOn).toHaveBeenCalledWith(signal);
+  const searchCalls = vi.mocked(service.SearchEntities).mock.calls.length;
+  const detailCalls = vi.mocked(service.GetEntityDetail).mock.calls.length;
+  // `as never` marks deliberately invalid kinds/IDs that the runtime guard rejects.
+  await expect(desktopBridge.SearchEntities!("", "album", 1)).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.SearchEntities!("a", "song" as never, 1)).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.SearchEntities!("a", "album", 0)).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.SearchEntities!("a", "album", 1001)).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.GetEntityDetail!("playlist" as never, "123")).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.GetEntityDetail!("album", "001")).rejects.toThrow("INVALID_ENTITY_REQUEST");
+  await expect(desktopBridge.GetEntityDetail!("artist", "https://example.com")).rejects.toThrow(
+    "INVALID_ENTITY_REQUEST",
+  );
+  expect(service.SearchEntities).toHaveBeenCalledTimes(searchCalls);
+  expect(service.GetEntityDetail).toHaveBeenCalledTimes(detailCalls);
 });
 
 it("rejects a validly shaped discovery response for a different playlist or page", async () => {

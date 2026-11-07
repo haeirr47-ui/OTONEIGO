@@ -1,8 +1,28 @@
 import { expect, it } from "vitest";
-import { fromPublicPlaylist, fromToplists } from "./discoveryWire";
+import { fromEntityDetail, fromEntitySearch, fromPublicPlaylist, fromToplists } from "./discoveryWire";
+
+const entityItem = {
+  id: "12345678901234567890",
+  name: "专辑",
+  subtitle: "歌手",
+  coverRef: "",
+  trackCount: 10,
+};
+const entitySearch = { kind: "album", items: [entityItem], total: 1, hasMore: false, partial: false };
 
 const summary = { playlistId: "12345678901234567890", name: "榜单", description: "", coverRef: "" };
 const track = { neteaseSongId: "22345678901234567890", name: "歌曲", artists: [], durationMs: 1000 };
+const entityDetail = {
+  kind: "album",
+  id: "12345678901234567890",
+  name: "专辑",
+  subtitle: "歌手",
+  description: "简介",
+  coverRef: "",
+  tracks: [track],
+  total: 1,
+  partial: false,
+};
 const page = {
   ...summary,
   tracks: [track],
@@ -66,4 +86,41 @@ it("rejects inconsistent pagination instead of admitting loops or unbounded page
   expect(fromPublicPlaylist({ ...page, total: 1, availableCount: 1, nextOffset: 1, hasMore: false }).hasMore).toBe(
     false,
   );
+});
+
+it("keeps entity identities as strings and strips fields outside the search/detail contract", () => {
+  const decoded = fromEntitySearch(
+    { ...entitySearch, cookie: "private", items: [{ ...entityItem, url: "https://media.example/private" }] },
+    "album",
+  );
+  expect(decoded.items[0].id).toBe(entityItem.id);
+  expect(decoded).not.toHaveProperty("cookie");
+  expect(decoded.items[0]).not.toHaveProperty("url");
+  const detail = fromEntityDetail({ ...entityDetail, token: "private" }, "album", entityDetail.id);
+  expect(detail.tracks[0].neteaseSongId).toBe(track.neteaseSongId);
+  expect(detail).not.toHaveProperty("token");
+});
+
+it("rejects mismatched kinds, duplicate rows, over-limit lists and unsafe entity covers", () => {
+  expect(() => fromEntitySearch(entitySearch, "artist")).toThrow();
+  for (const value of [
+    { ...entitySearch, items: [{ ...entityItem, id: 123 }] },
+    { ...entitySearch, items: [entityItem, entityItem] },
+    { ...entitySearch, items: Array(31).fill(entityItem) },
+    { ...entitySearch, items: [{ ...entityItem, coverRef: "https://example.com/a.jpg" }] },
+    { ...entitySearch, total: Number.MAX_SAFE_INTEGER + 1 },
+  ])
+    expect(() => fromEntitySearch(value, "album")).toThrow();
+  expect(() => fromEntityDetail(entityDetail, "artist", entityDetail.id)).toThrow();
+  expect(() => fromEntityDetail(entityDetail, "album", "999")).toThrow();
+  for (const changes of [
+    { id: 123 },
+    { name: " " },
+    { description: "x".repeat(4097) },
+    { coverRef: "https://example.com/a.jpg" },
+    { tracks: [track, track] },
+    { tracks: Array(201).fill(track) },
+    { total: 0 },
+  ])
+    expect(() => fromEntityDetail({ ...entityDetail, ...changes }, "album", entityDetail.id)).toThrow();
 });

@@ -14,6 +14,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type CSSProperties,
   type FormEvent,
   type ReactNode,
 } from "react";
@@ -564,7 +565,6 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
                   {iconButton("下一首", <MdSkipNext size={28} />, () => void store.next(), !ready || !current)}
                   {current && <FavoriteButton track={current} />}
                 </div>
-                <PlayerTime current={current} />
               </div>
               <div className="player-right-section">
                 <label className="volume">
@@ -611,27 +611,29 @@ export function OtoneiPlayer({ current: providedCurrent }: { current?: TrackSnap
 function PlayerProgress({ current, ready }: { current?: TrackSnapshot; ready: boolean }) {
   const store = usePlayerStore();
   const positionMs = usePlayerSelector((state) => state.queue.positionMs);
+  const durationMs = current?.durationMs || 0;
+  const maximum = Math.max(1, durationMs);
+  const value = Math.min(positionMs, durationMs);
+  const label = `${time(value)} / ${time(durationMs)}`;
+  const percent = durationMs > 0 ? Math.max(0, Math.min(100, (value / durationMs) * 100)) : 0;
   return (
-    <div className="progress-control-container">
+    <div className="progress-control-container" style={{ "--progress-time-left": `${percent}%` } as CSSProperties}>
       <input
         aria-label="播放进度"
+        aria-valuetext={label}
         type="range"
         min="0"
-        max={Math.max(1, current?.durationMs || 0)}
+        max={maximum}
         step="1000"
-        value={Math.min(positionMs, current?.durationMs || 0)}
+        value={value}
         disabled={!ready || !current}
         onChange={(e) => store.seek(Number(e.target.value))}
       />
+      {/* Visibility is CSS-driven on hover/focus/active; aria-valuetext carries the same value. */}
+      <div className="progress-time-bubble" aria-hidden="true">
+        {label}
+      </div>
     </div>
-  );
-}
-function PlayerTime({ current }: { current?: TrackSnapshot }) {
-  const positionMs = usePlayerSelector((state) => state.queue.positionMs);
-  return (
-    <small className="player-time">
-      {time(positionMs)} / {time(current?.durationMs || 0)}
-    </small>
   );
 }
 function PlayerLyrics() {
@@ -711,3 +713,6 @@ function QueueTrackRow({
     </li>
   );
 }
+// Exported for the in-app entity detail panel; the declaration stays a plain
+// function so the browser acceptance transform can still inject its counter.
+export { Cover as PlayerCover };
