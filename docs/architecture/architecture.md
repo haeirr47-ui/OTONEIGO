@@ -50,6 +50,12 @@ flowchart LR
 
 ## 状态、媒体与存储
 
+### 多类型搜索与站内实体详情（2026-11-07）
+
+`SearchEntities` 复用 `/weapi/cloudsearch/pc`，只把 `type` 从 1 换成 10/100/1000（专辑/歌手/歌单）；`GetEntityDetail` 读 `/weapi/v1/album/{id}` 与 `/weapi/v1/artist/{id}`，歌单详情复用既有 `GetPublicPlaylist`。三者共用 discovery gate、250 ms 间距、12 秒共享 deadline、4 MiB 响应上限、30 条/页与 200 首详情上限；目录请求不带兼容头、不查 GD、不用 cookie jar，与取流预算、缓存顺序和降级策略相互独立。`EntitySummary`/`EntitySearchResult`/`EntityDetail` 是浏览期视图模型，不写 SQLite、不扩 `TrackSnapshot` 字段；schema 仍为 7。
+
+`App` 用 `EntityViewContext` 把"查看详情"交给唯一的搜索页状态所有者；`EntityPanel` 只在详情页内持有取消代际与分页 offset，复用 `TrackCard`/`PlayerCover` 展示，播放与队列仍走唯一 `PlayerStore` 和唯一音频执行器。右键菜单的站内项与网页外链并存，外链仍只构造固定 `music.163.com` 链接，不接受任意 URL。
+
 ### 主窗口快捷键与轻量帮助（2026-11-06）
 
 `playerShortcuts.ts` 统一维护按键、命令及可用条件，`OtoneiPlayer` 在主窗口挂载文档键盘监听并在卸载时注销。命令读取最新 `PlayerStore`，复用现有播放、切歌、定位、音量及本地收藏方法；队列、歌词和帮助仍由原播放器的弹层所有者打开，不注册系统热键、不创建辅助播放器或后台键盘服务。迷你播放器和桌面歌词不挂载此监听。

@@ -1,5 +1,34 @@
 # 当前验证记录 — 0.5.4 交付 / 历史证据分期
 
+## 切片 5：多类型搜索与站内专辑/歌手详情（2026-11-07）
+
+用户确认补齐三项：多类型搜索（专辑/歌手/歌单）、站内专辑/歌手详情页，入口为搜索结果卡片 + 右键菜单，网页外链保留为次要项。不改账号、来源优先级、队列所有权、schema 7 或唯一音频执行器。
+
+- Go：`internal/domain/entities.go` 定义 `EntitySummary`/`EntitySearchResult`/`EntityDetail`（浏览期视图模型，不入库）；`internal/catalog/entities.go` 复用 `/weapi/cloudsearch/pc`（type 10/100/1000）与 `/weapi/v1/album/{id}`、`/weapi/v1/artist/{id}`，共用 discovery gate、250 ms 间距、12 秒共享 deadline、4 MiB 响应上限、30 条/页与 200 首详情上限，不带兼容头、不查 GD、不使用 cookie jar；`internal/appservice/entities.go` 暴露两个方法，绑定重新生成（51 方法/37 模型）。
+- 前端：`contracts.ts`/`discoveryWire.ts`/`desktopBridge.ts` 加字段级校验、身份回校与取消；`App.tsx` 加歌曲/专辑/歌手/歌单四类切换与实体结果卡片；`EntityPanel.tsx` 为站内详情页（专辑/歌手走详情端点，歌单复用既有 `GetPublicPlaylist` 分页）；`EntityViewContext` 把右键菜单的"查看专辑/查看歌手"接进站内，外链改名"在网易云打开…"保留。
+
+clean-anonymous live 探测（`loc=TH`，临时 `go test -tags liveprobe` 执行后删除，只记解析后的计数与短标签）：搜索"周杰伦"三类各返回 30 项，total 592/84/462，首项的名称、副标题、曲目数与封面均有效；专辑详情 1 首、歌手详情 50 首，名称/简介/封面/曲目全部解析，无 `Partial`。这只是单地区单会话样本，不证明所有对象或地区。
+
+已执行：
+
+- `./scripts/verify.ps1` exit=0：gofmt、Go 全量测试/vet、前端 format/lint、228 项 Vitest（16 文件）、51 方法/37 模型绑定、tsc、Vite（80 modules，JS 404.85 kB / gzip 122.50 kB，CSS 59.19 kB）、Windows production 构建、11 份上游许可门禁。
+- `node scripts/player-selector-acceptance.mjs`：32 项动态挂载断言通过；`Cover` 保留普通函数声明并以 `PlayerCover` 导出，渲染计数注入仍有效。
+- `./scripts/package-windows.ps1 -SkipBuild`：EXE 30,306,816 字节、SHA-256 `025a6f6ef0026aea086492be9a9c77543390cf5770fc6f41f9cade2cfa574981`；ZIP 19,561,729 字节、SHA-256 `19d40347a64e542682e05b5f8bc2686000a5feea6be968dfdb282f7dab9315a4`；报告的包内/输入 EXE 哈希一致，四文件逐项匹配。
+
+代码审查修复（同批）：存储文档补记 `EntitySummary`/`EntitySearchResult`/`EntityDetail` 同属非持久化视图模型；切换搜索类型时显式清理 `searching`（首次搜索未完成就切换会让"正在搜索"一直不消失），并改用输入框当前关键词而不是上次提交值；提交搜索时清除详情页，避免新结果被 `EntityPanel` 遮挡；专辑详情逐首校验 `al.id`，不属于该专辑的曲目跳过并标 `Partial`（空 `al.id` 视为未知保留），并补了对应测试。
+
+未执行 / 不得据此宣称：新增页面的原生 WebView2 验收（离线 harness 只覆盖既有快捷键/播放/列表与排行榜失败态）；右键菜单站内项、类型切换与详情页的真实鼠标/键盘交互待实机验证；`-462` 实际触发、中国大陆与其他地区复验；搜索结果歌单进入详情复用的 `GetPublicPlaylist` 未对"搜索歌单"单独做 live 探测；便携覆盖更新与旧版本启动、安装器/签名/远程发布。
+
+## 播放器时间气泡与产物重建（2026-11-07）
+
+把播放器时间从控制按钮下方的常驻文本改回 OTONEI 的进度条交互气泡：只有 hover / 键盘 focus / 拖动进度条时在 thumb 上方显示"当前 / 总时长"，`input[type=range]` 同时带 `aria-valuetext`，气泡 `aria-hidden` 且不接收指针事件；`aria-label="播放进度"` 的 slider 角色与 DOM 保持不变。改动仅涉及 `OtoneiPresentation.tsx`、`styles.css`、`LibraryPanels.test.tsx`，没有 Go、schema 或网络契约变化。
+
+- `./scripts/verify.ps1` exit=0：gofmt、Go 全量测试/vet、前端 format/lint、223 项 Vitest（16 文件）、49 方法/34 模型绑定、tsc、Vite（78 modules，JS 396.88 kB / gzip 120.70 kB，CSS 58.18 kB）、Windows production 构建与 11 份上游许可门禁。
+- `./scripts/package-windows.ps1 -SkipBuild` 重新打包：EXE 30,264,832 字节、SHA-256 `0154029bc14f8df2ecd925e30dea24bfae13aadabbf8aa6e59a3d926f2f7d5e1`；ZIP 19,550,889 字节、SHA-256 `79f1340df496d0d6518b1447c2c9b742bad33da5089da3abbf977810ceebc1d4`；报告的包内/输入 EXE 哈希一致，四文件逐项匹配。此前"EXE 比 ZIP 新"的漂移已收口；该产物已被同日切片 5 的构建覆盖，当前哈希见本文件首节。
+- 视觉验证：用生产 CSS 与 Chrome headless 复现 footer，确认气泡默认 `hidden`、hover 后 `visible` 且 `pointer-events:none`，位置在进度条上方并跟随 thumb（42% 时中心 x=503.5，与 slider 的 504 对齐），控制按钮下方不再有时间文本。截图在 gitignored 的 `output/visual-check/`。这是 CSS fixture 证据，不是原生 WebView2 验收。
+
+未执行：真实 WebView2 的气泡 hover 截图与鼠标拖动回归、便携覆盖更新与旧版本启动、安装器/签名/远程发布。可直接运行 `bin/OTONEIGO.exe` 或解压 `bin/OTONEIGO-0.5.4-windows-x64.zip` 自行验证。
+
 ## 主窗口快捷键与轻量帮助（2026-11-06）
 
 本批实现 [匿名差距计划](../planning/gofox-anonymous-feature-gap.md) 的切片 1。监听只随主窗口 `OtoneiPlayer` 挂载；没有系统热键注册、辅助窗口监听、新账号/目录端点或下一首优先规则。`playerShortcuts.ts` 的同一清单负责匹配、可用条件和帮助展示，读取最新 PlayerStore，复用原命令及唯一音频执行器。
@@ -66,7 +95,7 @@
 
 - `-462` 的实际触发与前端提示；中国大陆出口、其他地区与更多对象的复验。
 - 分享的实际剪贴板写入与外部浏览器打开未在验收中执行；菜单的右键/Shift+F10 路径只在单测与浏览器 fixture 覆盖，原生只验证了"更多操作"按钮打开、Escape 关闭与焦点回收。
-- 未重新打包：`bin/OTONEIGO-0.5.4-windows-x64.zip` 仍是 0.5.4 交付批次（`db347318…`，内含 `9b5257e4…`），当前 EXE 比 ZIP 新。
+- 当时未重新打包：`bin/OTONEIGO-0.5.4-windows-x64.zip` 仍是 0.5.4 交付批次（`db347318…`，内含 `9b5257e4…`），当时 EXE 比 ZIP 新；该漂移已于 2026-11-07 重新打包收口，见本文件首节。
 - 因此可以宣称"本轮匿名目录端点与分页在 TH 单样本下可用，且 UI 的离线性失败态已原生验证"，但不能宣称"排行榜在所有地区可用""原生播放列表已验收"。
 
 ## 播放器选择性订阅（2026-11-05）

@@ -1,6 +1,6 @@
 # go-musicfox 匿名功能参考与 OTONEIGO 差距计划
 
-> 评审日期：2026-11-05；实装跟踪：2026-11-06（切片 1-4 已落地，切片 5 未开始）。本文保留静态调研与分批计划，实际验证以 P0 记录为准，不据计划推断在线可用性或 P0/P1/P2 验收完成。
+> 评审日期：2026-11-05；实装跟踪：2026-11-07（切片 1-5 已落地）。本文保留静态调研与分批计划，实际验证以 P0 记录为准，不据计划推断在线可用性或 P0/P1/P2 验收完成。
 > 关联：[当前实施路线](roadmap.md)、[架构](../architecture/architecture.md)、[存储协议](../architecture/storage.md)、[网易云适配器](../architecture/netease-adapter.md)、[许可与来源](../delivery/licenses.md)、[P0 验证记录](../validation/p0-validation.md)、[根实施计划](../../OTONEI_Windows_Netease_Implementation_Plan_2026-10-31.md)。
 
 ## 1. 评审结论与证据口径
@@ -109,7 +109,7 @@
 | 2 下一首播放 | 已实现 | `PlayerStore.playNext` + 会话级 `pendingNextIds`；前端测试覆盖多批插入、重复曲目、容量与清空时机；**无原生验收**，未验证"点两次"在真实播放中的顺序 |
 | 3 右键菜单与分享 | 已实现（拖拽排序未做） | `frontend/src/TrackActions.tsx`、`trackSharing.ts`；只打开固定 `music.163.com` 链接，ID 先经正则校验。菜单可在卡片与队列行打开，**无原生验收** |
 | 4 排行榜 → 歌单详情 | 已实现，完成 TH 单样本匿名探测 | `internal/catalog/discovery.go`、`frontend/src/DiscoveryPanel.tsx`；fixture/单元测试覆盖匿名传输、上限、不可信封面与分页切片；2026-11-06 在 `loc=TH` 出口实测 `n:30` 返回全量 `trackIds`、offset 0/30/60 正常、越界不报错，专辑/歌手/新碟/精选歌单端点均 200。单样本不等于全地区可用 |
-| 5 专辑/歌手/多实体搜索 | 未开始 | 用户于 2026-11-06 明确本批不做 |
+| 5 多类型搜索与专辑/歌手详情 | 已实现（2026-11-07） | 搜索四类切换、站内详情页、右键菜单入口；`loc=TH` 单样本 live 探测三类搜索与两种详情均解析正常；原生 WebView2 验收未做 |
 
 ### 切片 1：聚焦窗口快捷键与轻量帮助（2026-11-06 首批实装）
 
@@ -153,25 +153,33 @@
 
 状态（2026-11-06）：`GetToplists`（`GET /api/toplist`）与 `GetPublicPlaylist`（`/weapi/v3/playlist/detail`，本页缺资料时再批量 `/weapi/v3/song/detail`）已实现：250 ms 间距、单一 discovery gate、12 秒共享 deadline、4 MiB 响应上限、100 条榜单 / 1000 条曲目 / 每页 30 条上限、不可信封面丢弃、`Partial`/`HasMore` 语义；前端有取消代际、迟到丢弃与重试。clean-anonymous 预检已执行（`loc=TH`，空 cookie jar、无兼容头）：`n:30` 返回全量 `trackIds`，100 首榜单在 offset 0/30/60 各返回 30 行且 `partial=false`，offset 990 越界不报错；证据与原始计数见 [P0 记录](../validation/p0-validation.md) 的"匿名目录 live 探测"。未覆盖其他地区、更多对象与 `-462` 实际触发。
 
-### 切片 5：专辑/歌手浏览与核心实体搜索（2026-11-06 明确本批不做）
+### 切片 5：多类型搜索与站内专辑/歌手详情（2026-11-07 已实现）
 
-分别验证新碟/专辑详情、热门歌手及其歌曲/专辑，再扩核心实体搜索，不一次交付整组端点。复用 `usePlayerSelector`/`usePlayerStore`，行级只订阅自身收藏/当前条目标识，进度更新隔离；播放 tick 不触发推荐请求、整表重渲染或全库载入。
+按用户确认的范围落地，入口为**搜索结果卡片 + 右键菜单**，网页外链保留为次要项：搜索页加歌曲/专辑/歌手/歌单四类切换；专辑/歌手/歌单三类走同一 `/weapi/cloudsearch/pc`（type 10/100/1000），结果卡片可进入站内详情页；专辑/歌手详情走 `/weapi/v1/album/{id}`、`/weapi/v1/artist/{id}`，歌单复用既有 `GetPublicPlaylist` 分页。右键菜单新增"查看专辑/查看歌手"站内项，原外链改名"在网易云打开…"。
+
+实现沿用单一 `PlayerStore`/音频执行器与 `usePlayerSelector`/`usePlayerStore`：`EntitySummary`/`EntitySearchResult`/`EntityDetail` 是浏览期视图模型、不入库；请求共用 discovery gate、250 ms 间距、12 秒共享 deadline、4 MiB 响应上限、30 条/页与 200 首详情上限，不带兼容头、不查 GD、不用 cookie jar；前端有取消代际、迟到丢弃、重试与字段级校验。播放 tick 不触发目录请求，也不整表重渲染。
+
+仍按原计划未做：新碟/热门歌手的独立导航入口、相似歌曲、建议/热搜、YRC、时间偏移、主题、i18n、通知增强、播放模式。
 
 其余相似歌曲、建议/热搜、YRC、时间偏移、主题、i18n、通知增强、播放模式按收益独立排期。此顺序是拆分建议，不要求为每个常规实现步骤重复申请批准。
 
-### 待验证与待决策（2026-11-06 评审补充）
+### 待验证与待决策（2026-11-07 更新）
 
 已完成（2026-11-06，`loc=TH`）：clean-anonymous 预检覆盖 `offset=0/30/60/990`，确认 `n:30` 返回全量 `trackIds`（100 首榜单 `total=available=100`），专辑/歌手/热门歌手/新碟/精选歌单端点均 200；计数与边界见 [P0 记录](../validation/p0-validation.md)"匿名目录 live 探测"。该结果只代表单地区单会话，不能外推。
 
+已完成（2026-11-07，`loc=TH`）：切片 5 的 clean-anonymous 探测确认三类搜索各返回 30 项（total 592/84/462）、专辑/歌手详情分别解析出 1/50 首且封面与简介有效；计数见 [P0 记录](../validation/p0-validation.md)"切片 5"节。同样是单地区单会话样本。
+
 仍开放：
 
-- `-462` 的实际触发与前端提示（当前只有单元测试）；中国大陆与其他地区、更多榜单/歌单对象的复验。
+- `-462` 的实际触发与前端提示（当前只有单元测试）；中国大陆与其他地区、更多对象的复验。
 - 限流预算：目录侧只有同类请求的 250 ms 间距，缺跨端点总速率上限与"目录先降级、不影响播放取流"的明确顺序。
+- 新增页面的原生 WebView2 验收：类型切换、实体卡片、详情页与右键菜单站内项均待实机验证；离线 harness 只覆盖既有播放/快捷键/焦点与排行榜失败态。
+- 搜索结果歌单进入详情复用的 `GetPublicPlaylist` 未对"搜索歌单"单独做 live 探测。
 
 待决策（实现下一批前定，不要留在代码里隐含）：
 
-1. 目录浏览模型一律**不入库**；`TrackSnapshot` 已被队列/收藏/历史持久化，不为浏览页扩字段。
-2. 目录请求需要一条全局速率上限，并明确"目录先降级、不影响播放取流"的顺序；现有 `discoverySpacing=250ms` 只是同类请求的起点。
+1. 目录浏览模型一律**不入库**（切片 5 已按此实现：`EntityDetail`/`EntitySummary` 不写库，`TrackSnapshot` 未扩字段）。
+2. 目录请求需要一条全局速率上限，并明确"目录先降级、不影响播放取流"的顺序；现有 `discoverySpacing=250ms` 只是同类请求的起点（尚未实现跨端点总预算）。
 3. 列表/详情缓存只做有界内存 LRU（含 TTL），不写入 `cache/resources`（那是封面/歌词）。
 4. 新端点是否进入 `playback.jsonl` 白名单（`stage=discovery`）及字段范围；不记录 URL/Cookie/响应体。
 5. 海外匿名目录整体不可用时的产品表现（隐藏入口 / 保留入口并明确不可用）。

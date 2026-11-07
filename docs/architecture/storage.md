@@ -21,7 +21,7 @@ TrackSnapshot 只含字符串网易云 ID、名称、歌手/专辑、时长和�
 
 2026-11-05 选择性订阅调整：完整收藏成员集合以 `PlayerState.favoriteIDs: ReadonlySet<string>` 暴露给前端选择器，初始化读取完整 ID，收藏写入成功后复制替换集合并通知。已有快照保持不变，失败写入不提前改变成员资格；当前页 `favorites` metadata 与完整成员集合分别负责分页展示和爱心判断。此集合不写入队列 JSON，不新增数据库表、schema 或浏览器持久化；SQLite 仍是收藏关系的持久化来源。
 
-2026-11-06 匿名目录与队列操作：`Toplist`/`PublicPlaylistPage` 只是浏览期视图模型，不写库、不进队列快照；`playNext` 的优先顺序只存在于内存（`pendingNextIds`），重启即失效。schema 仍为 7，未新增表或字段。
+2026-11-06/07 匿名目录、多类型搜索与队列操作：`Toplist`、`PublicPlaylistPage`、`EntitySummary`、`EntitySearchResult`、`EntityDetail` 都只是浏览期视图模型，不写库、不进队列快照，`TrackSnapshot` 也未扩字段；`playNext` 的优先顺序只存在于内存（`pendingNextIds`），重启即失效。schema 仍为 7，未新增表或字段。
 
 队列项使用独立 `queueEntryId`，允许同一歌曲重复；含当前 entry/index、循环模式、整数毫秒位置和 JS 安全整数 revision。校验最多 1000 项、2 MiB JSON、字段长度、ID、位置和当前项一致性。前端串行保存完整快照，队列编辑立即提交，进度最多每 5 秒保存一次，暂停保存当前位置。
 
